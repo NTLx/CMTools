@@ -73,7 +73,7 @@ window.addEventListener('DOMContentLoaded', () => {
   if (helpBtn) {
     helpBtn.addEventListener('click', () => {
       // Open the help documentation URL
-      window.open('https://alidocs.dingtalk.com/i/p/b6Vz6Rg8EE383zZ9', '_blank');
+      window.open('https://alidocs.dingtalk.com/i/spaces/b6Vz6Rg8EE383zZ9/overview', '_blank');
     });
   }
 
