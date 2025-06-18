@@ -65,6 +65,17 @@ window.addEventListener('DOMContentLoaded', () => {
   if (shCarrierBtn) {
     shCarrierBtn.addEventListener('click', () => selectTool('shCarrier'));
   }
+  
+  // Get reference to help button
+  const helpBtn = document.getElementById('helpButton');
+  
+  // Add click event listener to help button
+  if (helpBtn) {
+    helpBtn.addEventListener('click', () => {
+      // Open the help documentation URL
+      window.open('https://alidocs.dingtalk.com/i/p/b6Vz6Rg8EE383zZ9', '_blank');
+    });
+  }
 
   // Initialize theme to match system preferences
   const initializeTheme = async () => {
