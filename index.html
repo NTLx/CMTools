@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html style="height: 100%; margin: 0; padding: 0;">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Content Security Policy to restrict script sources for security -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="script-src 'self' 'unsafe-inline';"
+    />
+    <meta
+      http-equiv="X-Content-Security-Policy"
+      content="script-src 'self' 'unsafe-inline';"
+    />
+    <!-- Link to the stylesheet for theme styling -->
+    <link rel="stylesheet" type="text/css" href="./styles.css">
+    <title>CMTools</title>
+  </head>
+  <body style="height: 100%; margin: 0; padding: 0; overflow: hidden;">
+    <!-- Commented out info paragraph -->
+    <!-- <p id="info"></p> -->
+    
+    <!-- Theme settings are now automatically managed based on system preferences -->
+
+    <!-- File upload area -->
+    <div class="file-upload-container">
+      <h2>CMTools - <span id="tool-name">工具</span></h2>
+      <div class="tool-info">
+        <button id="change-tool-button" class="secondary-button">
+          更换工具
+        </button>
+      </div>
+      <div class="app-description">
+        <p>计算结果在各输入文件同目录下生成</p>
+      </div>
+      
+      <!-- 文件选择区域 -->
+      <div class="file-upload-buttons">
+        <button id="select-file-button" class="process-button">
+          选择文件
+        </button>
+        <input type="file" id="file-input" accept=".csv,.tsv" style="display: none;" multiple>
+      </div>
+      
+      <!-- 文件信息显示 - 简化为文本形式 -->
+      <div class="file-count-info">
+        <p>已选择文件：<span id="selected-file-count">0</span> 个</p>
+      </div>
+      <div id="selected-files-list" class="selected-files-list"></div>
+      
+      <!-- 处理选项 -->
+      <div class="process-options">
+        <h3>处理选项</h3>
+        <div class="option">
+          <label for="std-name">标准品样本名称：</label>
+          <input type="text" id="std-name" name="std-name" value="STD" placeholder="输入标准品样本名称">
+        </div>
+        <div class="option">
+          <input type="checkbox" id="use-area" name="use-area">
+          <label for="use-area">使用峰面积数据进行计算</label>
+        </div>
+        <div class="option">
+          <input type="checkbox" id="use-gbk" name="use-gbk" checked>
+          <label for="use-gbk">Windows系统优化</label>
+        </div>
+        <!-- Development mode option is now hidden -->
+      </div>
+      
+      <!-- 处理按钮 -->
+      <div class="file-upload-buttons">
+        <button id="process-file" class="process-button" disabled>
+          处理文件
+        </button>
+      </div>
+      
+      <!-- 处理状态 -->
+      <div id="processing-status" class="processing-status"></div>
+      <div id="processing-progress" class="processing-progress">
+        <div class="progress-info">
+          <span id="processed-count">0</span>/<span id="total-count">0</span> 文件已处理
+        </div>
+        <div class="progress-bar-container">
+          <div id="progress-bar" class="progress-bar"></div>
+        </div>
+      </div>
+    </div>
+  </body>
+  <!-- Load the renderer process script -->
+  <script src="./renderer.js"></script>
+</html>

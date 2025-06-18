@@ -1,0 +1,805 @@
+/**
+ * Styles for the CMTools Electron application
+ */
+
+:root {
+  --primary-color: #1976d2;
+  --primary-light: #63a4ff;
+  --primary-dark: #004ba0;
+  --text-on-primary: #ffffff;
+  --secondary-color: #f50057;
+  --secondary-light: #ff5983;
+  --secondary-dark: #bb002f;
+  --text-on-secondary: #ffffff;
+  --success-color: #4caf50;
+  --warning-color: #ff9800;
+  --error-color: #f44336;
+  --background-light: #f5f5f5;
+  --text-light: #212121;
+  --text-light-secondary: #757575;
+  --background-dark: #121212;
+  --text-dark: #ffffff;
+  --text-dark-secondary: #b0b0b0;
+  --card-light: #ffffff;
+  --card-dark: #1e1e1e;
+  --border-light: #e0e0e0;
+  --border-dark: #333333;
+}
+
+/* System theme default styles - Dark mode */
+@media (prefers-color-scheme: dark) {
+  body:not(.light-mode):not(.dark-mode) {
+    background: #121212;
+    color: #e0e0e0;
+  }
+}
+
+/* System theme default styles - Light mode */
+@media (prefers-color-scheme: light) {
+  body:not(.light-mode):not(.dark-mode) {
+    background: #f8f9fa;
+    color: #212529;
+  }
+}
+
+/* Manually selected light theme styles */
+body.light-mode {
+  background: #f8f9fa;
+  color: #212529;
+}
+
+/* Manually selected dark theme styles */
+body.dark-mode {
+  background: #121212;
+  color: #e0e0e0;
+}
+
+/* CSS变量定义 */
+:root {
+  --border-color: #dee2e6;
+  --text-color: #212529;
+  --hover-color: rgba(0, 0, 0, 0.05);
+  --accent-color: #4d7cfe;
+}
+
+body.dark-mode {
+  --border-color: #3d3d4d;
+  --text-color: #e0e0e0;
+  --hover-color: rgba(255, 255, 255, 0.05);
+  --accent-color: #7c9eff;
+}
+
+/* General body styling */
+body {
+  font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
+  padding: 0;
+  margin: 0;
+  line-height: 1.6;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  letter-spacing: 0.01em;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Button styling */
+button {
+  margin: 5px;
+  padding: 10px 18px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+  position: relative;
+  overflow: hidden;
+}
+
+button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+}
+
+button:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+button::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.1);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+button:hover::after {
+  opacity: 1;
+}
+
+body.dark-mode button {
+  background: #2d2d3a;
+  color: #e0e0e0;
+  border: 1px solid #3d3d4d;
+}
+
+body.light-mode button {
+  background: #e9ecef;
+  color: #212529;
+  border: 1px solid #dee2e6;
+}
+
+/* File upload container styling */
+.file-upload-container {
+  width: 100%;
+  height: 100%;
+  padding: 20px;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+  display: flex;
+  flex-direction: column;
+}
+
+body.dark-mode .file-upload-container {
+  background: #121212;
+}
+
+body.light-mode .file-upload-container {
+  background: #f8f9fa;
+}
+
+/* File upload container header */
+.file-upload-container h2 {
+  font-size: 24px;
+  font-weight: 600;
+  margin-bottom: 15px;
+  text-align: center;
+  position: relative;
+  letter-spacing: -0.02em;
+}
+
+.file-upload-container h2::after {
+  content: '';
+  display: block;
+  width: 60px;
+  height: 3px;
+  margin: 12px auto 0;
+  border-radius: 2px;
+  background: linear-gradient(90deg, #4d7cfe, #7c4dfe);
+}
+
+body.dark-mode .file-upload-container h2 {
+  color: #e0e0e0;
+}
+
+body.light-mode .file-upload-container h2 {
+  color: #212529;
+}
+
+/* File upload buttons styling */
+.file-upload-buttons {
+  margin: 15px 0;
+  text-align: center;
+  display: flex;
+  justify-content: center;
+}
+
+/* Process button styling */
+.process-button {
+  background: linear-gradient(135deg, #4d7cfe, #7c4dfe);
+  color: white;
+  padding: 12px 24px;
+  font-size: 15px;
+  font-weight: 500;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin: 15px auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(77, 124, 254, 0.25);
+  position: relative;
+  overflow: hidden;
+  min-width: 160px;
+}
+
+.secondary-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 5px 10px;
+  background: linear-gradient(135deg, #4d7cfe, #7c4dfe);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 400;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(77, 124, 254, 0.25);
+  position: relative;
+  overflow: hidden;
+}
+
+.process-button:hover {
+  background: linear-gradient(135deg, #3d6cee, #6c3dee);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(77, 124, 254, 0.35);
+}
+
+.process-button:active {
+  transform: translateY(0);
+  box-shadow: 0 4px 12px rgba(77, 124, 254, 0.25);
+}
+
+.secondary-button:hover {
+  background: linear-gradient(135deg, #3d6cee, #6c3dee);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(77, 124, 254, 0.35);
+}
+
+.secondary-button:active {
+  transform: translateY(0);
+  box-shadow: 0 4px 12px rgba(77, 124, 254, 0.25);
+}
+
+.process-button:disabled {
+  background: linear-gradient(135deg, #a0a0a0, #b0b0b0);
+  color: rgba(255, 255, 255, 0.7);
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.secondary-button:disabled {
+  background: linear-gradient(135deg, #a0a0a0, #b0b0b0);
+  color: rgba(255, 255, 255, 0.7);
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.secondary-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.7s ease;
+}
+
+.secondary-button:hover:not(:disabled)::before {
+  left: 100%;
+}
+
+.process-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.7s ease;
+}
+
+.process-button:hover:not(:disabled)::before {
+  left: 100%;
+}
+
+/* File info styling */
+.file-info {
+  margin: 25px 0;
+  padding: 18px;
+  background-color: rgba(0, 0, 0, 0.02);
+  border-radius: 14px;
+  transition: all 0.3s ease;
+  border: 1px solid transparent;
+  position: relative;
+  overflow: hidden;
+}
+
+.file-info::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: linear-gradient(to bottom, #4d7cfe, #7c4dfe);
+  opacity: 0.7;
+}
+
+body.dark-mode .file-info {
+  background-color: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.03);
+}
+
+body.light-mode .file-info {
+  background-color: rgba(0, 0, 0, 0.01);
+  border-color: rgba(0, 0, 0, 0.04);
+}
+
+.file-info p {
+  margin: 0;
+  font-size: 15px;
+}
+
+.file-info #selected-file-path {
+  font-weight: 500;
+  word-break: break-all;
+}
+
+body.dark-mode .file-info #selected-file-path {
+  color: #a6adc8;
+}
+
+body.light-mode .file-info #selected-file-path {
+  color: #52525b;
+}
+
+/* Processing options styling */
+.process-options {
+  margin: 15px 0;
+  padding: 15px;
+  border-radius: 10px;
+  background-color: rgba(0, 0, 0, 0.01);
+  border: 1px solid transparent;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.process-options::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 100px;
+  height: 100px;
+  background: radial-gradient(circle at bottom right, rgba(77, 124, 254, 0.05), transparent 70%);
+  border-radius: 0 0 14px 0;
+  pointer-events: none;
+}
+
+body.dark-mode .process-options {
+  background-color: rgba(255, 255, 255, 0.02);
+  border-color: rgba(255, 255, 255, 0.03);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+body.light-mode .process-options {
+  background-color: rgba(0, 0, 0, 0.01);
+  border-color: rgba(0, 0, 0, 0.03);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+}
+
+.process-options h3 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.option {
+  margin: 8px 0;
+  display: flex;
+  align-items: center;
+}
+
+.option label {
+  margin-left: 8px;
+  font-size: 15px;
+}
+
+.option input[type="text"] {
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  width: 100%;
+  max-width: 220px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+}
+
+body.dark-mode .option input[type="text"] {
+  background-color: rgba(30, 30, 46, 0.6);
+  color: #e0e0e0;
+  border-color: #3d3d4d;
+}
+
+body.dark-mode .option input[type="text"]:focus {
+  border-color: #4d7cfe;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(77, 124, 254, 0.2);
+  background-color: rgba(30, 30, 46, 0.8);
+}
+
+body.light-mode .option input[type="text"] {
+  background-color: #ffffff;
+  color: #212529;
+  border-color: #dee2e6;
+}
+
+body.light-mode .option input[type="text"]:focus {
+  border-color: #4d7cfe;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(77, 124, 254, 0.15);
+}
+
+.option input[type="text"]::placeholder {
+  color: #adb5bd;
+  opacity: 0.7;
+}
+
+/* Processing status styling */
+.processing-status {
+  margin-top: 15px;
+  padding: 12px;
+  border-radius: 10px;
+  min-height: 18px;
+  transition: all 0.3s ease;
+  border: 1px solid transparent;
+  font-size: 14px;
+  position: relative;
+  overflow: hidden;
+}
+
+.processing-status::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  opacity: 0.7;
+}
+
+.processing-status.success {
+  background-color: rgba(130, 200, 130, 0.08);
+  color: #2e933c;
+  border-color: rgba(130, 200, 130, 0.2);
+}
+
+.processing-status.success::before {
+  background: linear-gradient(to right, #2e933c, #5bb85b);
+}
+
+body.dark-mode .processing-status.success {
+  background-color: rgba(130, 200, 130, 0.05);
+  color: #82c882;
+  border-color: rgba(130, 200, 130, 0.15);
+}
+
+.processing-status.warning {
+  background-color: rgba(255, 152, 0, 0.08);
+  color: #ff9800;
+  border-color: rgba(255, 152, 0, 0.2);
+}
+
+.processing-status.warning::before {
+  background: linear-gradient(to right, #ff9800, #ffb74d);
+}
+
+body.dark-mode .processing-status.warning {
+  background-color: rgba(255, 152, 0, 0.05);
+  color: #ffb74d;
+  border-color: rgba(255, 152, 0, 0.15);
+}
+
+/* 进度条warning状态样式已移至进度条样式部分 */
+.processing-status.error {
+  background-color: rgba(220, 53, 69, 0.08);
+  color: #dc3545;
+  border-color: rgba(220, 53, 69, 0.2);
+}
+
+.processing-status.error::before {
+  background: linear-gradient(to right, #dc3545, #ff6b6b);
+}
+
+body.dark-mode .processing-status.error {
+  background-color: rgba(220, 53, 69, 0.05);
+  color: #ff6b6b;
+  border-color: rgba(220, 53, 69, 0.15);
+}
+
+/* Output file link styling */
+.output-file-link {
+  color: #4d7cfe;
+  text-decoration: none;
+  cursor: pointer;
+  font-weight: 500;
+  position: relative;
+  transition: all 0.3s ease;
+  padding: 4px 8px;
+  border-radius: 6px;
+  display: inline-block;
+  margin: 6px 0;
+}
+
+.output-file-link::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background-color: currentColor;
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform 0.3s ease;
+}
+
+.output-file-link:hover {
+  background-color: rgba(77, 124, 254, 0.08);
+}
+
+.output-file-link:hover::after {
+  transform: scaleX(1);
+  transform-origin: left;
+}
+
+body.dark-mode .output-file-link {
+  color: #7c9eff;
+}
+
+body.dark-mode .output-file-link:hover {
+  background-color: rgba(124, 158, 255, 0.08);
+}
+
+/* App description styling */
+.app-description {
+  text-align: center;
+  margin-bottom: 10px;
+  font-size: 14px;
+  color: #6c757d;
+  max-width: 80%;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.4;
+  position: relative;
+}
+
+.app-description::after {
+  content: '';
+  display: block;
+  width: 30px;
+  height: 2px;
+  background-color: rgba(77, 124, 254, 0.3);
+  margin: 8px auto 0;
+  border-radius: 2px;
+}
+
+body.dark-mode .app-description {
+  color: #adb5bd;
+}
+
+/* Icon styling */
+.icon {
+  vertical-align: middle;
+  margin-right: 6px;
+  display: inline-block;
+}
+
+/* Button with icon alignment */
+button .icon {
+  margin-top: 0;
+}
+
+/* Custom checkbox styling */
+input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  outline: none;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.3s ease;
+  vertical-align: middle;
+}
+
+body.dark-mode input[type="checkbox"] {
+  border: 2px solid #3d3d4d;
+  background-color: #1e1e2e;
+}
+
+body.light-mode input[type="checkbox"] {
+  border: 2px solid #ced4da;
+  background-color: #ffffff;
+}
+
+input[type="checkbox"]:checked {
+  background: linear-gradient(135deg, #4d7cfe, #7c4dfe);
+  border-color: transparent;
+}
+
+input[type="checkbox"]:checked::after {
+  content: "";
+  position: absolute;
+  width: 6px;
+  height: 11px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  top: 2px;
+  left: 6px;
+  transform: rotate(45deg);
+}
+
+input[type="checkbox"]:hover:not(:checked):not(:disabled) {
+  border-color: #4d7cfe;
+}
+
+input[type="checkbox"]:focus {
+  box-shadow: 0 0 0 3px rgba(77, 124, 254, 0.25);
+}
+
+input[type="checkbox"]:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* 文件计数信息样式 */
+.file-count-info {
+  margin: 8px 0 3px 0;
+  text-align: center;
+}
+
+.file-count-info p {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text-color);
+}
+
+/* 修改文件列表样式，使其直接显示在文本下方 */
+.selected-files-list {
+  max-height: 80px;
+  overflow-y: auto;
+  margin: 3px auto 10px auto;
+  border-radius: 4px;
+  padding: 2px;
+  width: 80%;
+  max-width: 500px;
+}
+
+/* 只有当列表中有内容时才显示边框 */
+.selected-files-list:not(:empty) {
+  border: 1px solid var(--border-color);
+}
+
+/* File list styles */
+.file-list {
+  margin-top: 20px;
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid var(--border-light);
+  border-radius: 4px;
+  padding: 10px;
+}
+
+.light-mode .file-list {
+  border-color: var(--border-light);
+  background-color: var(--card-light);
+}
+
+.dark-mode .file-list {
+  border-color: var(--border-dark);
+  background-color: var(--card-dark);
+}
+
+/* Tool info styles */
+.tool-info {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 5px;
+}
+
+/* Tool selection styles */
+.tool-selection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  margin-top: 40px;
+}
+
+.tool-selection .process-button {
+  width: 220px;
+  margin: 0;
+}
+.file-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.file-item:last-child {
+  border-bottom: none;
+}
+
+.file-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-right: 10px;
+}
+
+.remove-file {
+  background: none;
+  border: none;
+  color: var(--text-color);
+  cursor: pointer;
+  padding: 2px 5px;
+  font-size: 14px;
+  border-radius: 3px;
+}
+
+.remove-file:hover {
+  background-color: var(--hover-color);
+}
+
+/* 进度条样式 */
+.processing-progress {
+  margin-top: 10px;
+  display: none;
+}
+
+.progress-info {
+  text-align: center;
+  margin-bottom: 3px;
+  font-size: 13px;
+  color: var(--text-color);
+}
+
+.progress-bar-container {
+  width: 100%;
+  height: 6px;
+  background-color: rgba(0, 0, 0, 0.05);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+body.dark-mode .progress-bar-container {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.progress-bar {
+  height: 100%;
+  width: 0%;
+  transition: width 0.3s ease;
+  border-radius: 4px;
+  background: linear-gradient(to right, #4d7cfe, #7c4dfe);
+}
+
+.progress-bar.success {
+  background: linear-gradient(to right, #2e933c, #5bb85b);
+}
+
+.progress-bar.warning {
+  background: linear-gradient(to right, #ff9800, #ffb74d);
+}
+
+.progress-bar.error {
+  background: linear-gradient(to right, #dc3545, #ff6b6b);
+}
