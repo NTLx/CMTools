@@ -48,6 +48,20 @@ const createWindow = () => {
 
 // When Electron has finished initializing
 app.whenReady().then(() => {
+  // Initialize theme to follow system preferences
+  nativeTheme.themeSource = 'system';
+  const systemIsDarkMode = nativeTheme.shouldUseDarkColors;
+  console.log('[Theme] Detected system theme:', systemIsDarkMode ? 'Dark' : 'Light');
+  
+  // Store the detected system theme to localStorage for all renderer processes
+  // This ensures consistent theme across all windows
+  const themeValue = systemIsDarkMode ? 'dark' : 'light';
+  
+  // We need to set this in a way that's accessible to renderer processes
+  // Store it as a global that can be accessed via IPC
+  global.initialTheme = themeValue;
+  console.log('[Theme] Initial theme stored globally:', themeValue);
+  
   // Create the main application window
   createWindow()
   
@@ -58,6 +72,26 @@ app.whenReady().then(() => {
   
   // Handle ping IPC message for testing communication
   ipcMain.handle('ping', () => 'pong')
+  
+  /**
+   * Get initial theme state set during app startup
+   * Returns the initial theme preference detected from system
+   */
+  ipcMain.handle('theme:get-initial', () => {
+    const initialTheme = global.initialTheme || 'light';
+    console.log('[Theme] Initial theme requested:', initialTheme);
+    return initialTheme === 'dark';
+  });
+  
+  /**
+   * Get current theme state
+   * Returns the current dark mode state
+   */
+  ipcMain.handle('dark-mode:get', () => {
+    const isDarkMode = nativeTheme.shouldUseDarkColors;
+    console.log('[Theme] Current theme state requested:', isDarkMode ? 'Dark' : 'Light');
+    return isDarkMode;
+  });
   
   /**
    * Toggle between dark and light mode

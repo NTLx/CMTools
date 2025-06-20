@@ -13,6 +13,9 @@ const { contextBridge, ipcRenderer } = require('electron');
  * for theme-related functionality while maintaining security context isolation
  */
 contextBridge.exposeInMainWorld('darkMode', {
+  // Get current theme state
+  get: () => ipcRenderer.invoke('dark-mode:get'),
+  
   // Toggle between dark and light mode
   toggle: () => ipcRenderer.invoke('dark-mode:toggle'),
   
@@ -21,6 +24,9 @@ contextBridge.exposeInMainWorld('darkMode', {
   
   // Reset to system theme preferences
   system: () => ipcRenderer.invoke('dark-mode:system'),
+  
+  // Get initial theme state
+  getInitial: () => ipcRenderer.invoke('theme:get-initial'),
   
   // Register a callback to be notified when the theme changes
   onUpdate: (callback) => ipcRenderer.on('dark-mode:updated', (event, isDarkMode) => callback(isDarkMode))

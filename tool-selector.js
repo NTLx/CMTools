@@ -87,41 +87,40 @@ window.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Initialize theme to match system preferences or stored preference
+  // Initialize theme based on initial system detection or stored preference
   const initializeTheme = async () => {
     console.log('Initializing theme...');
     try {
-      // Check if there's a stored theme preference
-      const storedTheme = localStorage.getItem('appTheme');
       let isDarkMode;
       
+      // Check if we already have a stored theme preference
+      const storedTheme = localStorage.getItem('appTheme');
+      
       if (storedTheme !== null) {
-        // Use stored theme preference
+        // Use existing stored preference
         isDarkMode = storedTheme === 'dark';
         console.log('Using stored theme preference:', isDarkMode ? 'Dark' : 'Light');
       } else {
-        // Use system theme preference and store it
+        // First time startup - get initial theme from main process
         try {
-          // Check if matchMedia is available and working
-          if (window.matchMedia && typeof window.matchMedia === 'function') {
-            const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-            isDarkMode = mediaQuery.matches;
-            console.log('System theme detected via matchMedia:', isDarkMode ? 'Dark' : 'Light');
+          if (window.darkMode && window.darkMode.getInitial) {
+            isDarkMode = await window.darkMode.getInitial();
+            console.log('Using initial system theme from main process:', isDarkMode ? 'Dark' : 'Light');
+            // Store the initial theme for future use
+            localStorage.setItem('appTheme', isDarkMode ? 'dark' : 'light');
           } else {
-            // Fallback to light mode if matchMedia is not available
-            console.warn('matchMedia not available, defaulting to light mode');
+            console.warn('darkMode.getInitial API not available, defaulting to light mode');
             isDarkMode = false;
+            localStorage.setItem('appTheme', 'light');
           }
-        } catch (mediaError) {
-          console.warn('Error detecting system theme, defaulting to light mode:', mediaError);
+        } catch (error) {
+          console.warn('Failed to get initial theme from main process, defaulting to light mode:', error);
           isDarkMode = false;
+          localStorage.setItem('appTheme', 'light');
         }
-        
-        // Store the detected or default theme
-        localStorage.setItem('appTheme', isDarkMode ? 'dark' : 'light');
       }
       
-      // Ensure updateThemeClass is called after a short delay to ensure DOM is ready
+      // Apply the theme
       setTimeout(() => {
         updateThemeClass(isDarkMode);
       }, 10);

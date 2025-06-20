@@ -78,40 +78,24 @@ window.addEventListener('DOMContentLoaded', () => {
    * Initialize the application theme
    * Uses stored theme preference from tool selector
    */
-  const initializeTheme = async () => {
+  const initializeTheme = () => {
     console.log('Initializing theme from stored preference...');
     try {
-      // Get stored theme preference
+      // Get stored theme preference set by tool selector
       const storedTheme = localStorage.getItem('appTheme');
       let isDarkMode;
       
       if (storedTheme !== null) {
-        // Use stored theme preference
         isDarkMode = storedTheme === 'dark';
         console.log('Using stored theme preference:', isDarkMode ? 'Dark' : 'Light');
       } else {
-        // Fallback to system theme if no preference stored
-        try {
-          // Check if matchMedia is available and working
-          if (window.matchMedia && typeof window.matchMedia === 'function') {
-            const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-            isDarkMode = mediaQuery.matches;
-            console.log('No stored theme found, using system theme via matchMedia:', isDarkMode ? 'Dark' : 'Light');
-          } else {
-            // Fallback to light mode if matchMedia is not available
-            console.warn('matchMedia not available, defaulting to light mode');
-            isDarkMode = false;
-          }
-        } catch (mediaError) {
-          console.warn('Error detecting system theme, defaulting to light mode:', mediaError);
-          isDarkMode = false;
-        }
-        
-        // Store the detected or default theme
-        localStorage.setItem('appTheme', isDarkMode ? 'dark' : 'light');
+        // Default to light mode if no preference is stored
+        console.log('No stored theme preference found, defaulting to light mode');
+        isDarkMode = false;
+        localStorage.setItem('appTheme', 'light');
       }
       
-      // Ensure updateThemeClass is called after a short delay to ensure DOM is ready
+      // Apply the theme
       setTimeout(() => {
         updateThemeClass(isDarkMode);
       }, 10);
