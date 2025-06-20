@@ -99,6 +99,9 @@ npm install
 
 # 启动开发环境
 npm start
+
+## 或使用速度更快的npx
+npx electron .
 ```
 
 #### 构建绿色软件
@@ -107,11 +110,11 @@ npm start
 # 构建单文件可执行程序
 npm run dist
 
-# 或使用npx
+## 或使用速度更快的npx
 npx electron-builder --dir
 ```
 
-构建完成后，将生成 `CMTools.exe` 单文件可执行程序，用户无需安装即可直接运行。
+构建完成后，将生成 `CMTools x.x.x.exe` 单文件可执行程序，用户无需安装即可直接运行。
 
 
 ## 许可证
