@@ -76,19 +76,51 @@ window.addEventListener('DOMContentLoaded', () => {
 
   /**
    * Initialize the application theme
-   * Sets theme to follow system preferences
+   * Uses stored theme preference from tool selector
    */
   const initializeTheme = async () => {
-    console.log('Initializing theme to use system preferences...');
+    console.log('Initializing theme from stored preference...');
     try {
-      // Set theme to system
-      await window.darkMode.system();
-      // Get current system theme status
-      const isDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      console.log('System theme detected:', isDarkMode ? 'Dark' : 'Light');
-      updateThemeClass(isDarkMode);
+      // Get stored theme preference
+      const storedTheme = localStorage.getItem('appTheme');
+      let isDarkMode;
+      
+      if (storedTheme !== null) {
+        // Use stored theme preference
+        isDarkMode = storedTheme === 'dark';
+        console.log('Using stored theme preference:', isDarkMode ? 'Dark' : 'Light');
+      } else {
+        // Fallback to system theme if no preference stored
+        try {
+          // Check if matchMedia is available and working
+          if (window.matchMedia && typeof window.matchMedia === 'function') {
+            const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+            isDarkMode = mediaQuery.matches;
+            console.log('No stored theme found, using system theme via matchMedia:', isDarkMode ? 'Dark' : 'Light');
+          } else {
+            // Fallback to light mode if matchMedia is not available
+            console.warn('matchMedia not available, defaulting to light mode');
+            isDarkMode = false;
+          }
+        } catch (mediaError) {
+          console.warn('Error detecting system theme, defaulting to light mode:', mediaError);
+          isDarkMode = false;
+        }
+        
+        // Store the detected or default theme
+        localStorage.setItem('appTheme', isDarkMode ? 'dark' : 'light');
+      }
+      
+      // Ensure updateThemeClass is called after a short delay to ensure DOM is ready
+      setTimeout(() => {
+        updateThemeClass(isDarkMode);
+      }, 10);
     } catch (error) {
       console.error('Theme initialization failed:', error);
+      // Fallback to light mode
+      setTimeout(() => {
+        updateThemeClass(false);
+      }, 10);
     }
   };
 

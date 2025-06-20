@@ -92,6 +92,7 @@
       "index.html",
       "styles.css",
       "error-report.html",
+      "error-report.js",
       "tool-selector.html",
       "tool-selector.js"
     ],

@@ -76,18 +76,78 @@ window.addEventListener('DOMContentLoaded', () => {
       window.open('https://alidocs.dingtalk.com/i/spaces/b6Vz6Rg8EE383zZ9/overview', '_blank');
     });
   }
+  
+  // Get reference to theme button
+  const themeBtn = document.getElementById('themeButton');
+  
+  // Add click event listener to theme button
+  if (themeBtn) {
+    themeBtn.addEventListener('click', () => {
+      toggleTheme();
+    });
+  }
 
-  // Initialize theme to match system preferences
+  // Initialize theme to match system preferences or stored preference
   const initializeTheme = async () => {
-    console.log('Initializing theme to use system preferences...');
+    console.log('Initializing theme...');
     try {
-      // Get current system theme status
-      const isDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      console.log('System theme detected:', isDarkMode ? 'Dark' : 'Light');
-      updateThemeClass(isDarkMode);
+      // Check if there's a stored theme preference
+      const storedTheme = localStorage.getItem('appTheme');
+      let isDarkMode;
+      
+      if (storedTheme !== null) {
+        // Use stored theme preference
+        isDarkMode = storedTheme === 'dark';
+        console.log('Using stored theme preference:', isDarkMode ? 'Dark' : 'Light');
+      } else {
+        // Use system theme preference and store it
+        try {
+          // Check if matchMedia is available and working
+          if (window.matchMedia && typeof window.matchMedia === 'function') {
+            const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+            isDarkMode = mediaQuery.matches;
+            console.log('System theme detected via matchMedia:', isDarkMode ? 'Dark' : 'Light');
+          } else {
+            // Fallback to light mode if matchMedia is not available
+            console.warn('matchMedia not available, defaulting to light mode');
+            isDarkMode = false;
+          }
+        } catch (mediaError) {
+          console.warn('Error detecting system theme, defaulting to light mode:', mediaError);
+          isDarkMode = false;
+        }
+        
+        // Store the detected or default theme
+        localStorage.setItem('appTheme', isDarkMode ? 'dark' : 'light');
+      }
+      
+      // Ensure updateThemeClass is called after a short delay to ensure DOM is ready
+      setTimeout(() => {
+        updateThemeClass(isDarkMode);
+      }, 10);
     } catch (error) {
       console.error('Theme initialization failed:', error);
+      // Fallback to light mode
+      setTimeout(() => {
+        updateThemeClass(false);
+      }, 10);
     }
+  };
+  
+  /**
+   * Toggle between light and dark themes
+   */
+  const toggleTheme = () => {
+    const isDarkMode = document.body.classList.contains('dark-mode');
+    const newTheme = isDarkMode ? 'light' : 'dark';
+    
+    console.log('Toggling theme to:', newTheme);
+    
+    // Update theme class
+    updateThemeClass(!isDarkMode);
+    
+    // Store theme preference
+    localStorage.setItem('appTheme', newTheme);
   };
 
   /**

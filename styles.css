@@ -591,6 +591,30 @@ body.dark-mode .app-description {
   color: #adb5bd;
 }
 
+/* Emphasized text styling */
+.emphasized-text {
+  font-weight: 600;
+  position: relative;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: linear-gradient(135deg, rgba(77, 124, 254, 0.1), rgba(124, 77, 254, 0.1));
+  transition: all 0.3s ease;
+}
+
+/* Light mode emphasized text */
+body:not(.dark-mode) .emphasized-text {
+  color: #4d7cfe;
+  box-shadow: 0 1px 3px rgba(77, 124, 254, 0.1);
+  border-left: 2px solid #4d7cfe;
+}
+
+/* Dark mode emphasized text */
+body.dark-mode .emphasized-text {
+  color: #7c9eff;
+  box-shadow: 0 1px 3px rgba(124, 158, 255, 0.15);
+  border-left: 2px solid #7c9eff;
+}
+
 /* Icon styling */
 .icon {
   vertical-align: middle;
@@ -876,4 +900,196 @@ body.light-mode .help-button {
 body.light-mode .help-button:hover {
   background: linear-gradient(135deg, #fb8c00, #e64a19);
   box-shadow: 0 6px 16px rgba(255, 152, 0, 0.35);
+}
+
+/* Theme button container styling */
+.theme-button-container {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  z-index: 100;
+}
+
+/* Theme button styling */
+.theme-button {
+  background: linear-gradient(135deg, #6c757d, #495057);
+  color: white;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(108, 117, 125, 0.25);
+  position: relative;
+  overflow: hidden;
+}
+
+.theme-button:hover {
+  background: linear-gradient(135deg, #5a6268, #343a40);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(108, 117, 125, 0.35);
+}
+
+.theme-button:active {
+  transform: translateY(0);
+  box-shadow: 0 4px 12px rgba(108, 117, 125, 0.25);
+}
+
+.theme-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.7s ease;
+}
+
+.theme-button:hover::before {
+  left: 100%;
+}
+
+/* Dark mode specific styling for theme button */
+body.dark-mode .theme-button {
+  background: linear-gradient(135deg, #6c757d, #495057);
+  color: white;
+  box-shadow: 0 4px 12px rgba(108, 117, 125, 0.15);
+}
+
+body.dark-mode .theme-button:hover {
+  background: linear-gradient(135deg, #5a6268, #343a40);
+  box-shadow: 0 6px 16px rgba(108, 117, 125, 0.25);
+}
+
+/* Light mode specific styling for theme button */
+body.light-mode .theme-button {
+  background: linear-gradient(135deg, #6c757d, #495057);
+  color: white;
+  box-shadow: 0 4px 12px rgba(108, 117, 125, 0.25);
+}
+
+body.light-mode .theme-button:hover {
+  background: linear-gradient(135deg, #5a6268, #343a40);
+  box-shadow: 0 6px 16px rgba(108, 117, 125, 0.35);
+}
+
+/* Theme toggle button styles */
+.theme-toggle {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: none;
+  border: 2px solid var(--border-color);
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  transition: all 0.3s ease;
+  z-index: 1000;
+  color: var(--text-color);
+}
+
+.theme-toggle:hover {
+  background-color: var(--hover-color);
+  transform: scale(1.1);
+}
+
+.theme-toggle:active {
+  transform: scale(0.95);
+}
+
+/* Error report specific styles */
+.error-report-container {
+  padding: 20px;
+  height: calc(100% - 40px);
+  overflow: auto;
+}
+
+.error-report-title {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.error-report-title::after {
+  content: '';
+  display: block;
+  width: 50px;
+  height: 3px;
+  margin: 10px auto 0;
+  border-radius: 2px;
+  background: linear-gradient(90deg, #dc3545, #ff6b6b);
+}
+
+.error-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.error-item {
+  margin-bottom: 15px;
+  padding: 15px;
+  border-radius: 8px;
+  background-color: rgba(220, 53, 69, 0.08);
+  border: 1px solid rgba(220, 53, 69, 0.2);
+}
+
+body.dark-mode .error-item {
+  background-color: rgba(220, 53, 69, 0.05);
+  border-color: rgba(220, 53, 69, 0.15);
+}
+
+.file-path {
+  font-weight: 500;
+  margin-bottom: 8px;
+  word-break: break-all;
+}
+
+.error-message {
+  color: #dc3545;
+  font-family: monospace;
+  white-space: pre-wrap;
+  margin-top: 8px;
+  padding: 8px;
+  background-color: rgba(0, 0, 0, 0.03);
+  border-radius: 4px;
+}
+
+body.dark-mode .error-message {
+  color: #ff6b6b;
+  background-color: rgba(255, 255, 255, 0.03);
+}
+
+.error-code {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background-color: rgba(220, 53, 69, 0.2);
+  color: #dc3545;
+  font-weight: 500;
+  margin-left: 8px;
+}
+
+body.dark-mode .error-code {
+  background-color: rgba(220, 53, 69, 0.15);
+  color: #ff6b6b;
+}
+
+.no-errors {
+  text-align: center;
+  padding: 20px;
+  color: #6c757d;
+}
+
+body.dark-mode .no-errors {
+  color: #adb5bd;
 }

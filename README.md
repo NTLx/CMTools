@@ -60,6 +60,8 @@ CMTools是一个基于Electron的桌面应用程序，为用户提供了多种�
 
 ### 构建与打包
 
+#### npm
+
 ```bash
 # 安装依赖
 npm install
@@ -73,6 +75,27 @@ npm run make
 # 创建Windows可执行文件
 npm run dist
 ```
+
+#### npx
+
+```bash
+# 安装依赖
+npx install
+
+# 启动开发环境
+npx start
+## 或者
+npx electron .
+
+# 打包应用
+npx make
+
+# 创建Windows可执行文件
+npx dist
+## 或者
+npx electron-builder --dir
+```
+
 
 ## 许可证
 
