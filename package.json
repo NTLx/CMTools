@@ -12,7 +12,7 @@
     "electron-builder": "^26.0.12"
   },
   "name": "cmtools",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "CMTools",
   "main": "main.js",
   "dependencies": {

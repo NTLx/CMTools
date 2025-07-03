@@ -189,7 +189,8 @@ window.addEventListener('DOMContentLoaded', () => {
     
     // Clear any previous processing status
     processingStatus.textContent = '';
-    processingStatus.classList.remove('success', 'error');
+    processingStatus.classList.remove('success', 'error', 'warning', 'processing');
+    progressBar.classList.remove('success', 'error', 'warning');
     processingProgress.style.display = 'none';
     
     // Update the files list
@@ -290,7 +291,11 @@ window.addEventListener('DOMContentLoaded', () => {
     
     // Clear previous status and show processing message
     processingStatus.textContent = 'Processing files...';
-    processingStatus.classList.remove('success', 'error');
+    processingStatus.classList.remove('success', 'error', 'warning', 'processing');
+    processingStatus.classList.add('processing');
+    
+    // Clear progress bar status classes and reset
+    progressBar.classList.remove('success', 'error', 'warning');
     
     // Show progress bar
     processingProgress.style.display = 'block';
@@ -335,7 +340,10 @@ window.addEventListener('DOMContentLoaded', () => {
   const handleProcessResult = (result) => {
     // 更新处理状态
     processingStatus.textContent = '处理完成';
-    processingStatus.classList.remove('processing');
+    
+    // 清除所有之前的状态样式类
+    processingStatus.classList.remove('processing', 'success', 'error', 'warning');
+    progressBar.classList.remove('success', 'error', 'warning');
     
     // 根据处理结果设置不同的状态样式
     if (result.successCount === result.totalFiles) {

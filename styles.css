@@ -471,6 +471,22 @@ body.light-mode .option input[type="text"]:focus {
   opacity: 0.7;
 }
 
+.processing-status.processing {
+  background-color: rgba(77, 124, 254, 0.08);
+  color: #4d7cfe;
+  border-color: rgba(77, 124, 254, 0.2);
+}
+
+.processing-status.processing::before {
+  background: linear-gradient(to right, #4d7cfe, #7c4dfe);
+}
+
+body.dark-mode .processing-status.processing {
+  background-color: rgba(77, 124, 254, 0.05);
+  color: #7c9eff;
+  border-color: rgba(77, 124, 254, 0.15);
+}
+
 .processing-status.success {
   background-color: rgba(130, 200, 130, 0.08);
   color: #2e933c;
