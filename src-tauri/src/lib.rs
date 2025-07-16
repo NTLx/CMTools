@@ -2,7 +2,87 @@ use std::path::Path;
 use std::process::Command;
 use std::fs;
 use std::io::Write;
+use std::collections::HashMap;
+use std::sync::LazyLock;
 use serde::{Deserialize, Serialize};
+// use thiserror::Error; // 不再需要，已改为手动实现 Display trait
+use tokio::task;
+
+// 自定义错误类型
+#[derive(Debug)]
+enum ProcessError {
+    UnknownTool { tool: String },
+    Io(std::io::Error),
+    CommandFailed { message: String },
+    FileProcessing { file: String, message: String },
+}
+
+impl std::fmt::Display for ProcessError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ProcessError::UnknownTool { tool } => write!(f, "Unknown tool name: {}", tool),
+            ProcessError::Io(err) => write!(f, "IO error: {}", err),
+            ProcessError::CommandFailed { message } => write!(f, "Command execution failed: {}", message),
+            ProcessError::FileProcessing { file, message } => write!(f, "File processing error: {} - {}", file, message),
+        }
+    }
+}
+
+impl std::error::Error for ProcessError {}
+
+impl From<std::io::Error> for ProcessError {
+    fn from(err: std::io::Error) -> Self {
+        ProcessError::Io(err)
+    }
+}
+
+// 工具枚举，提供类型安全的工具选择
+#[derive(Debug, Clone, Copy)]
+enum Tool {
+    AneuFiler,
+    Aneu23,
+    SHCarrier,
+}
+
+impl Tool {
+    // 从字符串解析工具类型
+    fn from_str(s: &str) -> Result<Self, ProcessError> {
+        match s {
+            "AneuFiler" => Ok(Tool::AneuFiler),
+            "Aneu23" => Ok(Tool::Aneu23),
+            "SHCarrier" => Ok(Tool::SHCarrier),
+            _ => Err(ProcessError::UnknownTool { tool: s.to_string() }),
+        }
+    }
+    
+    // 获取可执行文件名
+    fn exe_name(&self) -> &'static str {
+        match self {
+            Tool::AneuFiler => "AneuFiler.exe",
+            Tool::Aneu23 => "Aneu23.exe",
+            Tool::SHCarrier => "SHCarrier.exe",
+        }
+    }
+    
+    // 获取嵌入的可执行文件数据
+    fn exe_data(&self) -> &'static [u8] {
+        match self {
+            Tool::AneuFiler => include_bytes!("../../AneuFiler.exe"),
+            Tool::Aneu23 => include_bytes!("../../Aneu23.exe"),
+            Tool::SHCarrier => include_bytes!("../../SHCarrier.exe"),
+        }
+    }
+    
+    // 检查工具是否支持标准品样本名称
+    fn supports_std_sample(&self) -> bool {
+        matches!(self, Tool::Aneu23 | Tool::SHCarrier)
+    }
+    
+    // 检查工具是否支持 Windows 优化
+    fn supports_windows_optimization(&self) -> bool {
+        matches!(self, Tool::SHCarrier)
+    }
+}
 
 #[derive(Serialize, Deserialize)]
 struct ProcessResult {
@@ -12,32 +92,81 @@ struct ProcessResult {
     file_path: Option<String>,
 }
 
+// 静态翻译映射表
+static TRANSLATIONS: LazyLock<HashMap<(&str, &str), &str>> = LazyLock::new(|| {
+    let mut map = HashMap::new();
+    
+    // 中文翻译
+    map.insert(("file_not_found", "zh"), "文件不存在");
+    map.insert(("file_not_found_error", "zh"), "文件不存在");
+    map.insert(("process_success", "zh"), "成功处理文件");
+    map.insert(("process_failed", "zh"), "处理文件失败");
+    map.insert(("execute_failed", "zh"), "执行程序失败");
+    map.insert(("unknown_tool", "zh"), "未知的工具名称");
+    map.insert(("unable_open_directory", "zh"), "无法打开目录");
+    map.insert(("unable_create_temp_file", "zh"), "无法创建临时可执行文件");
+    map.insert(("unable_write_file_data", "zh"), "无法写入可执行文件数据");
+    map.insert(("unable_get_permissions", "zh"), "无法获取文件权限");
+    map.insert(("unable_set_permissions", "zh"), "无法设置可执行权限");
+    map.insert(("task_execution_failed", "zh"), "任务执行失败");
+    map.insert(("unknown_tool_error", "zh"), "未知的工具名称");
+    map.insert(("io_error", "zh"), "IO 错误");
+    map.insert(("command_failed_error", "zh"), "命令执行失败");
+    map.insert(("file_processing_error", "zh"), "文件处理错误");
+    
+    // 英文翻译
+    map.insert(("file_not_found", "en"), "File not found");
+    map.insert(("file_not_found_error", "en"), "File not found");
+    map.insert(("process_success", "en"), "Successfully processed file");
+    map.insert(("process_failed", "en"), "Failed to process file");
+    map.insert(("execute_failed", "en"), "Failed to execute program");
+    map.insert(("unknown_tool", "en"), "Unknown tool name");
+    map.insert(("unable_open_directory", "en"), "Unable to open directory");
+    map.insert(("unable_create_temp_file", "en"), "Unable to create temporary executable file");
+    map.insert(("unable_write_file_data", "en"), "Unable to write executable file data");
+    map.insert(("unable_get_permissions", "en"), "Unable to get file permissions");
+    map.insert(("unable_set_permissions", "en"), "Unable to set executable permissions");
+    map.insert(("task_execution_failed", "en"), "Task execution failed");
+    map.insert(("unknown_tool_error", "en"), "Unknown tool name");
+    map.insert(("io_error", "en"), "IO error");
+    map.insert(("command_failed_error", "en"), "Command execution failed");
+    map.insert(("file_processing_error", "en"), "File processing error");
+    
+    map
+});
+
 // 消息翻译函数
 fn get_message(key: &str, language: &str, filename: Option<&str>) -> String {
-    match (key, language) {
-        ("file_not_found", "zh") => format!("文件不存在: {}", filename.unwrap_or("")),
-        ("file_not_found", _) => format!("File not found: {}", filename.unwrap_or("")),
-        ("file_not_found_error", "zh") => "文件不存在".to_string(),
-        ("file_not_found_error", _) => "File not found".to_string(),
-        ("process_success", "zh") => format!("成功处理文件: {}", filename.unwrap_or("")),
-        ("process_success", _) => format!("Successfully processed file: {}", filename.unwrap_or("")),
-        ("process_failed", "zh") => format!("处理文件失败: {}", filename.unwrap_or("")),
-        ("process_failed", _) => format!("Failed to process file: {}", filename.unwrap_or("")),
-        ("execute_failed", "zh") => format!("执行程序失败: {}", filename.unwrap_or("")),
-        ("execute_failed", _) => format!("Failed to execute program: {}", filename.unwrap_or("")),
-        ("unknown_tool", "zh") => "未知的工具名称".to_string(),
-        ("unknown_tool", _) => "Unknown tool name".to_string(),
-        ("unable_open_directory", "zh") => "无法打开目录".to_string(),
-        ("unable_open_directory", _) => "Unable to open directory".to_string(),
-        ("unable_create_temp_file", "zh") => "无法创建临时可执行文件".to_string(),
-        ("unable_create_temp_file", _) => "Unable to create temporary executable file".to_string(),
-        ("unable_write_file_data", "zh") => "无法写入可执行文件数据".to_string(),
-        ("unable_write_file_data", _) => "Unable to write executable file data".to_string(),
-        ("unable_get_permissions", "zh") => "无法获取文件权限".to_string(),
-        ("unable_get_permissions", _) => "Unable to get file permissions".to_string(),
-        ("unable_set_permissions", "zh") => "无法设置可执行权限".to_string(),
-        ("unable_set_permissions", _) => "Unable to set executable permissions".to_string(),
-        _ => key.to_string(),
+    let message = TRANSLATIONS.get(&(key, language))
+        .or_else(|| TRANSLATIONS.get(&(key, "en")))
+        .unwrap_or(&key);
+    
+    if let Some(name) = filename {
+        if !name.is_empty() {
+            format!("{}: {}", message, name)
+        } else {
+            message.to_string()
+        }
+    } else {
+        message.to_string()
+    }
+}
+
+// 将 ProcessError 转换为本地化错误消息
+fn process_error_to_localized_string(error: &ProcessError, language: &str) -> String {
+    match error {
+        ProcessError::UnknownTool { tool } => {
+            format!("{}: {}", get_message("unknown_tool_error", language, None), tool)
+        }
+        ProcessError::Io(err) => {
+            format!("{}: {}", get_message("io_error", language, None), err)
+        }
+        ProcessError::CommandFailed { message } => {
+            format!("{}: {}", get_message("command_failed_error", language, None), message)
+        }
+        ProcessError::FileProcessing { file, message } => {
+            format!("{}: {} - {}", get_message("file_processing_error", language, None), file, message)
+        }
     }
 }
 
@@ -79,19 +208,17 @@ async fn open_file_directory(file_path: String, language: Option<String>) -> Res
     Ok(())
 }
 
-// 处理文件的命令
-#[tauri::command]
-async fn process_files(_app: tauri::AppHandle, tool_name: String, file_paths: Vec<String>, use_area_data: bool, std_sample_name: Option<String>, windows_optimization: Option<bool>, language: Option<String>) -> Result<Vec<ProcessResult>, String> {
+// 内部处理函数，使用 ProcessError
+async fn process_files_internal(_app: tauri::AppHandle, tool_name: String, file_paths: Vec<String>, use_area_data: bool, std_sample_name: Option<String>, windows_optimization: Option<bool>, language: Option<String>) -> Result<Vec<ProcessResult>, ProcessError> {
     let lang = language.as_deref().unwrap_or("en");
     let mut results = Vec::new();
     
-    // 获取嵌入的可执行文件数据
-    let (exe_name, exe_data): (&str, &[u8]) = match tool_name.as_str() {
-        "AneuFiler" => ("AneuFiler.exe", include_bytes!("../../AneuFiler.exe")),
-        "Aneu23" => ("Aneu23.exe", include_bytes!("../../Aneu23.exe")),
-        "SHCarrier" => ("SHCarrier.exe", include_bytes!("../../SHCarrier.exe")),
-        _ => return Err(get_message("unknown_tool", lang, None)),
-    };
+    // 解析工具类型
+    let tool = Tool::from_str(&tool_name)?;
+    
+    // 获取工具的可执行文件信息
+    let exe_name = tool.exe_name();
+    let exe_data = tool.exe_data();
     
     // 获取临时目录
     let temp_dir = std::env::temp_dir();
@@ -106,133 +233,155 @@ async fn process_files(_app: tauri::AppHandle, tool_name: String, file_paths: Ve
     
     if should_write {
         // 将嵌入的可执行文件写入临时目录
-        let mut file = fs::File::create(&exe_path)
-            .map_err(|e| format!("{}: {}", get_message("unable_create_temp_file", lang, None), e))?;
-        file.write_all(exe_data)
-            .map_err(|e| format!("{}: {}", get_message("unable_write_file_data", lang, None), e))?;
+        let mut file = fs::File::create(&exe_path)?;
+        file.write_all(exe_data)?;
         
         // 在Windows上设置可执行权限（虽然通常不需要）
         #[cfg(unix)]
         {
             use std::os::unix::fs::PermissionsExt;
-            let mut perms = fs::metadata(&exe_path)
-                .map_err(|e| format!("{}: {}", get_message("unable_get_permissions", lang, None), e))?
-                .permissions();
+            let mut perms = fs::metadata(&exe_path)?.permissions();
             perms.set_mode(0o755);
-            fs::set_permissions(&exe_path, perms)
-                .map_err(|e| format!("{}: {}", get_message("unable_set_permissions", lang, None), e))?;
+            fs::set_permissions(&exe_path, perms)?;
         }
     }
     
-    for file_path in file_paths {
-        let file_path_obj = Path::new(&file_path);
+    // 并行处理文件
+    let tasks: Vec<_> = file_paths.into_iter().map(|file_path| {
+        let exe_path = exe_path.clone();
+        let _tool_name = tool_name.clone();
+        let std_sample_name = std_sample_name.clone();
+        let lang = lang.to_string();
         
-        // 检查文件是否存在
-        if !file_path_obj.exists() {
-            results.push(ProcessResult {
-                success: false,
-                message: get_message("file_not_found", lang, Some(&file_path)),
-                error: Some(get_message("file_not_found_error", lang, None)),
-                file_path: Some(file_path.clone()),
-            });
-            continue;
-        }
-        
-        // 获取文件所在目录
-        let file_dir = file_path_obj.parent().unwrap_or(Path::new("."));
-        
-        // 根据不同工具构建命令行参数
-        let mut cmd = Command::new(&exe_path);
-        
-        match tool_name.as_str() {
-             "AneuFiler" => {
-                 // AneuFiler工具需要-i参数指定输入文件
-                 cmd.arg("-i").arg(&file_path);
-                 
-                 // 如果选择使用峰面积数据，添加-Area参数
-                 if use_area_data {
-                     cmd.arg("-Area");
-                 }
-             }
-             "Aneu23" | "SHCarrier" => {
-                 // Aneu23和SHCarrier工具需要-i参数指定输入文件
-                 cmd.arg("-i").arg(&file_path);
-                 
-                 // 如果选择使用峰面积数据，添加-Area参数
-                 if use_area_data {
-                     cmd.arg("-Area");
-                 }
-                 
-                 // 如果提供了标准品样本名称，添加-STD参数
-                 if let Some(ref std_name) = std_sample_name {
-                     if !std_name.trim().is_empty() {
-                         cmd.arg("-STD").arg(std_name.trim());
-                     }
-                 }
-                 
-                 // SHCarrier工具的Windows系统优化选项
-                 if tool_name == "SHCarrier" && windows_optimization.unwrap_or(false) {
-                     cmd.arg("-GBK");
-                 }
-             }
-             _ => {
-                 // 其他未知工具直接传递文件路径
-                 cmd.arg(&file_path);
-             }
-         }
-        
-        // 在开发模式下输出调用命令到控制台
-        #[cfg(debug_assertions)]
-        {
-            let cmd_str = format!("{:?}", cmd);
-            println!("[DEBUG] 执行命令: {}", cmd_str);
-            println!("[DEBUG] 工作目录: {:?}", file_dir);
-            println!("[DEBUG] 工具: {}, 文件: {}", tool_name, file_path);
+        task::spawn_blocking(move || -> ProcessResult {
+            let file_path_obj = Path::new(&file_path);
+            
+            // 检查文件是否存在
+            if !file_path_obj.exists() {
+                let error = ProcessError::FileProcessing {
+                    file: file_path.clone(),
+                    message: get_message("file_not_found_error", &lang, None),
+                };
+                return ProcessResult {
+                    success: false,
+                    message: get_message("file_not_found", &lang, Some(&file_path)),
+                    error: Some(process_error_to_localized_string(&error, &lang)),
+                    file_path: Some(file_path.clone()),
+                };
+            }
+            
+            // 获取文件所在目录
+            let file_dir = file_path_obj.parent().unwrap_or(Path::new("."));
+            
+            // 根据不同工具构建命令行参数
+            let mut cmd = Command::new(&exe_path);
+            
+            // 添加输入文件参数
+            cmd.arg("-i").arg(&file_path);
+            
+            // 添加峰面积数据参数（所有工具都支持）
             if use_area_data {
-                println!("[DEBUG] 使用峰面积数据: true");
+                cmd.arg("-Area");
             }
-            if let Some(ref std_name) = std_sample_name {
-                println!("[DEBUG] 标准品样本名称: {}", std_name);
-            }
-            if tool_name == "SHCarrier" {
-                println!("[DEBUG] Windows系统优化: {}", windows_optimization.unwrap_or(false));
-            }
-            println!("[DEBUG] ----------------------------------------");
-        }
-        
-        // 执行外部程序
-        match cmd.current_dir(file_dir).output()
-        {
-            Ok(output) => {
-                if output.status.success() {
-                    results.push(ProcessResult {
-                        success: true,
-                        message: get_message("process_success", lang, Some(&file_path_obj.file_name().unwrap().to_string_lossy())),
-                        error: None,
-                        file_path: Some(file_path.clone()),
-                    });
-                } else {
-                    let error_msg = String::from_utf8_lossy(&output.stderr);
-                    results.push(ProcessResult {
-                        success: false,
-                        message: get_message("process_failed", lang, Some(&file_path_obj.file_name().unwrap().to_string_lossy())),
-                        error: Some(error_msg.to_string()),
-                        file_path: Some(file_path.clone()),
-                    });
+            
+            // 添加标准品样本名称参数（仅部分工具支持）
+            if tool.supports_std_sample() {
+                if let Some(ref std_name) = std_sample_name {
+                    if !std_name.trim().is_empty() {
+                        cmd.arg("-STD").arg(std_name.trim());
+                    }
                 }
             }
+            
+            // 添加 Windows 优化参数（仅 SHCarrier 支持）
+            if tool.supports_windows_optimization() {
+                if windows_optimization.unwrap_or(false) {
+                    cmd.arg("-GBK");
+                }
+            }
+            
+            // 在开发模式下输出调用命令到控制台
+            #[cfg(debug_assertions)]
+            {
+                let cmd_str = format!("{:?}", cmd);
+                println!("[DEBUG] Executing command: {}", cmd_str);
+                println!("[DEBUG] Working directory: {:?}", file_dir);
+                println!("[DEBUG] Tool: {}, File: {}", _tool_name, file_path);
+                if use_area_data {
+                    println!("[DEBUG] Using peak area data: true");
+                }
+                if let Some(ref std_name) = std_sample_name {
+                    println!("[DEBUG] Standard sample name: {}", std_name);
+                }
+                if _tool_name == "SHCarrier" {
+                    println!("[DEBUG] Windows optimization: {}", windows_optimization.unwrap_or(false));
+                }
+                println!("[DEBUG] ----------------------------------------");
+            }
+            
+            // 执行外部程序
+            match cmd.current_dir(file_dir).output() {
+                Ok(output) => {
+                    if output.status.success() {
+                        ProcessResult {
+                            success: true,
+                            message: get_message("process_success", &lang, Some(&file_path_obj.file_name().unwrap().to_string_lossy())),
+                            error: None,
+                            file_path: Some(file_path.clone()),
+                        }
+                    } else {
+                        let error_msg = String::from_utf8_lossy(&output.stderr);
+                        let error = ProcessError::CommandFailed {
+                            message: error_msg.to_string(),
+                        };
+                        ProcessResult {
+                            success: false,
+                            message: get_message("process_failed", &lang, Some(&file_path_obj.file_name().unwrap().to_string_lossy())),
+                            error: Some(process_error_to_localized_string(&error, &lang)),
+                            file_path: Some(file_path.clone()),
+                        }
+                    }
+                }
+                Err(e) => {
+                    let error = ProcessError::CommandFailed {
+                        message: e.to_string(),
+                    };
+                    ProcessResult {
+                        success: false,
+                        message: get_message("execute_failed", &lang, Some(&file_path_obj.file_name().unwrap().to_string_lossy())),
+                        error: Some(process_error_to_localized_string(&error, &lang)),
+                        file_path: Some(file_path.clone()),
+                    }
+                }
+            }
+        })
+    }).collect();
+    
+    // 等待所有任务完成并收集结果
+    for task in tasks {
+        match task.await {
+            Ok(result) => results.push(result),
             Err(e) => {
                 results.push(ProcessResult {
                     success: false,
-                    message: get_message("execute_failed", lang, Some(&file_path_obj.file_name().unwrap().to_string_lossy())),
+                    message: get_message("task_execution_failed", &lang, None),
                     error: Some(e.to_string()),
-                    file_path: Some(file_path.clone()),
+                    file_path: None,
                 });
             }
         }
     }
     
     Ok(results)
+}
+
+// 处理文件的命令
+#[tauri::command]
+async fn process_files(app: tauri::AppHandle, tool_name: String, file_paths: Vec<String>, use_area_data: bool, std_sample_name: Option<String>, windows_optimization: Option<bool>, language: Option<String>) -> Result<Vec<ProcessResult>, String> {
+    let lang = language.as_deref().unwrap_or("en");
+    process_files_internal(app, tool_name, file_paths, use_area_data, std_sample_name, windows_optimization, language.clone())
+        .await
+        .map_err(|e| process_error_to_localized_string(&e, lang))
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]

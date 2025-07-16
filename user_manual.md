@@ -36,7 +36,7 @@ The main window of CMTools is divided into several sections:
 
 1.  **Header:**
     *   **Help (`❓`):** Opens the online help documentation.
-    *   **Version Display:** Shows the current version of the application (e.g., `v2.0.1`).
+    *   **Version Display:** Shows the current version of the application (e.g., `v2.1.0`).
     *   **Language Switch (`CN`/`EN`):** Toggles the interface language between Chinese and English.
     *   **Theme Toggle (`☀️`/`🌙`):** Switches between light and dark mode.
     *   **Logo and Title:** Displays the application's branding.
@@ -181,7 +181,7 @@ CMTools 的主窗口分为几个部分：
 
 1.  **标题栏:**
     *   **帮助 (`❓`):** 打开在线帮助文档。
-    *   **版本显示:** 显示应用程序的当前版本（例如 `v2.0.1`）。
+    *   **版本显示:** 显示应用程序的当前版本（例如 `v2.1.0`）。
     *   **语言切换 (`CN`/`EN`):** 在中文和英文之间切换界面语言。
     *   **主题切换 (`☀️`/`🌙`):** 在亮色和暗色模式之间切换。
     *   **Logo 和标题:** 显示应用程序的品牌标识。

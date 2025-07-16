@@ -3,6 +3,33 @@ import { ref, onMounted } from "vue";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 
+// 工具类型枚举
+enum ToolType {
+  AneuFiler = "AneuFiler",
+  Aneu23 = "Aneu23",
+  SHCarrier = "SHCarrier"
+}
+
+// 工具配置接口
+interface ToolConfig {
+  name: ToolType;
+  label: string;
+  supportsStdSample: boolean;
+  supportsWindowsOptimization: boolean;
+}
+
+// 处理选项接口
+interface ProcessOptions {
+  toolName: ToolType;
+  filePaths: string[];
+  useAreaData: boolean;
+  stdSampleName?: string;
+  windowsOptimization?: boolean;
+  language: string;
+  [key: string]: unknown;
+}
+
+// 处理结果接口
 interface ProcessResult {
   success: boolean;
   message: string;
@@ -11,10 +38,10 @@ interface ProcessResult {
 }
 
 // 获取应用版本号
-const appVersion = (globalThis as any).__APP_VERSION__ || '2.0.1';
+const appVersion = (globalThis as any).__APP_VERSION__ || '2.1.0';
 
 const selectedFiles = ref<string[]>([]);
-const selectedTool = ref<string>("AneuFiler");
+const selectedTool = ref<ToolType>(ToolType.AneuFiler);
 const useAreaData = ref<boolean>(false);
 const stdSampleName = ref<string>("STD");
 const windowsOptimization = ref<boolean>(true); // Windows系统优化，默认选中
@@ -25,11 +52,32 @@ const errorMessages = ref<string[]>([]);
 const isDarkMode = ref<boolean>(true); // 默认暗色模式
 const currentLanguage = ref<string>('zh'); // 默认中文
 
-const tools = [
-  { name: "AneuFiler", label: "AneuFiler" },
-  { name: "Aneu23", label: "Aneu23" },
-  { name: "SHCarrier", label: "SHCarrier" }
+// 工具配置数组
+const tools: ToolConfig[] = [
+  { 
+    name: ToolType.AneuFiler, 
+    label: "AneuFiler", 
+    supportsStdSample: false, 
+    supportsWindowsOptimization: false 
+  },
+  { 
+    name: ToolType.Aneu23, 
+    label: "Aneu23", 
+    supportsStdSample: true, 
+    supportsWindowsOptimization: false 
+  },
+  { 
+    name: ToolType.SHCarrier, 
+    label: "SHCarrier", 
+    supportsStdSample: true, 
+    supportsWindowsOptimization: true 
+  }
 ];
+
+// 获取当前选中工具的配置
+const getCurrentToolConfig = (): ToolConfig => {
+  return tools.find(tool => tool.name === selectedTool.value) || tools[0];
+};
 
 // 翻译文本
 const translations = {
@@ -138,14 +186,19 @@ async function processFiles() {
   errorMessages.value = [];
   
   try {
-    const processResults = await invoke<ProcessResult[]>("process_files", {
+    const currentTool = getCurrentToolConfig();
+    
+    // 构建处理选项
+    const options: ProcessOptions = {
       toolName: selectedTool.value,
       filePaths: selectedFiles.value,
       useAreaData: useAreaData.value,
-      stdSampleName: (selectedTool.value === "Aneu23" || selectedTool.value === "SHCarrier") ? stdSampleName.value : undefined,
-      windowsOptimization: selectedTool.value === "SHCarrier" ? windowsOptimization.value : undefined,
+      stdSampleName: currentTool.supportsStdSample ? stdSampleName.value : undefined,
+      windowsOptimization: currentTool.supportsWindowsOptimization ? windowsOptimization.value : undefined,
       language: currentLanguage.value
-    });
+    };
+    
+    const processResults = await invoke<ProcessResult[]>("process_files", options);
     
     results.value = processResults;
     
@@ -317,7 +370,7 @@ onMounted(() => {
         </div>
         
         <!-- Windows系统优化选项 -->
-        <div class="option-item" v-if="selectedTool === 'SHCarrier'">
+        <div class="option-item" v-if="getCurrentToolConfig().supportsWindowsOptimization">
           <label class="checkbox-label">
             <input 
               type="checkbox" 
@@ -331,7 +384,7 @@ onMounted(() => {
         </div>
         
         <!-- 标准品样本名称配置 -->
-        <div class="option-item" v-if="selectedTool === 'Aneu23' || selectedTool === 'SHCarrier'">
+        <div class="option-item" v-if="getCurrentToolConfig().supportsStdSample">
           <label class="input-label">
             <span class="input-text">{{ t('stdSampleName') }}</span>
             <input 
