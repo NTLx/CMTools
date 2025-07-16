@@ -688,15 +688,6 @@ html, body {
   font-size: 14px;
 }
 
-.help-btn:hover,
-.language-btn:hover,
-.theme-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
-  backdrop-filter: blur(10px);
-}
-
 .logo {
   width: 48px;
   height: 48px;
