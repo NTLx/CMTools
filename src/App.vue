@@ -293,7 +293,7 @@ onMounted(() => {
     <header class="header">
       <div class="help-toggle">
         <button @click="openHelpCenter" class="help-btn" :title="t('helpCenter')">
-          <span>❓</span>
+          <span>{{ currentLanguage === 'zh' ? '帮助' : 'Help' }}</span>
         </button>
       </div>
       <div class="version-display">
@@ -301,13 +301,12 @@ onMounted(() => {
       </div>
       <div class="language-toggle">
         <button @click="toggleLanguage" class="language-btn" :title="t('languageSwitch')">
-          <span>{{ currentLanguage === 'zh' ? 'CN' : 'EN' }}</span>
+          <span>{{ currentLanguage === 'zh' ? '中文' : 'EN' }}</span>
         </button>
       </div>
       <div class="theme-toggle">
         <button @click="toggleTheme" class="theme-btn" :title="isDarkMode ? t('switchToLight') : t('switchToDark')">
-          <span v-if="isDarkMode">☀️</span>
-          <span v-else>🌙</span>
+          <span>{{ isDarkMode ? (currentLanguage === 'zh' ? '暗' : 'Dark') : (currentLanguage === 'zh' ? '亮' : 'Light') }}</span>
         </button>
       </div>
       <img src="/logo.png" class="logo" alt="CMTools Logo" />
@@ -474,117 +473,123 @@ html, body {
 
 /* CSS变量定义 - 亮色主题 */
 :root {
-  /* 主色调 - Material Design Blue */
-  --primary-50: #e3f2fd;
-  --primary-100: #bbdefb;
-  --primary-200: #90caf9;
-  --primary-300: #64b5f6;
-  --primary-400: #42a5f5;
-  --primary-500: #2196f3;
-  --primary-600: #1e88e5;
-  --primary-700: #1976d2;
-  --primary-800: #1565c0;
-  --primary-900: #0d47a1;
+  /* 主色调 - 柔和的蓝绿色调 */
+  --primary-50: #f0f9ff;
+  --primary-100: #e0f2fe;
+  --primary-200: #bae6fd;
+  --primary-300: #7dd3fc;
+  --primary-400: #38bdf8;
+  --primary-500: #0ea5e9;
+  --primary-600: #0284c7;
+  --primary-700: #0369a1;
+  --primary-800: #075985;
+  --primary-900: #0c4a6e;
   
-  /* 辅助色调 - Material Design Indigo */
-  --secondary-50: #e8eaf6;
-  --secondary-100: #c5cae9;
-  --secondary-200: #9fa8da;
-  --secondary-300: #7986cb;
-  --secondary-400: #5c6bc0;
-  --secondary-500: #3f51b5;
-  --secondary-600: #3949ab;
-  --secondary-700: #303f9f;
-  --secondary-800: #283593;
-  --secondary-900: #1a237e;
+  /* 辅助色调 - 温和的紫色调 */
+  --secondary-50: #faf5ff;
+  --secondary-100: #f3e8ff;
+  --secondary-200: #e9d5ff;
+  --secondary-300: #d8b4fe;
+  --secondary-400: #c084fc;
+  --secondary-500: #a855f7;
+  --secondary-600: #9333ea;
+  --secondary-700: #7c3aed;
+  --secondary-800: #6b21a8;
+  --secondary-900: #581c87;
   
-  /* 中性色 */
-  --gray-50: #fafafa;
-  --gray-100: #f5f5f5;
-  --gray-200: #eeeeee;
-  --gray-300: #e0e0e0;
-  --gray-400: #bdbdbd;
-  --gray-500: #9e9e9e;
-  --gray-600: #757575;
-  --gray-700: #616161;
-  --gray-800: #424242;
-  --gray-900: #212121;
+  /* 中性色 - 温暖的灰色调 */
+  --gray-50: #fafaf9;
+  --gray-100: #f5f5f4;
+  --gray-200: #e7e5e4;
+  --gray-300: #d6d3d1;
+  --gray-400: #a8a29e;
+  --gray-500: #78716c;
+  --gray-600: #57534e;
+  --gray-700: #44403c;
+  --gray-800: #292524;
+  --gray-900: #1c1917;
   
-  /* 语义色彩 */
-  --success: #4caf50;
-  --warning: #ff9800;
-  --error: #f44336;
-  --info: #2196f3;
+  /* 语义色彩 - 柔和版本 */
+  --success: #22c55e;
+  --warning: #f59e0b;
+  --error: #ef4444;
+  --info: #06b6d4;
   
   /* 背景和表面 */
-  --bg-primary: linear-gradient(135deg, var(--primary-400) 0%, var(--secondary-500) 100%);
+  --bg-primary: linear-gradient(135deg, #0ea5e9 0%, #a855f7 100%);
   --bg-surface: #ffffff;
   --bg-surface-variant: var(--gray-50);
   
   /* 文本颜色 */
-  --text-primary: var(--gray-900);
+  --text-primary: var(--gray-800);
   --text-secondary: var(--gray-600);
   --text-on-primary: #ffffff;
   
-  /* 阴影 */
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
-  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
-  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1), 0 4px 6px rgba(0, 0, 0, 0.05);
-  --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.1), 0 10px 10px rgba(0, 0, 0, 0.04);
+  /* 阴影 - 更柔和的阴影 */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07), 0 2px 4px rgba(0, 0, 0, 0.03);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.08), 0 4px 6px rgba(0, 0, 0, 0.03);
+  --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.1), 0 10px 10px rgba(0, 0, 0, 0.02);
 }
 
 /* 暗色主题 */
 .dark-theme {
-  /* 主色调 - 暗色版本 */
-  --primary-50: #0d47a1;
-  --primary-100: #1565c0;
-  --primary-200: #1976d2;
-  --primary-300: #1e88e5;
-  --primary-400: #2196f3;
-  --primary-500: #42a5f5;
-  --primary-600: #64b5f6;
-  --primary-700: #90caf9;
-  --primary-800: #bbdefb;
-  --primary-900: #e3f2fd;
+  /* 主色调 - 柔和的暗色蓝绿色调 */
+  --primary-50: #0c4a6e;
+  --primary-100: #075985;
+  --primary-200: #0369a1;
+  --primary-300: #0284c7;
+  --primary-400: #0ea5e9;
+  --primary-500: #38bdf8;
+  --primary-600: #7dd3fc;
+  --primary-700: #bae6fd;
+  --primary-800: #e0f2fe;
+  --primary-900: #f0f9ff;
   
-  /* 辅助色调 - 暗色版本 */
-  --secondary-50: #1a237e;
-  --secondary-100: #283593;
-  --secondary-200: #303f9f;
-  --secondary-300: #3949ab;
-  --secondary-400: #3f51b5;
-  --secondary-500: #5c6bc0;
-  --secondary-600: #7986cb;
-  --secondary-700: #9fa8da;
-  --secondary-800: #c5cae9;
-  --secondary-900: #e8eaf6;
+  /* 辅助色调 - 温和的暗色紫色调 */
+  --secondary-50: #581c87;
+  --secondary-100: #6b21a8;
+  --secondary-200: #7c3aed;
+  --secondary-300: #9333ea;
+  --secondary-400: #a855f7;
+  --secondary-500: #c084fc;
+  --secondary-600: #d8b4fe;
+  --secondary-700: #e9d5ff;
+  --secondary-800: #f3e8ff;
+  --secondary-900: #faf5ff;
   
-  /* 中性色 - 暗色版本 */
-  --gray-50: #121212;
-  --gray-100: #1e1e1e;
-  --gray-200: #2d2d2d;
-  --gray-300: #404040;
-  --gray-400: #5a5a5a;
-  --gray-500: #757575;
-  --gray-600: #9e9e9e;
-  --gray-700: #bdbdbd;
-  --gray-800: #e0e0e0;
-  --gray-900: #ffffff;
+  /* 中性色 - 温暖的暗色调 */
+  --gray-50: #1c1917;
+  --gray-100: #292524;
+  --gray-200: #44403c;
+  --gray-300: #57534e;
+  --gray-400: #78716c;
+  --gray-500: #a8a29e;
+  --gray-600: #d6d3d1;
+  --gray-700: #e7e5e4;
+  --gray-800: #f5f5f4;
+  --gray-900: #fafaf9;
+  
+  /* 语义色彩 - 暗色柔和版本 */
+  --success: #16a34a;
+  --warning: #d97706;
+  --error: #dc2626;
+  --info: #0891b2;
   
   /* 背景和表面 - 暗色版本 */
-  --bg-primary: linear-gradient(135deg, #1a237e 0%, #0d47a1 100%);
-  --bg-surface: #1e1e1e;
-  --bg-surface-variant: #2d2d2d;
+  --bg-primary: linear-gradient(135deg, #0c4a6e 0%, #581c87 100%);
+  --bg-surface: #292524;
+  --bg-surface-variant: #44403c;
   
   /* 文本颜色 - 暗色版本 */
-  --text-primary: var(--gray-900);
-  --text-secondary: var(--gray-700);
+  --text-primary: var(--gray-800);
+  --text-secondary: var(--gray-600);
   --text-on-primary: #ffffff;
   
-  /* 阴影 - 暗色版本 */
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.4);
-  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.2), 0 2px 4px rgba(0, 0, 0, 0.15);
-  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.2), 0 4px 6px rgba(0, 0, 0, 0.1);
+  /* 阴影 - 柔和的暗色阴影 */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.15), 0 2px 4px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.2), 0 4px 6px rgba(0, 0, 0, 0.08);
   --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.25), 0 10px 10px rgba(0, 0, 0, 0.1);
 }
 </style>
@@ -593,7 +598,7 @@ html, body {
 .container {
   min-height: 100vh;
   background: var(--bg-primary);
-  padding: 0;
+  padding: 0 0 32px 0;
   font-family: 'Roboto', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   transition: all 0.3s ease;
 }
@@ -675,7 +680,7 @@ html, body {
 
 .help-btn,
 .theme-btn {
-  font-size: 20px;
+  font-size: 14px;
 }
 
 .help-btn:hover,
@@ -713,7 +718,7 @@ html, body {
 
 .main-content {
   max-width: 800px;
-  margin: 0 auto 16px auto;
+  margin: 0 auto 48px auto;
   background: var(--bg-surface);
   border-radius: 20px;
   padding: 20px;

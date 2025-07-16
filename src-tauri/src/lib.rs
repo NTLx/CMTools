@@ -276,6 +276,13 @@ async fn process_files_internal(_app: tauri::AppHandle, tool_name: String, file_
             // 根据不同工具构建命令行参数
             let mut cmd = Command::new(&exe_path);
             
+            // 在 Windows 上隐藏命令行窗口
+            #[cfg(target_os = "windows")]
+            {
+                use std::os::windows::process::CommandExt;
+                cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+            }
+            
             // 添加输入文件参数
             cmd.arg("-i").arg(&file_path);
             
