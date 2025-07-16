@@ -139,7 +139,7 @@ npm run tauri build
 ```json
 {
   "productName": "cmtools",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "identifier": "com.cmtools.app",
   "app": {
     "windows": [{

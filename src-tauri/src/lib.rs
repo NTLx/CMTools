@@ -9,11 +9,80 @@ struct ProcessResult {
     success: bool,
     message: String,
     error: Option<String>,
+    file_path: Option<String>,
+}
+
+// 消息翻译函数
+fn get_message(key: &str, language: &str, filename: Option<&str>) -> String {
+    match (key, language) {
+        ("file_not_found", "zh") => format!("文件不存在: {}", filename.unwrap_or("")),
+        ("file_not_found", _) => format!("File not found: {}", filename.unwrap_or("")),
+        ("file_not_found_error", "zh") => "文件不存在".to_string(),
+        ("file_not_found_error", _) => "File not found".to_string(),
+        ("process_success", "zh") => format!("成功处理文件: {}", filename.unwrap_or("")),
+        ("process_success", _) => format!("Successfully processed file: {}", filename.unwrap_or("")),
+        ("process_failed", "zh") => format!("处理文件失败: {}", filename.unwrap_or("")),
+        ("process_failed", _) => format!("Failed to process file: {}", filename.unwrap_or("")),
+        ("execute_failed", "zh") => format!("执行程序失败: {}", filename.unwrap_or("")),
+        ("execute_failed", _) => format!("Failed to execute program: {}", filename.unwrap_or("")),
+        ("unknown_tool", "zh") => "未知的工具名称".to_string(),
+        ("unknown_tool", _) => "Unknown tool name".to_string(),
+        ("unable_open_directory", "zh") => "无法打开目录".to_string(),
+        ("unable_open_directory", _) => "Unable to open directory".to_string(),
+        ("unable_create_temp_file", "zh") => "无法创建临时可执行文件".to_string(),
+        ("unable_create_temp_file", _) => "Unable to create temporary executable file".to_string(),
+        ("unable_write_file_data", "zh") => "无法写入可执行文件数据".to_string(),
+        ("unable_write_file_data", _) => "Unable to write executable file data".to_string(),
+        ("unable_get_permissions", "zh") => "无法获取文件权限".to_string(),
+        ("unable_get_permissions", _) => "Unable to get file permissions".to_string(),
+        ("unable_set_permissions", "zh") => "无法设置可执行权限".to_string(),
+        ("unable_set_permissions", _) => "Unable to set executable permissions".to_string(),
+        _ => key.to_string(),
+    }
+}
+
+// 打开文件所在目录的命令
+#[tauri::command]
+async fn open_file_directory(file_path: String, language: Option<String>) -> Result<(), String> {
+    let lang = language.as_deref().unwrap_or("en");
+    let path = Path::new(&file_path);
+    let dir_path = if path.is_file() {
+        path.parent().unwrap_or(path)
+    } else {
+        path
+    };
+    
+    #[cfg(target_os = "windows")]
+    {
+        Command::new("explorer")
+            .arg(dir_path)
+            .spawn()
+            .map_err(|e| format!("{}: {}", get_message("unable_open_directory", lang, None), e))?;
+    }
+    
+    #[cfg(target_os = "macos")]
+    {
+        Command::new("open")
+            .arg(dir_path)
+            .spawn()
+            .map_err(|e| format!("{}: {}", get_message("unable_open_directory", lang, None), e))?;
+    }
+    
+    #[cfg(target_os = "linux")]
+    {
+        Command::new("xdg-open")
+            .arg(dir_path)
+            .spawn()
+            .map_err(|e| format!("{}: {}", get_message("unable_open_directory", lang, None), e))?;
+    }
+    
+    Ok(())
 }
 
 // 处理文件的命令
 #[tauri::command]
-async fn process_files(_app: tauri::AppHandle, tool_name: String, file_paths: Vec<String>, use_area_data: bool, std_sample_name: Option<String>, windows_optimization: Option<bool>) -> Result<Vec<ProcessResult>, String> {
+async fn process_files(_app: tauri::AppHandle, tool_name: String, file_paths: Vec<String>, use_area_data: bool, std_sample_name: Option<String>, windows_optimization: Option<bool>, language: Option<String>) -> Result<Vec<ProcessResult>, String> {
+    let lang = language.as_deref().unwrap_or("en");
     let mut results = Vec::new();
     
     // 获取嵌入的可执行文件数据
@@ -21,7 +90,7 @@ async fn process_files(_app: tauri::AppHandle, tool_name: String, file_paths: Ve
         "AneuFiler" => ("AneuFiler.exe", include_bytes!("../../AneuFiler.exe")),
         "Aneu23" => ("Aneu23.exe", include_bytes!("../../Aneu23.exe")),
         "SHCarrier" => ("SHCarrier.exe", include_bytes!("../../SHCarrier.exe")),
-        _ => return Err("未知的工具名称".to_string()),
+        _ => return Err(get_message("unknown_tool", lang, None)),
     };
     
     // 获取临时目录
@@ -38,20 +107,20 @@ async fn process_files(_app: tauri::AppHandle, tool_name: String, file_paths: Ve
     if should_write {
         // 将嵌入的可执行文件写入临时目录
         let mut file = fs::File::create(&exe_path)
-            .map_err(|e| format!("无法创建临时可执行文件: {}", e))?;
+            .map_err(|e| format!("{}: {}", get_message("unable_create_temp_file", lang, None), e))?;
         file.write_all(exe_data)
-            .map_err(|e| format!("无法写入可执行文件数据: {}", e))?;
+            .map_err(|e| format!("{}: {}", get_message("unable_write_file_data", lang, None), e))?;
         
         // 在Windows上设置可执行权限（虽然通常不需要）
         #[cfg(unix)]
         {
             use std::os::unix::fs::PermissionsExt;
             let mut perms = fs::metadata(&exe_path)
-                .map_err(|e| format!("无法获取文件权限: {}", e))?
+                .map_err(|e| format!("{}: {}", get_message("unable_get_permissions", lang, None), e))?
                 .permissions();
             perms.set_mode(0o755);
             fs::set_permissions(&exe_path, perms)
-                .map_err(|e| format!("无法设置可执行权限: {}", e))?;
+                .map_err(|e| format!("{}: {}", get_message("unable_set_permissions", lang, None), e))?;
         }
     }
     
@@ -62,8 +131,9 @@ async fn process_files(_app: tauri::AppHandle, tool_name: String, file_paths: Ve
         if !file_path_obj.exists() {
             results.push(ProcessResult {
                 success: false,
-                message: format!("文件不存在: {}", file_path),
-                error: Some("文件不存在".to_string()),
+                message: get_message("file_not_found", lang, Some(&file_path)),
+                error: Some(get_message("file_not_found_error", lang, None)),
+                file_path: Some(file_path.clone()),
             });
             continue;
         }
@@ -137,23 +207,26 @@ async fn process_files(_app: tauri::AppHandle, tool_name: String, file_paths: Ve
                 if output.status.success() {
                     results.push(ProcessResult {
                         success: true,
-                        message: format!("成功处理文件: {}", file_path_obj.file_name().unwrap().to_string_lossy()),
+                        message: get_message("process_success", lang, Some(&file_path_obj.file_name().unwrap().to_string_lossy())),
                         error: None,
+                        file_path: Some(file_path.clone()),
                     });
                 } else {
                     let error_msg = String::from_utf8_lossy(&output.stderr);
                     results.push(ProcessResult {
                         success: false,
-                        message: format!("处理文件失败: {}", file_path_obj.file_name().unwrap().to_string_lossy()),
+                        message: get_message("process_failed", lang, Some(&file_path_obj.file_name().unwrap().to_string_lossy())),
                         error: Some(error_msg.to_string()),
+                        file_path: Some(file_path.clone()),
                     });
                 }
             }
             Err(e) => {
                 results.push(ProcessResult {
                     success: false,
-                    message: format!("执行程序失败: {}", file_path_obj.file_name().unwrap().to_string_lossy()),
+                    message: get_message("execute_failed", lang, Some(&file_path_obj.file_name().unwrap().to_string_lossy())),
                     error: Some(e.to_string()),
+                    file_path: Some(file_path.clone()),
                 });
             }
         }
@@ -167,7 +240,7 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
-        .invoke_handler(tauri::generate_handler![process_files])
+        .invoke_handler(tauri::generate_handler![process_files, open_file_directory])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

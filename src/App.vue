@@ -7,10 +7,11 @@ interface ProcessResult {
   success: boolean;
   message: string;
   error?: string;
+  file_path?: string;
 }
 
 // 获取应用版本号
-const appVersion = (globalThis as any).__APP_VERSION__ || '2.0.0';
+const appVersion = (globalThis as any).__APP_VERSION__ || '2.0.1';
 
 const selectedFiles = ref<string[]>([]);
 const selectedTool = ref<string>("AneuFiler");
@@ -57,9 +58,12 @@ const translations = {
     selectFilesError: '选择文件时出错:',
     processFilesError: '处理文件时出错:',
     openHelpError: '打开帮助中心时出错:',
+    openDirectoryError: '打开目录时出错:',
+    clickToOpenDirectory: '点击打开文件所在目录',
     helpCenter: 'CMTools帮助中心',
     switchToLight: '切换到亮色模式',
-    switchToDark: '切换到暗色模式'
+    switchToDark: '切换到暗色模式',
+    languageSwitch: '语言切换'
   },
   en: {
     subtitle: 'Result files are generated in the same directory as input files',
@@ -86,9 +90,12 @@ const translations = {
     selectFilesError: 'Error selecting files:',
     processFilesError: 'Error processing files:',
     openHelpError: 'Error opening help center:',
+    openDirectoryError: 'Error opening directory:',
+    clickToOpenDirectory: 'Click to open file directory',
     helpCenter: 'CMTools Help Center',
     switchToLight: 'Switch to light mode',
-    switchToDark: 'Switch to dark mode'
+    switchToDark: 'Switch to dark mode',
+    languageSwitch: 'Language Switch'
   }
 };
 
@@ -136,7 +143,8 @@ async function processFiles() {
       filePaths: selectedFiles.value,
       useAreaData: useAreaData.value,
       stdSampleName: (selectedTool.value === "Aneu23" || selectedTool.value === "SHCarrier") ? stdSampleName.value : undefined,
-      windowsOptimization: selectedTool.value === "SHCarrier" ? windowsOptimization.value : undefined
+      windowsOptimization: selectedTool.value === "SHCarrier" ? windowsOptimization.value : undefined,
+      language: currentLanguage.value
     });
     
     results.value = processResults;
@@ -170,6 +178,20 @@ function clearFiles() {
 function closeErrorDialog() {
   showErrorDialog.value = false;
   errorMessages.value = [];
+}
+
+// 打开文件所在目录
+async function openFileDirectory(filePath?: string) {
+  if (!filePath) {
+    return;
+  }
+  
+  try {
+    await invoke("open_file_directory", { filePath, language: currentLanguage.value });
+  } catch (error) {
+    console.error(t('openDirectoryError'), error);
+    alert(`${t('openDirectoryError')} ${error}`);
+  }
 }
 
 // 主题切换
@@ -225,7 +247,7 @@ onMounted(() => {
         <span class="version-text">v{{ appVersion }}</span>
       </div>
       <div class="language-toggle">
-        <button @click="toggleLanguage" class="language-btn" title="Language / 语言">
+        <button @click="toggleLanguage" class="language-btn" :title="t('languageSwitch')">
           <span>{{ currentLanguage === 'zh' ? 'CN' : 'EN' }}</span>
         </button>
       </div>
@@ -343,9 +365,12 @@ onMounted(() => {
             v-for="(result, index) in results" 
             :key="index" 
             :class="['result-item', result.success ? 'success' : 'error']"
+            @click="openFileDirectory(result.file_path)"
+            :title="result.file_path ? t('clickToOpenDirectory') : ''"
           >
             <span class="result-icon">{{ result.success ? '✅' : '❌' }}</span>
             <span class="result-message">{{ result.message }}</span>
+            <span v-if="result.file_path" class="open-folder-icon">📁</span>
           </div>
         </div>
       </div>
@@ -871,6 +896,8 @@ h3 {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   font-size: 0.8125rem;
   box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  position: relative;
 }
 
 .result-item:hover {
@@ -899,6 +926,18 @@ h3 {
   flex: 1;
   color: var(--text-primary);
   line-height: 1.4;
+}
+
+.open-folder-icon {
+  font-size: 1.125rem;
+  opacity: 0.7;
+  transition: all 0.3s ease;
+  margin-left: auto;
+}
+
+.result-item:hover .open-folder-icon {
+  opacity: 1;
+  transform: scale(1.1);
 }
 
 /* 错误对话框样式 */
