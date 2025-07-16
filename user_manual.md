@@ -35,18 +35,18 @@ CMTools is a portable (green) software, which means it doesn't require any insta
 The main window of CMTools is divided into several sections:
 
 1.  **Header:**
-    *   **Help (`❓`):** Opens the online help documentation.
+    *   **Help (`帮助`/`Help`):** Opens the online help documentation (https://docs.dingtalk.com/i/nodes/mExel2BLV5xvg52YSErl4LvbWgk9rpMq).
     *   **Version Display:** Shows the current version of the application (e.g., `v2.1.0`).
-    *   **Language Switch (`CN`/`EN`):** Toggles the interface language between Chinese and English.
-    *   **Theme Toggle (`☀️`/`🌙`):** Switches between light and dark mode.
+    *   **Language Switch (`中文`/`English`):** Toggles the interface language between Chinese and English.
+    *   **Theme Toggle (`☀️`/`🌙`):** Switches between light and dark mode. The button's title attribute dynamically displays `切换到亮色模式` or `切换到暗色模式`.
     *   **Logo and Title:** Displays the application's branding.
 
 2.  **Tool Selection:**
     *   Choose the processing tool you want to use: `AneuFiler`, `Aneu23`, or `SHCarrier`.
 
 3.  **File Processing:**
-    *   **Select Files (`📁 Select Files`):** Opens a dialog to select one or more data files for processing.
-    *   **Clear (`🗑️ Clear`):** Removes all selected files from the list.
+    *   **Select Files (`📁 选择文件`/`📁 Select Files`):** Opens a dialog to select one or more data files for processing.
+    *   **Clear (`🗑️ 清除`/`🗑️ Clear`):** Removes all selected files from the list.
     *   **Selected Files List:** Displays the names of the files you have chosen.
 
 4.  **Processing Options:**
@@ -56,7 +56,7 @@ The main window of CMTools is divided into several sections:
     *   **Windows System Optimization:** (For `SHCarrier`) Optimizes file encoding for Windows systems. It's recommended to keep this enabled on Windows.
 
 5.  **Start Processing:**
-    *   **Start Processing (`🚀 Start Processing`):** Begins the data processing task. The button will show `⏳ Processing...` while running.
+    *   **Start Processing (`🚀 开始处理`/`🚀 Start Processing`):** Begins the data processing task. The button will show `⏳ 处理中...`/`⏳ Processing...` while running.
 
 6.  **Processing Results:**
     *   Displays the outcome for each file after processing is complete.
@@ -180,18 +180,18 @@ CMTools 是一款绿色软件，这意味着它无需安装。只需按照以下
 CMTools 的主窗口分为几个部分：
 
 1.  **标题栏:**
-    *   **帮助 (`❓`):** 打开在线帮助文档。
+    *   **帮助 (`帮助`/`Help`):** 打开在线帮助文档 (https://docs.dingtalk.com/i/nodes/mExel2BLV5xvg52YSErl4LvbWgk9rpMq)。
     *   **版本显示:** 显示应用程序的当前版本（例如 `v2.1.0`）。
-    *   **语言切换 (`CN`/`EN`):** 在中文和英文之间切换界面语言。
-    *   **主题切换 (`☀️`/`🌙`):** 在亮色和暗色模式之间切换。
+    *   **语言切换 (`中文`/`English`):** 在中文和英文之间切换界面语言。
+    *   **主题切换 (`☀️`/`🌙`):** 在亮色和暗色模式之间切换。按钮的 `title` 属性会动态显示 `切换到亮色模式` 或 `切换到暗色模式`。
     *   **Logo 和标题:** 显示应用程序的品牌标识。
 
 2.  **工具选择:**
     *   选择您要使用的处理工具：`AneuFiler`、`Aneu23` 或 `SHCarrier`。
 
 3.  **文件处理:**
-    *   **选择文件 (`📁 选择文件`):** 打开一个对话框，用于选择一个或多个要处理的数据文件。
-    *   **清除 (`🗑️ 清除`):** 从列表中移除所有选定的文件。
+    *   **选择文件 (`📁 选择文件`/`📁 Select Files`):** 打开一个对话框，用于选择一个或多个要处理的数据文件。
+    *   **清除 (`🗑️ 清除`/`🗑️ Clear`):** 从列表中移除所有选定的文件。
     *   **已选择的文件列表:** 显示您已选择的文件的名称。
 
 4.  **处理选项:**
@@ -201,7 +201,7 @@ CMTools 的主窗口分为几个部分：
     *   **Windows 系统优化:** (适用于 `SHCarrier`) 针对 Windows 系统优化文件编码。建议在 Windows 上保持启用状态。
 
 5.  **开始处理:**
-    *   **开始处理 (`🚀 开始处理`):** 开始数据处理任务。运行时，按钮将显示 `⏳ 处理中...`。
+    *   **开始处理 (`🚀 开始处理`/`🚀 Start Processing`):** 开始数据处理任务。运行时，按钮将显示 `⏳ 处理中...`/`⏳ Processing...`。
 
 6.  **处理结果:**
     *   处理完成后，显示每个文件的处理结果。
