@@ -175,36 +175,51 @@ fn process_error_to_localized_string(error: &ProcessError, language: &str) -> St
 async fn open_file_directory(file_path: String, language: Option<String>) -> Result<(), String> {
     let lang = language.as_deref().unwrap_or("en");
     let path = Path::new(&file_path);
-    let dir_path = if path.is_file() {
-        path.parent().unwrap_or(path)
-    } else {
-        path
-    };
-    
+
     #[cfg(target_os = "windows")]
     {
+        // 确保路径是绝对路径并且格式正确
+        let absolute_path = if path.is_absolute() {
+            path.to_path_buf()
+        } else {
+            std::env::current_dir()
+                .map_err(|e| format!("{}: {}", get_message("unable_open_directory", lang, None), e))?
+                .join(path)
+        };
+        
+        // 使用 /select 参数打开文件浏览器并选中文件
         Command::new("explorer")
-            .arg(dir_path)
+            .arg("/select,")
+            .arg(&absolute_path)
             .spawn()
             .map_err(|e| format!("{}: {}", get_message("unable_open_directory", lang, None), e))?;
     }
-    
-    #[cfg(target_os = "macos")]
+
+    #[cfg(not(target_os = "windows"))]
     {
-        Command::new("open")
-            .arg(dir_path)
-            .spawn()
-            .map_err(|e| format!("{}: {}", get_message("unable_open_directory", lang, None), e))?;
+        let dir_path = if path.is_file() {
+            path.parent().unwrap_or(path)
+        } else {
+            path
+        };
+
+        #[cfg(target_os = "macos")]
+        {
+            Command::new("open")
+                .arg(dir_path)
+                .spawn()
+                .map_err(|e| format!("{}: {}", get_message("unable_open_directory", lang, None), e))?;
+        }
+
+        #[cfg(target_os = "linux")]
+        {
+            Command::new("xdg-open")
+                .arg(dir_path)
+                .spawn()
+                .map_err(|e| format!("{}: {}", get_message("unable_open_directory", lang, None), e))?;
+        }
     }
-    
-    #[cfg(target_os = "linux")]
-    {
-        Command::new("xdg-open")
-            .arg(dir_path)
-            .spawn()
-            .map_err(|e| format!("{}: {}", get_message("unable_open_directory", lang, None), e))?;
-    }
-    
+
     Ok(())
 }
 

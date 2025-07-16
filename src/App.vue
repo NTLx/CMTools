@@ -918,18 +918,6 @@ h3 {
   scrollbar-color: var(--gray-400) transparent;
 }
 
-.file-list::-webkit-scrollbar {
-  width: 6px;
-}
-
-.file-list::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.file-list::-webkit-scrollbar-thumb {
-  background: var(--gray-400);
-  border-radius: 3px;
-}
 
 .file-item {
   padding: 8px 0;
@@ -1013,6 +1001,26 @@ h3 {
   max-height: 600px; /* Limit height to roughly 12 items */
   scrollbar-width: thin;
   scrollbar-color: var(--gray-400) transparent;
+}
+
+/* Common scrollbar styles */
+.file-list::-webkit-scrollbar,
+.result-list::-webkit-scrollbar,
+.error-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.file-list::-webkit-scrollbar-track,
+.result-list::-webkit-scrollbar-track,
+.error-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.file-list::-webkit-scrollbar-thumb,
+.result-list::-webkit-scrollbar-thumb,
+.error-content::-webkit-scrollbar-thumb {
+  background: var(--gray-400);
+  border-radius: 3px;
 }
 
 .result-item {
@@ -1151,18 +1159,7 @@ h3 {
   scrollbar-color: var(--gray-400) transparent;
 }
 
-.error-content::-webkit-scrollbar {
-  width: 6px;
-}
 
-.error-content::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.error-content::-webkit-scrollbar-thumb {
-  background: var(--gray-400);
-  border-radius: 3px;
-}
 
 .error-item {
   padding: 12px;
