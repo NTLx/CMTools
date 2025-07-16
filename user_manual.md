@@ -62,7 +62,7 @@ The main window of CMTools is divided into several sections:
     *   Displays the outcome for each file after processing is complete.
     *   **Success (`✅`):** Indicates the file was processed successfully.
     *   **Failure (`❌`):** Indicates an error occurred. An error dialog will appear with details.
-    *   Clicking on a result item will open the directory containing the corresponding input file.
+    *   Clicking on a result item will open its containing folder and select the file in the file explorer.
 
 ## 4. How to Use CMTools
 
@@ -92,7 +92,7 @@ Click on one of the tool buttons (`AneuFiler`, `Aneu23`, `SHCarrier`) to select 
 -   Once processing is finished, the "Processing Results" section will show the status for each file.
 -   Result files are generated in the same directory as their corresponding input files.
 -   If any errors occurred, a dialog box will pop up with detailed error messages.
--   You can click on any result item to quickly navigate to the file's location.
+-   You can click on any result item to quickly locate the original file in your file explorer.
 
 ## 5. Tool-Specific Details
 
@@ -207,7 +207,7 @@ CMTools 的主窗口分为几个部分：
     *   处理完成后，显示每个文件的处理结果。
     *   **成功 (`✅`):** 表示文件已成功处理。
     *   **失败 (`❌`):** 表示发生了错误。将出现一个包含详细信息的错误对话框。
-    *   点击结果项将打开包含相应输入文件的目录。
+    *   点击结果项将在文件浏览器中打开其所在目录并选中该文件。
 
 ## 4. 如何使用 CMTools
 
@@ -237,7 +237,7 @@ CMTools 的主窗口分为几个部分：
 -   处理完成后，“处理结果”部分将显示每个文件的状态。
 -   结果文件与相应的输入文件生成在同一目录中。
 -   如果发生任何错误，将弹出一个对话框，其中包含详细的错误消息。
--   您可以点击任何结果项以快速导航到文件的位置。
+-   您可以点击任何结果项以在文件浏览器中快速定位到原始文件。
 
 ## 5. 特定工具详情
 

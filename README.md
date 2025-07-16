@@ -5,7 +5,7 @@
   <h3>现代化的色谱数据处理工具集</h3>
   <p>基于 Tauri 2.0 + Vue 3 + TypeScript 构建的跨平台、高性能桌面应用</p>
   
-  [![Version](https://img.shields.io/badge/version-2.0.1-blue.svg)](https://github.com/USERNAME/REPOSITORY)
+  [![Version](https://img.shields.io/badge/version-2.1.0-blue.svg)](https://github.com/USERNAME/REPOSITORY)
   [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
   [![Tauri](https://img.shields.io/badge/Tauri-2.0-orange.svg)](https://tauri.app/)
   [![Vue](https://img.shields.io/badge/Vue-3.5-green.svg)](https://vuejs.org/)
@@ -41,7 +41,7 @@ CMTools 采用前后端分离的现代桌面应用架构，利用 Tauri 将基�
 
 - **前端**: Vue `^3.5.13` (Composition API) + TypeScript `~5.6.2` + Vite `^6.0.3`
 - **后端**: Rust (Edition 2021) + Tauri `^2.0.0` + Tokio `^1.0`
-- **核心依赖**: Serde `^1.0`, `tauri-plugin-dialog` `^2.3.0`, `tauri-plugin-opener` `^2.0.0`
+- **核心依赖**: Serde `^1.0`, `tauri-plugin-dialog` `^2.3.0`, `tauri-plugin-shell` `^2.0.0`
 
 ### 项目结构详解
 
@@ -127,10 +127,16 @@ CMTools 的核心设计思想是通过 Rust 后端调用外部的命令行可执
 
 ### 前后端交互
 
-前后端通信依赖 Tauri 的 `invoke` 机制。核心的交互点是 `lib.rs` 中定义的 `process_files` 命令。
+前后端通信依赖 Tauri 的 `invoke` 机制。核心的交互点是 `lib.rs` 中定义的 `process_files` 和 `open_file_directory` 命令。
 
 **后端命令示例 (`src-tauri/src/lib.rs`)**
 ```rust
+#[tauri::command]
+#[tauri::command]
+async fn open_file_directory(file_path: String) -> Result<(), String> {
+    // ... 业务逻辑
+}
+
 #[tauri::command]
 async fn process_files(
     language: String, // 新增语言参数
@@ -147,7 +153,11 @@ import { invoke } from '@tauri-apps/api/core';
 
 async function handleFileProcessing() {
   try {
-    const results = await invoke('process_files', {
+    await invoke('open_file_directory', { filePath: path });
+
+// ...
+
+const results = await invoke('process_files', {
       language: currentLanguage.value,
       toolName: selectedTool.value,
       // ... 其他参数
