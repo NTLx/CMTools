@@ -315,114 +315,119 @@ onMounted(() => {
     </header>
 
     <div class="main-content">
-      <!-- 工具选择 -->
-      <div class="tool-selection">
-        <h3>{{ t('selectTool') }}</h3>
-        <div class="tool-buttons">
-          <button 
-            v-for="tool in tools" 
-            :key="tool.name"
-            :class="['tool-btn', { active: selectedTool === tool.name }]"
-            @click="selectedTool = tool.name"
-          >
-            {{ tool.label }}
-          </button>
+      <!-- 左侧内容区域 -->
+      <div class="left-panel">
+        <!-- 工具选择 -->
+        <div class="tool-selection">
+          <h3>{{ t('selectTool') }}</h3>
+          <div class="tool-buttons">
+            <button 
+              v-for="tool in tools" 
+              :key="tool.name"
+              :class="['tool-btn', { active: selectedTool === tool.name }]"
+              @click="selectedTool = tool.name"
+            >
+              {{ tool.label }}
+            </button>
+          </div>
         </div>
-      </div>
 
-      <!-- 文件选择 -->
-      <div class="file-selection">
-        <h3>{{ t('fileProcessing') }}</h3>
-        <div class="file-actions">
-          <button @click="selectFiles" class="select-btn">
-            {{ t('selectFilesBtn') }}
-          </button>
-          <button @click="clearFiles" class="clear-btn" v-if="selectedFiles.length > 0">
-            {{ t('clearBtn') }}
-          </button>
-        </div>
-        
-        <div v-if="selectedFiles.length > 0" class="selected-files">
-          <h4>{{ t('selectedFiles') }} ({{ selectedFiles.length }})</h4>
-          <div class="file-list">
-            <div v-for="(file, index) in selectedFiles" :key="index" class="file-item">
-              📄 {{ file.split('\\').pop() || file.split('/').pop() }}
+        <!-- 文件选择 -->
+        <div class="file-selection">
+          <h3>{{ t('fileProcessing') }}</h3>
+          <div class="file-actions">
+            <button @click="selectFiles" class="select-btn">
+              {{ t('selectFilesBtn') }}
+            </button>
+            <button @click="clearFiles" class="clear-btn" v-if="selectedFiles.length > 0">
+              {{ t('clearBtn') }}
+            </button>
+          </div>
+          
+          <div v-if="selectedFiles.length > 0" class="selected-files">
+            <h4>{{ t('selectedFiles') }} ({{ selectedFiles.length }})</h4>
+            <div class="file-list">
+              <div v-for="(file, index) in selectedFiles" :key="index" class="file-item">
+                📄 {{ file.split('\\').pop() || file.split('/').pop() }}
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- 处理选项 -->
-      <div class="process-options" v-if="selectedFiles.length > 0">
-        <h3>{{ t('processOptions') }}</h3>
-        <div class="option-item">
-          <label class="checkbox-label">
-            <input 
-              type="checkbox" 
-              v-model="useAreaData" 
-              class="checkbox-input"
-            />
-            <span class="checkbox-custom"></span>
-            <span class="checkbox-text">{{ t('useAreaData') }}</span>
-          </label>
-          <p class="option-description">{{ t('useAreaDataDesc') }}</p>
+        <!-- 处理选项 -->
+        <div class="process-options" v-if="selectedFiles.length > 0">
+          <h3>{{ t('processOptions') }}</h3>
+          <div class="option-item">
+            <label class="checkbox-label">
+              <input 
+                type="checkbox" 
+                v-model="useAreaData" 
+                class="checkbox-input"
+              />
+              <span class="checkbox-custom"></span>
+              <span class="checkbox-text">{{ t('useAreaData') }}</span>
+            </label>
+            <p class="option-description">{{ t('useAreaDataDesc') }}</p>
+          </div>
+          
+          <!-- Windows系统优化选项 -->
+          <div class="option-item" v-if="getCurrentToolConfig().supportsWindowsOptimization">
+            <label class="checkbox-label">
+              <input 
+                type="checkbox" 
+                v-model="windowsOptimization" 
+                class="checkbox-input"
+              />
+              <span class="checkbox-custom"></span>
+              <span class="checkbox-text">{{ t('windowsOptimization') }}</span>
+            </label>
+            <p class="option-description">{{ t('windowsOptimizationDesc') }}</p>
+          </div>
+          
+          <!-- 标准品样本名称配置 -->
+          <div class="option-item" v-if="getCurrentToolConfig().supportsStdSample">
+            <label class="input-label">
+              <span class="input-text">{{ t('stdSampleName') }}</span>
+              <input 
+                type="text" 
+                v-model="stdSampleName" 
+                class="text-input"
+                placeholder="STD"
+              />
+            </label>
+            <p class="option-description">{{ t('stdSampleNameDesc') }}</p>
+          </div>
         </div>
-        
-        <!-- Windows系统优化选项 -->
-        <div class="option-item" v-if="getCurrentToolConfig().supportsWindowsOptimization">
-          <label class="checkbox-label">
-            <input 
-              type="checkbox" 
-              v-model="windowsOptimization" 
-              class="checkbox-input"
-            />
-            <span class="checkbox-custom"></span>
-            <span class="checkbox-text">{{ t('windowsOptimization') }}</span>
-          </label>
-          <p class="option-description">{{ t('windowsOptimizationDesc') }}</p>
-        </div>
-        
-        <!-- 标准品样本名称配置 -->
-        <div class="option-item" v-if="getCurrentToolConfig().supportsStdSample">
-          <label class="input-label">
-            <span class="input-text">{{ t('stdSampleName') }}</span>
-            <input 
-              type="text" 
-              v-model="stdSampleName" 
-              class="text-input"
-              placeholder="STD"
-            />
-          </label>
-          <p class="option-description">{{ t('stdSampleNameDesc') }}</p>
-        </div>
-      </div>
 
-      <!-- 处理按钮 -->
-      <div class="process-section">
-        <button 
-          @click="processFiles" 
-          :disabled="selectedFiles.length === 0 || processing"
-          class="process-btn"
-        >
-          <span v-if="processing">{{ t('processing') }}</span>
-          <span v-else>{{ t('startProcess') }}</span>
-         </button>
-       </div>
-
-      <!-- 处理结果 -->
-      <div v-if="results.length > 0" class="results">
-        <h3>{{ t('processResults') }}</h3>
-        <div class="result-list">
-          <div 
-            v-for="(result, index) in results" 
-            :key="index" 
-            :class="['result-item', result.success ? 'success' : 'error']"
-            @click="openFileDirectory(result.file_path)"
-            :title="result.file_path ? t('clickToOpenDirectory') : ''"
+        <!-- 处理按钮 -->
+        <div class="process-section">
+          <button 
+            @click="processFiles" 
+            :disabled="selectedFiles.length === 0 || processing"
+            class="process-btn"
           >
-            <span class="result-icon">{{ result.success ? '✅' : '❌' }}</span>
-            <span class="result-message">{{ result.message }}</span>
-            <span v-if="result.file_path" class="open-folder-icon">📁</span>
+            <span v-if="processing">{{ t('processing') }}</span>
+            <span v-else>{{ t('startProcess') }}</span>
+           </button>
+         </div>
+      </div>
+
+      <!-- 右侧处理结果面板 -->
+      <div v-if="results.length > 0" class="results-panel">
+        <div class="results">
+          <h3>{{ t('processResults') }}</h3>
+          <div class="result-list">
+            <div 
+              v-for="(result, index) in results" 
+              :key="index" 
+              :class="['result-item', result.success ? 'success' : 'error']"
+              @click="openFileDirectory(result.file_path)"
+              :title="result.file_path ? t('clickToOpenDirectory') : ''"
+            >
+              <span class="result-icon">{{ result.success ? '✅' : '❌' }}</span>
+              <span class="result-message">{{ result.message }}</span>
+              <span v-if="result.file_path" class="open-folder-icon">📁</span>
+            </div>
           </div>
         </div>
       </div>
@@ -717,7 +722,7 @@ html, body {
 }
 
 .main-content {
-  max-width: 800px;
+  max-width: 1400px;
   margin: 0 auto 48px auto;
   background: var(--bg-surface);
   border-radius: 20px;
@@ -726,6 +731,33 @@ html, body {
   backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.1);
   transition: all 0.3s ease;
+  display: flex;
+  gap: 20px;
+  align-items: stretch; /* 改为 stretch 以便子元素等高 */
+}
+
+/* 左侧面板 */
+.left-panel {
+  flex: 1;
+  min-width: 0;
+}
+
+/* 右侧结果面板 */
+.results-panel {
+  flex: 1;
+  min-width: 0;
+  background: var(--bg-surface-variant);
+  border-radius: 16px;
+  padding: 16px;
+  border: none; /* 移除边框 */
+  transition: all 0.3s ease;
+  display: flex; /* 使用 flex 布局 */
+  flex-direction: column; /* 垂直排列 */
+  min-height: 0;
+}
+
+.dark-theme .results-panel {
+  background: var(--gray-100);
 }
 
 .tool-selection,
@@ -733,6 +765,35 @@ html, body {
 .process-section,
 .results {
   margin-bottom: 16px;
+}
+
+/* 响应式布局 - 窄屏时垂直排列 */
+@media (max-width: 1024px) {
+  .main-content {
+    flex-direction: column;
+    max-width: 800px;
+  }
+
+  .left-panel,
+  .results-panel {
+    width: 100%;
+  }
+  
+  .results-panel {
+    margin-top: 16px;
+  }
+}
+
+/* 移动端优化 */
+@media (max-width: 768px) {
+  .main-content {
+    margin: 0 16px 32px 16px;
+    padding: 16px;
+  }
+  
+  .results-panel {
+    padding: 12px;
+  }
 }
 
 h3 {
@@ -851,7 +912,7 @@ h3 {
 }
 
 .file-list {
-  max-height: 200px;
+  max-height: 100px; /* 增加最大高度 */
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: var(--gray-400) transparent;
@@ -933,16 +994,25 @@ h3 {
 }
 
 .results {
-  background: var(--bg-surface-variant);
-  border-radius: 12px;
-  padding: 16px;
-  border: 1px solid var(--gray-200);
+  background: transparent;
+  border-radius: 0;
+  padding: 0;
+  border: none;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  min-height: 0;
 }
 
 .result-list {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  overflow-y: auto; /* 内容超出时显示滚动条 */
+  flex-grow: 1; /* 占据剩余空间 */
+  max-height: 600px; /* Limit height to roughly 12 items */
+  scrollbar-width: thin;
+  scrollbar-color: var(--gray-400) transparent;
 }
 
 .result-item {
