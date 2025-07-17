@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
-import { invoke } from "@tauri-apps/api/core";
-import { open } from "@tauri-apps/plugin-dialog";
+import { ref, onMounted } from 'vue';
+import { invoke } from '@tauri-apps/api/core';
+import { open } from '@tauri-apps/plugin-dialog';
 
 // 工具类型枚举
 enum ToolType {
-  AneuFiler = "AneuFiler",
-  Aneu23 = "Aneu23",
-  SHCarrier = "SHCarrier"
+  AneuFiler = 'AneuFiler',
+  Aneu23 = 'Aneu23',
+  SHCarrier = 'SHCarrier',
 }
 
 // 工具配置接口
@@ -54,24 +54,24 @@ const currentLanguage = ref<string>('zh'); // 默认中文
 
 // 工具配置数组
 const tools: ToolConfig[] = [
-  { 
-    name: ToolType.AneuFiler, 
-    label: "AneuFiler", 
-    supportsStdSample: false, 
-    supportsWindowsOptimization: false 
+  {
+    name: ToolType.AneuFiler,
+    label: 'AneuFiler',
+    supportsStdSample: false,
+    supportsWindowsOptimization: false,
   },
-  { 
-    name: ToolType.Aneu23, 
-    label: "Aneu23", 
-    supportsStdSample: true, 
-    supportsWindowsOptimization: false 
+  {
+    name: ToolType.Aneu23,
+    label: 'Aneu23',
+    supportsStdSample: true,
+    supportsWindowsOptimization: false,
   },
-  { 
-    name: ToolType.SHCarrier, 
-    label: "SHCarrier", 
-    supportsStdSample: true, 
-    supportsWindowsOptimization: true 
-  }
+  {
+    name: ToolType.SHCarrier,
+    label: 'SHCarrier',
+    supportsStdSample: true,
+    supportsWindowsOptimization: true,
+  },
 ];
 
 // 获取当前选中工具的配置
@@ -111,7 +111,7 @@ const translations = {
     helpCenter: 'CMTools帮助中心',
     switchToLight: '切换到亮色模式',
     switchToDark: '切换到暗色模式',
-    languageSwitch: '语言切换'
+    languageSwitch: '语言切换',
   },
   en: {
     subtitle: 'Result files are generated in the same directory as input files',
@@ -143,8 +143,8 @@ const translations = {
     helpCenter: 'CMTools Help Center',
     switchToLight: 'Switch to light mode',
     switchToDark: 'Switch to dark mode',
-    languageSwitch: 'Language Switch'
-  }
+    languageSwitch: 'Language Switch',
+  },
 };
 
 // 获取翻译文本
@@ -198,7 +198,7 @@ async function processFiles() {
       language: currentLanguage.value
     };
     
-    const processResults = await invoke<ProcessResult[]>("process_files", options);
+    const processResults = await invoke<ProcessResult[]>('process_files', options);
     
     results.value = processResults;
     
@@ -240,7 +240,7 @@ async function openFileDirectory(filePath?: string) {
   }
   
   try {
-    await invoke("open_file_directory", { filePath, language: currentLanguage.value });
+    await invoke('open_file_directory', { filePath, language: currentLanguage.value });
   } catch (error) {
     console.error(t('openDirectoryError'), error);
     alert(`${t('openDirectoryError')} ${error}`);

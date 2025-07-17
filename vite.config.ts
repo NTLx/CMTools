@@ -1,13 +1,13 @@
-import { defineConfig } from "vite";
-import vue from "@vitejs/plugin-vue";
-import { readFileSync } from "fs";
-import { resolve } from "path";
+import { defineConfig } from 'vite';
+import vue from '@vitejs/plugin-vue';
+import { readFileSync } from 'fs';
+import { resolve } from 'path';
 
 // @ts-expect-error process is a nodejs global
 const host = process.env.TAURI_DEV_HOST;
 
 // 读取package.json获取版本号
-const packageJson = JSON.parse(readFileSync(resolve(__dirname, "package.json"), "utf-8"));
+const packageJson = JSON.parse(readFileSync(resolve(__dirname, 'package.json'), 'utf-8'));
 const version = packageJson.version;
 
 // https://vitejs.dev/config/
@@ -30,14 +30,14 @@ export default defineConfig(async () => ({
     host: host || false,
     hmr: host
       ? {
-          protocol: "ws",
+          protocol: 'ws',
           host,
           port: 1421,
         }
       : undefined,
     watch: {
       // 3. tell vite to ignore watching `src-tauri`
-      ignored: ["**/src-tauri/**"],
+      ignored: ['**/src-tauri/**'],
     },
   },
 }));

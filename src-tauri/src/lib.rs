@@ -94,45 +94,43 @@ struct ProcessResult {
 
 // 静态翻译映射表
 static TRANSLATIONS: LazyLock<HashMap<(&str, &str), &str>> = LazyLock::new(|| {
-    let mut map = HashMap::new();
-    
-    // 中文翻译
-    map.insert(("file_not_found", "zh"), "文件不存在");
-    map.insert(("file_not_found_error", "zh"), "文件不存在");
-    map.insert(("process_success", "zh"), "成功处理文件");
-    map.insert(("process_failed", "zh"), "处理文件失败");
-    map.insert(("execute_failed", "zh"), "执行程序失败");
-    map.insert(("unknown_tool", "zh"), "未知的工具名称");
-    map.insert(("unable_open_directory", "zh"), "无法打开目录");
-    map.insert(("unable_create_temp_file", "zh"), "无法创建临时可执行文件");
-    map.insert(("unable_write_file_data", "zh"), "无法写入可执行文件数据");
-    map.insert(("unable_get_permissions", "zh"), "无法获取文件权限");
-    map.insert(("unable_set_permissions", "zh"), "无法设置可执行权限");
-    map.insert(("task_execution_failed", "zh"), "任务执行失败");
-    map.insert(("unknown_tool_error", "zh"), "未知的工具名称");
-    map.insert(("io_error", "zh"), "IO 错误");
-    map.insert(("command_failed_error", "zh"), "命令执行失败");
-    map.insert(("file_processing_error", "zh"), "文件处理错误");
-    
-    // 英文翻译
-    map.insert(("file_not_found", "en"), "File not found");
-    map.insert(("file_not_found_error", "en"), "File not found");
-    map.insert(("process_success", "en"), "Successfully processed file");
-    map.insert(("process_failed", "en"), "Failed to process file");
-    map.insert(("execute_failed", "en"), "Failed to execute program");
-    map.insert(("unknown_tool", "en"), "Unknown tool name");
-    map.insert(("unable_open_directory", "en"), "Unable to open directory");
-    map.insert(("unable_create_temp_file", "en"), "Unable to create temporary executable file");
-    map.insert(("unable_write_file_data", "en"), "Unable to write executable file data");
-    map.insert(("unable_get_permissions", "en"), "Unable to get file permissions");
-    map.insert(("unable_set_permissions", "en"), "Unable to set executable permissions");
-    map.insert(("task_execution_failed", "en"), "Task execution failed");
-    map.insert(("unknown_tool_error", "en"), "Unknown tool name");
-    map.insert(("io_error", "en"), "IO error");
-    map.insert(("command_failed_error", "en"), "Command execution failed");
-    map.insert(("file_processing_error", "en"), "File processing error");
-    
-    map
+    HashMap::from([
+        // 中文翻译
+        (("file_not_found", "zh"), "文件不存在"),
+        (("file_not_found_error", "zh"), "文件不存在"),
+        (("process_success", "zh"), "成功处理文件"),
+        (("process_failed", "zh"), "处理文件失败"),
+        (("execute_failed", "zh"), "执行程序失败"),
+        (("unknown_tool", "zh"), "未知的工具名称"),
+        (("unable_open_directory", "zh"), "无法打开目录"),
+        (("unable_create_temp_file", "zh"), "无法创建临时可执行文件"),
+        (("unable_write_file_data", "zh"), "无法写入可执行文件数据"),
+        (("unable_get_permissions", "zh"), "无法获取文件权限"),
+        (("unable_set_permissions", "zh"), "无法设置可执行权限"),
+        (("task_execution_failed", "zh"), "任务执行失败"),
+        (("unknown_tool_error", "zh"), "未知的工具名称"),
+        (("io_error", "zh"), "IO 错误"),
+        (("command_failed_error", "zh"), "命令执行失败"),
+        (("file_processing_error", "zh"), "文件处理错误"),
+        
+        // 英文翻译
+        (("file_not_found", "en"), "File not found"),
+        (("file_not_found_error", "en"), "File not found"),
+        (("process_success", "en"), "Successfully processed file"),
+        (("process_failed", "en"), "Failed to process file"),
+        (("execute_failed", "en"), "Failed to execute program"),
+        (("unknown_tool", "en"), "Unknown tool name"),
+        (("unable_open_directory", "en"), "Unable to open directory"),
+        (("unable_create_temp_file", "en"), "Unable to create temporary executable file"),
+        (("unable_write_file_data", "en"), "Unable to write executable file data"),
+        (("unable_get_permissions", "en"), "Unable to get file permissions"),
+        (("unable_set_permissions", "en"), "Unable to set executable permissions"),
+        (("task_execution_failed", "en"), "Task execution failed"),
+        (("unknown_tool_error", "en"), "Unknown tool name"),
+        (("io_error", "en"), "IO error"),
+        (("command_failed_error", "en"), "Command execution failed"),
+        (("file_processing_error", "en"), "File processing error"),
+    ])
 });
 
 // 消息翻译函数

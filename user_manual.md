@@ -1,19 +1,19 @@
-# CMTools User Manual
+# 📖 CMTools User Manual
 
-## 1. Introduction
+## 1. 📜 Introduction
 
 CMTools is a desktop application designed to process analytical data files. It provides a user-friendly interface to apply different processing tools to your data files, streamlining your workflow and improving efficiency.
 
-**Key Features: **
+**Key Features:**
 
-*   **Multiple Processing Tools: ** Supports various tools like AneuFiler, Aneu23, and SHCarrier.
-*   **Batch Processing: ** Process multiple files at once.
-*   **Customizable Options: ** Adjust processing parameters like using peak area data and specifying standard sample names.
-*   **Cross-Platform: ** Runs on Windows, macOS, and Linux.
-*   **Multi-language Support: ** Available in English and Chinese.
-*   **Light/Dark Mode: ** Switch between themes for your visual comfort.
+*   **🔧 Multiple Processing Tools:** Supports various tools like `AneuFiler`, `Aneu23`, and `SHCarrier`.
+*   **🗂️ Batch Processing:** Process multiple files at once.
+*   **⚙️ Customizable Options:** Adjust processing parameters like using peak area data and specifying standard sample names.
+*   **💻 Cross-Platform:** Runs on Windows, macOS, and Linux.
+*   **🌍 Multi-language Support:** Available in English and Chinese.
+*   **🎨 Light/Dark Mode:** Switch between themes for your visual comfort.
 
-## 2. How to Run
+## 2. 🚀 How to Run
 
 CMTools is a portable (green) software, which means it doesn't require any installation. Simply follow these steps:
 
@@ -23,114 +23,114 @@ CMTools is a portable (green) software, which means it doesn't require any insta
 
 ![CMTools Interface](https://cdn.jsdelivr.net/gh/NTLx/Pic/PicGo/202507170855602.gif)
 
-**Benefits of Portable Software: **
+**Benefits of Portable Software:**
 
-*   **No Installation Needed: ** Runs directly without a complex setup process.
-*   **System Cleanliness: ** It does not write data to the system registry or create hidden files on your computer, preventing system clutter.
-*   **Portability: ** You can store it on a USB drive or cloud storage and run it on any compatible computer.
-*   **Easy Removal: ** To uninstall, simply delete the application folder. No residue will be left on your system.
+*   **✅ No Installation Needed:** Runs directly without a complex setup process.
+*   **🧹 System Cleanliness:** It does not write data to the system registry or create hidden files on your computer, preventing system clutter.
+*   **🎒 Portability:** You can store it on a USB drive or cloud storage and run it on any compatible computer.
+*   **🗑️ Easy Removal:** To uninstall, simply delete the application folder. No residue will be left on your system.
 
-## 3. User Interface Overview
+## 3. 🖥️ User Interface Overview
 
 The main window of CMTools is divided into several sections:
 
-1.  **Header: **
-    *   **Help (`帮助`/`Help`): ** Opens the online help documentation (https://docs.dingtalk.com/i/nodes/mExel2BLV5xvg52YSErl4LvbWgk9rpMq).
-    *   **Version Display: ** Shows the current version of the application (e.g., `v2.1.0`).
-    *   **Language Switch (`中文`/`English`): ** Toggles the interface language between Chinese and English.
-    *   **Theme Toggle (`暗`/`亮` or `Dark`/`Light`):** Switches between light and dark mode. The button's title attribute dynamically displays `切换到亮色模式`/`Switch to light mode` or `切换到暗色模式`/`Switch to dark mode`.
-    *   **Logo and Title: ** Displays the application's branding.
+1.  **Header:**
+    *   **Help (`帮助`/`Help`):** Opens the online help documentation (https://docs.dingtalk.com/i/nodes/mExel2BLV5xvg52YSErl4LvbWgk9rpMq).
+    *   **Version Display:** Shows the current version of the application (e.g., `v2.1.0`).
+    *   **Language Switch (`中文`/`English`):** Toggles the interface language between Chinese and English.
+    *   **Theme Toggle (`暗`/`亮` or `Dark`/`Light`):** Switches between light and dark mode. The button's `title` attribute dynamically displays `切换到亮色模式`/`Switch to light mode` or `切换到暗色模式`/`Switch to dark mode`.
+    *   **Logo and Title:** Displays the application's branding.
 
-2.  **Tool Selection: **
+2.  **Tool Selection:**
     *   Choose the processing tool you want to use: `AneuFiler`, `Aneu23`, or `SHCarrier`.
 
-3.  **File Processing: **
-    *   **Select Files (`📁 选择文件`/`📁 Select Files`): ** Opens a dialog to select one or more data files for processing.
-    *   **Clear (`🗑️ 清除`/`🗑️ Clear`): ** Removes all selected files from the list.
-    *   **Selected Files List: ** Displays the names of the files you have chosen.
+3.  **File Processing:**
+    *   **Select Files (`📁 选择文件`/`📁 Select Files`):** Opens a dialog to select one or more data files for processing.
+    *   **Clear (`🗑️ 清除`/`🗑️ Clear`):** Removes all selected files from the list.
+    *   **Selected Files List:** Displays the names of the files you have chosen.
 
-4.  **Processing Options: **
+4.  **Processing Options:**
     *   These options appear after you select files and may vary depending on the chosen tool.
-    *   **Use peak area data for calculation: ** If checked, the tool will use peak area instead of peak height for its calculations.
-    *   **Standard Sample Name: ** (For `Aneu23` and `SHCarrier`) Specify the name of the standard sample (e.g., "STD").
-    *   **Windows System Optimization: ** (For `SHCarrier`) Optimizes file encoding for Windows systems. It's recommended to keep this enabled on Windows.
+    *   **Use peak area data for calculation:** If checked, the tool will use peak area instead of peak height for its calculations.
+    *   **Standard Sample Name:** (For `Aneu23` and `SHCarrier`) Specify the name of the standard sample (e.g., "STD").
+    *   **Windows System Optimization:** (For `SHCarrier`) Optimizes file encoding for Windows systems. It's recommended to keep this enabled on Windows.
 
-5.  **Start Processing: **
-    *   **Start Processing (`🚀 开始处理`/`🚀 Start Processing`): ** Begins the data processing task. The button will show `⏳ 处理中...`/`⏳ Processing...` while running.
+5.  **Start Processing:**
+    *   **Start Processing (`🚀 开始处理`/`🚀 Start Processing`):** Begins the data processing task. The button will show `⏳ 处理中...`/`⏳ Processing...` while running.
 
-6.  **Processing Results: **
+6.  **Processing Results:**
     *   Displays the outcome for each file after processing is complete.
-    *   **Success (`✅`): ** Indicates the file was processed successfully.
-    *   **Failure (`❌`): ** Indicates an error occurred. An error dialog will appear with details.
+    *   **Success (`✅`):** Indicates the file was processed successfully.
+    *   **Failure (`❌`):** Indicates an error occurred. An error dialog will appear with details.
     *   Clicking on a result item will open its containing folder and select the file in the file explorer.
 
-## 4. How to Use CMTools
+## 4. 🛠️ How to Use CMTools
 
-### Step 1: Select a Tool
+### 📝 Step 1: Select a Tool
 
 Click on one of the tool buttons (`AneuFiler`, `Aneu23`, `SHCarrier`) to select the desired processing algorithm.
 
-### Step 2: Select Files
+### 📂 Step 2: Select Files
 
 1.  Click the `📁 Select Files` button.
 2.  In the file dialog, navigate to your data files, select one or more, and click `Open`.
-3.  The selected files will appear in the "Selected Files" list.
+3.  The selected files will appear in the `Selected Files` list.
 
-### Step 3: Configure Processing Options
+### ⚙️ Step 3: Configure Processing Options
 
--   **For all tools: ** Decide if you want to use peak area data by checking or unchecking the corresponding box.
--   **For `Aneu23` and `SHCarrier`: ** If your dataset includes a standard, enter its name in the `Standard Sample Name` text field.
--   **For `SHCarrier` on Windows: ** It is recommended to keep the `Windows System Optimization` option checked.
+-   **For all tools:** Decide if you want to use peak area data by checking or unchecking the corresponding box.
+-   **For `Aneu23` and `SHCarrier`:** If your dataset includes a standard, enter its name in the `Standard Sample Name` text field.
+-   **For `SHCarrier` on Windows:** It is recommended to keep the `Windows System Optimization` option checked.
 
-### Step 4: Start Processing
+### 🚀 Step 4: Start Processing
 
 1.  Click the `🚀 Start Processing` button.
 2.  The application will process each file sequentially. The button will be disabled and show a `Processing...` status.
 
-### Step 5: Review Results
+### 📊 Step 5: Review Results
 
--   Once processing is finished, the "Processing Results" section will show the status for each file.
+-   Once processing is finished, the `Processing Results` section will show the status for each file.
 -   Result files are generated in the same directory as their corresponding input files.
 -   If any errors occurred, a dialog box will pop up with detailed error messages.
 -   You can click on any result item to quickly locate the original file in your file explorer.
 
-## 5. Tool-Specific Details
+## 5. ⚙️ Tool-Specific Details
 
-### AneuFiler
+### 🧬 AneuFiler
 
-*   **Purpose: ** General-purpose data filtering.
-*   **Input: ** Data files.
-*   **Options: **
+*   **Purpose:** General-purpose data filtering.
+*   **Input:** Data files.
+*   **Options:**
     *   `Use peak area data`: Toggles between peak height and peak area for calculations.
 
-### Aneu23
+### 🔬 Aneu23
 
-*   **Purpose: ** Specialized analysis, possibly related to aneuploidy screening with 23 chromosome pairs.
-*   **Input: ** Data files that may contain a standard sample.
-*   **Options: **
+*   **Purpose:** Specialized analysis, possibly related to aneuploidy screening with 23 chromosome pairs.
+*   **Input:** Data files that may contain a standard sample.
+*   **Options:**
     *   `Use peak area data`: Toggles calculation mode.
     *   `Standard Sample Name`: Crucial for identifying the standard for normalization or comparison.
 
-### SHCarrier
+### 💉 SHCarrier
 
-*   **Purpose: ** Another specialized analysis, potentially for carrier screening.
-*   **Input: ** Data files, possibly with a standard.
-*   **Options: **
+*   **Purpose:** Another specialized analysis, potentially for carrier screening.
+*   **Input:** Data files, possibly with a standard.
+*   **Options:**
     *   `Use peak area data`: Toggles calculation mode.
     *   `Standard Sample Name`: For identifying the standard sample.
     *   `Windows System Optimization`: Ensures correct handling of character encoding on Windows.
 
-## 6. FAQ & Troubleshooting
+## 6. ❓ FAQ & Troubleshooting
 
-**Q: What file formats are supported?**
+**❓ Q: What file formats are supported?**
 
 A: The supported file formats depend on the underlying processing tools. Please refer to the documentation for the specific tool you are using.
 
-**Q: Where are the output files saved?**
+**❓ Q: Where are the output files saved?**
 
 A: The output files are saved in the same directory as the original input files.
 
-**Q: I encountered an error during processing. What should I do?**
+**❓ Q: I encountered an error during processing. What should I do?**
 
 A: The error dialog provides details about the issue. Common errors include:
 *   `File not found`: Ensure the selected files have not been moved or deleted.
@@ -139,26 +139,26 @@ A: The error dialog provides details about the issue. Common errors include:
 
 If you cannot resolve the issue, please contact support and provide the error message and the input file that caused the problem.
 
-**Q: Can I process files from different folders at the same time?**
+**❓ Q: Can I process files from different folders at the same time?**
 
 A: Yes, you can select files from multiple directories in the file selection dialog.
 
-# CMTools 用户手册
+# 📖 CMTools 用户手册
 
-## 1. 简介
+## 1. 📜 简介
 
 CMTools 是一款专为处理分析数据文件而设计的桌面应用程序。它提供了一个用户友好的界面，让您可以将不同的处理工具应用于您的数据文件，从而简化您的工作流程并提高效率。
 
 **主要功能：**
 
-*   **多种处理工具：** 支持 AneuFiler、Aneu23 和 SHCarrier 等多种工具。
-*   **批量处理：** 一次性处理多个文件。
-*   **可自定义选项：** 可调整处理参数，如使用峰面积数据和指定标准品样本名称。
-*   **跨平台：** 可在 Windows、macOS 和 Linux 上运行。
-*   **多语言支持：** 提供英文和中文两种语言界面。
-*   **亮色/暗色模式：** 可在不同主题之间切换，以获得舒适的视觉体验。
+*   **🔧 多种处理工具：** 支持 `AneuFiler`、`Aneu23` 和 `SHCarrier` 等多种工具。
+*   **🗂️ 批量处理：** 一次性处理多个文件。
+*   **⚙️ 可自定义选项：** 可调整处理参数，如使用峰面积数据和指定标准品样本名称。
+*   **💻 跨平台：** 可在 Windows、macOS 和 Linux 上运行。
+*   **🌍 多语言支持：** 提供英文和中文两种语言界面。
+*   **🎨 亮色/暗色模式：** 可在不同主题之间切换，以获得舒适的视觉体验。
 
-## 2. 如何运行
+## 2. 🚀 如何运行
 
 CMTools 是一款绿色软件，这意味着它无需安装。只需按照以下步骤操作：
 
@@ -170,12 +170,12 @@ CMTools 是一款绿色软件，这意味着它无需安装。只需按照以下
 
 **绿色软件的优势：**
 
-*   **无需安装：** 无需复杂的安装过程即可直接运行。
-*   **保持系统纯净：** 它不会向系统注册表写入数据，也不会在您的计算机上创建隐藏文件，从而避免系统变得臃肿。
-*   **便携性：** 您可以将其存储在 U 盘或云存储中，并在任何兼容的计算机上运行。
-*   **轻松删除：** 要卸载软件，只需删除应用程序文件夹即可，不会在您的系统上留下任何残留物。
+*   **✅ 无需安装：** 无需复杂的安装过程即可直接运行。
+*   **🧹 保持系统纯净：** 它不会向系统注册表写入数据，也不会在您的计算机上创建隐藏文件，从而避免系统变得臃肿。
+*   **🎒 便携性：** 您可以将其存储在 U 盘或云存储中，并在任何兼容的计算机上运行。
+*   **🗑️ 轻松删除：** 要卸载软件，只需删除应用程序文件夹即可，不会在您的系统上留下任何残留物。
 
-## 3. 用户界面概览
+## 3. 🖥️ 用户界面概览
 
 CMTools 的主窗口分为几个部分：
 
@@ -209,46 +209,46 @@ CMTools 的主窗口分为几个部分：
     *   **失败 (`❌`)：** 表示发生了错误。将出现一个包含详细信息的错误对话框。
     *   点击结果项将在文件浏览器中打开其所在目录并选中该文件。
 
-## 4. 如何使用 CMTools
+## 4. 🛠️ 如何使用 CMTools
 
-### 第 1 步：选择工具
+### 📝 第 1 步：选择工具
 
 点击工具按钮（`AneuFiler`、`Aneu23`、`SHCarrier`）之一，以选择所需的处理算法。
 
-### 第 2 步：选择文件
+### 📂 第 2 步：选择文件
 
 1.  点击 `📁 选择文件` 按钮。
 2.  在文件对话框中，导航到您的数据文件，选择一个或多个文件，然后点击 `打开`。
 3.  所选文件将出现在“已选择的文件”列表中。
 
-### 第 3 步：配置处理选项
+### ⚙️ 第 3 步：配置处理选项
 
 -   **所有工具：** 通过勾选或取消勾选相应的复选框，决定是否要使用峰面积数据。
 -   **对于 `Aneu23` 和 `SHCarrier`：** 如果您的数据集包含标准品，请在 `标准品样本名称` 文本字段中输入其名称。
 -   **对于 Windows 上的 `SHCarrier`：** 建议保持 `Windows 系统优化` 选项为勾选状态。
 
-### 第 4 步：开始处理
+### 🚀 第 4 步：开始处理
 
 1.  点击 `🚀 开始处理` 按钮。
 2.  应用程序将按顺序处理每个文件。该按钮将被禁用并显示 `处理中...` 状态。
 
-### 第 5 步：查看结果
+### 📊 第 5 步：查看结果
 
 -   处理完成后，“处理结果”部分将显示每个文件的状态。
 -   结果文件与相应的输入文件生成在同一目录中。
 -   如果发生任何错误，将弹出一个对话框，其中包含详细的错误消息。
 -   您可以点击任何结果项以在文件浏览器中快速定位到原始文件。
 
-## 5. 特定工具详情
+## 5. ⚙️ 特定工具详情
 
-### AneuFiler
+### 🧬 AneuFiler
 
 *   **用途：** 通用数据筛选。
 *   **输入：** 数据文件。
 *   **选项：**
     *   `使用峰面积数据`：在峰高和峰面积之间切换计算模式。
 
-### Aneu23
+### 🔬 Aneu23
 
 *   **用途：** 专业分析，可能与 23 对染色体的非整倍性筛查有关。
 *   **输入：** 可能包含标准品样本的数据文件。
@@ -256,7 +256,7 @@ CMTools 的主窗口分为几个部分：
     *   `使用峰面积数据`：切换计算模式。
     *   `标准品样本名称`：对于识别用于归一化或比较的标准品至关重要。
 
-### SHCarrier
+### 💉 SHCarrier
 
 *   **用途：** 另一种专业分析，可能用于携带者筛查。
 *   **输入：** 数据文件，可能带有标准品。
@@ -265,7 +265,7 @@ CMTools 的主窗口分为几个部分：
     *   `标准品样本名称`：用于识别标准品样本。
     *   `Windows 系统优化`：确保在 Windows 上正确处理字符编码。
 
-## 6. 常见问题与故障排除
+## 6. ❓ 常见问题与故障排除
 
 **问：支持哪些文件格式？**
 
