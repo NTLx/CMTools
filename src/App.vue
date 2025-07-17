@@ -309,7 +309,6 @@ onMounted(() => {
           <span>{{ isDarkMode ? (currentLanguage === 'zh' ? '暗' : 'Dark') : (currentLanguage === 'zh' ? '亮' : 'Light') }}</span>
         </button>
       </div>
-      <img src="/logo.png" class="logo" alt="CMTools Logo" />
       <h1>CMTools</h1>
       <p class="subtitle">{{ t('subtitle') }}</p>
     </header>
@@ -611,7 +610,7 @@ html, body {
 .header {
   text-align: center;
   margin-bottom: 16px;
-  padding: 16px 0 0 0;
+  padding: 8px 0 0 0;
   color: var(--text-on-primary);
   position: relative;
 }
@@ -688,17 +687,10 @@ html, body {
   font-size: 14px;
 }
 
-.logo {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  margin-bottom: 8px;
-  background: white;
-  box-shadow: var(--shadow-lg);
-}
+
 
 .header h1 {
-  margin: 6px 0 2px 0;
+  margin: 0 0 2px 0;
   font-size: 1.875rem;
   font-weight: 500;
   letter-spacing: -0.025em;
