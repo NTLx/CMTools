@@ -132,12 +132,57 @@ A: The output files are saved in the same directory as the original input files.
 
 **❓ Q: I encountered an error during processing. What should I do?**
 
-A: The error dialog provides details about the issue. Common errors include:
-*   `File not found`: Ensure the selected files have not been moved or deleted.
-*   `Failed to process file`: This could be due to an issue with the file format or content. Check the detailed error message from the tool.
-*   `Failed to execute program`: This might indicate a problem with the CMTools installation or system permissions.
+**A:** If you encounter errors during processing, please follow these troubleshooting steps:
 
-If you cannot resolve the issue, please contact support and provide the error message and the input file that caused the problem.
+#### 🔍 Software-Defined Error Messages
+
+CMTools displays the following specific error messages:
+
+**English Error Messages:**
+- `File not found` - Selected file path is invalid or file has been deleted
+- `Failed to process file` - Problem occurred during file processing
+- `Failed to execute program` - Internal tool program cannot start properly
+- `Unknown tool name` - Selected an unsupported processing tool
+- `Unable to open directory` - Cannot access the file's directory
+- `Unable to create temporary executable file` - Insufficient permissions in system temp directory
+- `Unable to write executable file data` - Insufficient disk space or permission issues
+- `Unable to get file permissions` / `Unable to set executable permissions` - File permission related issues
+- `Task execution failed` - Processing task terminated abnormally
+- `IO error` - File read/write operation failed
+- `Command execution failed` - Underlying command execution error
+- `File processing error` - File format or content issues
+
+#### 🛠️ Common Errors and Solutions
+
+1. **File Format Error**
+   - **Symptom**: `File processing error` or no output file after processing
+   - **Solution**: Ensure you select the correct file format (usually .txt or .csv files)
+
+2. **File Path Issues**
+   - **Symptom**: `File not found` or `Unable to open directory`
+   - **Solution**: Ensure file path contains no special characters, avoid using non-English paths
+
+3. **Insufficient Permissions**
+   - **Symptom**: `Unable to create temporary executable file` or `IO error`
+   - **Solution**: Run software as administrator, or check folder read/write permissions
+
+4. **Insufficient Disk Space**
+   - **Symptom**: `Unable to write executable file data`
+   - **Solution**: Free up disk space, especially in system temp directory
+
+5. **Antivirus Software Interference**
+   - **Symptom**: `Failed to execute program` or `Command execution failed`
+   - **Solution**: Add CMTools to antivirus software whitelist
+
+#### 📋 Troubleshooting Steps
+
+1. **Check file format**: Ensure you select the correct file format (usually .txt or .csv files).
+2. **Check file path**: Ensure the file path contains no special characters or non-English characters.
+3. **Check file permissions**: Ensure you have read and write permissions for the files.
+4. **Restart software**: Sometimes restarting CMTools can resolve temporary issues.
+5. **Review error messages**: Carefully read the specific error information in the error dialog, which usually provides clues for solving the problem.
+
+If the problem persists, please record the specific error message and the type of file you're processing for further diagnosis.
 
 **❓ Q: Can I process files from different folders at the same time?**
 
@@ -304,12 +349,57 @@ CMTools 的主窗口分为几个部分：
 
 **❓ 问：我在处理过程中遇到了错误。我该怎么办？**
 
-答：错误对话框提供了有关问题的详细信息。常见错误包括：
-*   `文件不存在`：确保所选文件未被移动或删除。
-*   `处理文件失败`：这可能是由于文件格式或内容的问题。请检查工具提供的详细错误消息。
-*   `执行程序失败`：这可能表示 CMTools 安装或系统权限存在问题。
+**答：** 如果您在处理过程中遇到错误，请按照以下步骤进行故障排除：
 
-如果您无法解决问题，请联系支持人员并提供导致问题的错误消息和输入文件。
+#### 🔍 软件明确定义的错误信息
+
+CMTools 会显示以下具体的错误信息：
+
+**中文错误信息：**
+- `文件不存在` - 选择的文件路径无效或文件已被删除
+- `处理文件失败` - 文件处理过程中出现问题
+- `执行程序失败` - 内部工具程序无法正常启动
+- `未知的工具名称` - 选择了不支持的处理工具
+- `无法打开目录` - 无法访问文件所在的文件夹
+- `无法创建临时可执行文件` - 系统临时目录权限不足
+- `无法写入可执行文件数据` - 磁盘空间不足或权限问题
+- `无法获取文件权限` / `无法设置可执行权限` - 文件权限相关问题
+- `任务执行失败` - 处理任务异常终止
+- `IO 错误` - 文件读写操作失败
+- `命令执行失败` - 底层命令执行出错
+- `文件处理错误` - 文件格式或内容问题
+
+#### 🛠️ 常见错误及解决方案
+
+1. **文件格式错误**
+   - **现象**：`文件处理错误` 或处理后无输出文件
+   - **解决**：确保选择正确的文件格式（通常是 .txt 或 .csv 文件）
+
+2. **文件路径问题**
+   - **现象**：`文件不存在` 或 `无法打开目录`
+   - **解决**：确保文件路径中没有特殊字符，避免使用中文路径
+
+3. **权限不足**
+   - **现象**：`无法创建临时可执行文件` 或 `IO 错误`
+   - **解决**：以管理员身份运行软件，或检查文件夹读写权限
+
+4. **磁盘空间不足**
+   - **现象**：`无法写入可执行文件数据`
+   - **解决**：清理磁盘空间，特别是系统临时目录
+
+5. **防病毒软件干扰**
+   - **现象**：`执行程序失败` 或 `命令执行失败`
+   - **解决**：将 CMTools 添加到防病毒软件白名单
+
+#### 📋 故障排除步骤
+
+1. **检查文件格式**：确保您选择的文件是正确的格式（通常是 .txt 或 .csv 文件）。
+2. **检查文件路径**：确保文件路径中没有特殊字符或非英文字符。
+3. **检查文件权限**：确保您有读取和写入文件的权限。
+4. **重新启动软件**：有时重新启动 CMTools 可以解决临时问题。
+5. **查看错误信息**：仔细阅读错误对话框中的具体错误信息，这通常会提供解决问题的线索。
+
+如果问题仍然存在，请记录具体的错误信息和您正在处理的文件类型，以便进一步诊断。
 
 **❓ 问：我可以同时处理来自不同文件夹的文件吗？**
 
