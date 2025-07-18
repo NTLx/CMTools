@@ -143,6 +143,33 @@ If you cannot resolve the issue, please contact support and provide the error me
 
 A: Yes, you can select files from multiple directories in the file selection dialog.
 
+**❓ Q: Windows shows a security warning when I try to run CMTools. Is it safe?**
+
+A: Yes, CMTools is completely safe. The warning appears because the application is not digitally signed with a commercial certificate. This is common for open-source and independent software. Here's how to safely run CMTools:
+
+**Method 1: Windows SmartScreen**
+1. When you see "Windows protected your PC", click `More info`
+2. Click `Run anyway` button
+3. CMTools will start normally
+
+**Method 2: Windows Security Center**
+1. If Windows Security blocks the file, go to `Windows Security` → `Virus & threat protection`
+2. Under "Virus & threat protection settings", click `Manage settings`
+3. Scroll down to "Exclusions" and click `Add or remove exclusions`
+4. Click `Add an exclusion` → `File` and select `cmtools.exe`
+5. The file will be permanently trusted
+
+**Method 3: File Properties**
+1. Right-click on `cmtools.exe` and select `Properties`
+2. Check the box `Unblock` at the bottom (if present)
+3. Click `OK` and try running the application again
+
+**Why this happens:**
+- CMTools is distributed as a portable application without commercial code signing
+- Windows treats unsigned software with caution as a security measure
+- This is normal behavior and doesn't indicate any actual security risk
+- Many legitimate open-source applications show similar warnings
+
 # 📖 CMTools 用户手册
 
 ## 1. 📜 简介
@@ -267,15 +294,15 @@ CMTools 的主窗口分为几个部分：
 
 ## 6. ❓ 常见问题与故障排除
 
-**问：支持哪些文件格式？**
+**❓ 问：支持哪些文件格式？**
 
 答：支持的文件格式取决于底层的处理工具。请参考您正在使用的特定工具的文档。
 
-**问：输出文件保存在哪里？**
+**❓ 问：输出文件保存在哪里？**
 
 答：输出文件保存在与原始输入文件相同的目录中。
 
-**问：我在处理过程中遇到了错误。我该怎么办？**
+**❓ 问：我在处理过程中遇到了错误。我该怎么办？**
 
 答：错误对话框提供了有关问题的详细信息。常见错误包括：
 *   `文件不存在`：确保所选文件未被移动或删除。
@@ -284,6 +311,33 @@ CMTools 的主窗口分为几个部分：
 
 如果您无法解决问题，请联系支持人员并提供导致问题的错误消息和输入文件。
 
-**问：我可以同时处理来自不同文件夹的文件吗？**
+**❓ 问：我可以同时处理来自不同文件夹的文件吗？**
 
 答：可以，您可以在文件选择对话框中从多个目录中选择文件。
+
+**❓ 问：Windows 显示安全警告，不让我运行 CMTools，这安全吗？**
+
+答：是的，CMTools 完全安全。出现警告是因为应用程序没有使用商业证书进行数字签名。这对于开源和独立软件来说很常见。以下是安全运行 CMTools 的方法：
+
+**方法一：Windows SmartScreen 警告**
+1. 当您看到"Windows 已保护你的电脑"时，点击 `更多信息`
+2. 点击 `仍要运行` 按钮
+3. CMTools 将正常启动
+
+**方法二：Windows 安全中心阻止**
+1. 如果 Windows 安全中心阻止了文件，请转到 `Windows 安全中心` → `病毒和威胁防护`
+2. 在"病毒和威胁防护设置"下，点击 `管理设置`
+3. 向下滚动到"排除项"并点击 `添加或删除排除项`
+4. 点击 `添加排除项` → `文件`，然后选择 `cmtools.exe`
+5. 该文件将被永久信任
+
+**方法三：文件属性设置**
+1. 右键点击 `cmtools.exe` 并选择 `属性`
+2. 在底部勾选 `解除阻止` 复选框（如果存在）
+3. 点击 `确定` 并重新尝试运行应用程序
+
+**为什么会出现这种情况：**
+- CMTools 作为绿色软件分发，没有商业代码签名
+- Windows 出于安全考虑对未签名软件保持谨慎态度
+- 这是正常行为，并不表示存在实际的安全风险
+- 许多合法的开源应用程序都会显示类似的警告
