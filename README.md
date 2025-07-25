@@ -5,7 +5,7 @@
   <h3>现代化的色谱数据处理工具集</h3>
   <p>基于 Tauri 2.0 + Vue 3 + TypeScript 构建的跨平台、高性能桌面应用</p>
   
-  [![Version](https://img.shields.io/badge/version-2.1.0-blue.svg)](https://github.com/USERNAME/REPOSITORY)
+  [![Version](https://img.shields.io/badge/version-2.1.1-blue.svg)](https://github.com/USERNAME/REPOSITORY)
   [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
   [![Tauri](https://img.shields.io/badge/Tauri-2.0-orange.svg)](https://tauri.app/)
   [![Vue](https://img.shields.io/badge/Vue-3.5-green.svg)](https://vuejs.org/)
