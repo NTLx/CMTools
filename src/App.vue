@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, nextTick } from 'vue';
 import { invoke } from '@tauri-apps/api/core';
 import { open } from '@tauri-apps/plugin-dialog';
 
@@ -147,15 +147,114 @@ const translations = {
   },
 };
 
+// 打字机动画状态
+const typewriterTexts = ref<Record<string, string>>({});
+const typingStates = ref<Record<string, boolean>>({});
+const isTyping = ref(false);
+
 // 获取翻译文本
 function t(key: string): string {
   return translations[currentLanguage.value as keyof typeof translations]?.[key as keyof typeof translations.zh] || key;
 }
 
+// 获取打字机显示文本
+function getTypewriterText(key: string): string {
+  return typewriterTexts.value[key] || '';
+}
+
+// 检查是否正在打字
+function isTextTyping(key: string): boolean {
+  return typingStates.value[key] || false;
+}
+
+// 淡出效果函数
+function fadeOutEffect(duration: number): Promise<void> {
+  return new Promise((resolve) => {
+    // 设置淡出状态
+    isTyping.value = true;
+    
+    // 获取所有需要动画的文本元素
+    const elements = document.querySelectorAll('.header h1 span, .subtitle span, .tool-selection h3 span, .file-selection h3 span, .process-options h3 span, .results h3 span, .selected-files h4 span, .option-description span, .tool-btn span, .file-actions button span, .process-btn span, .checkbox-text span, .input-text span, .close-btn span, .ok-btn span, .error-item span, .error-header h3 span, .help-btn span, .language-btn span, .theme-btn span');
+    
+    // 添加淡出效果
+    elements.forEach(el => {
+      (el as HTMLElement).style.opacity = '0';
+    });
+    
+    // 等待动画完成
+    setTimeout(() => {
+      resolve();
+    }, duration);
+  });
+}
+
+// 淡入效果函数
+function fadeInEffect(duration: number): Promise<void> {
+  return new Promise((resolve) => {
+    // 更新所有文本内容
+    const newLang = translations[currentLanguage.value as keyof typeof translations];
+    Object.keys(newLang).forEach(key => {
+      typewriterTexts.value[key] = newLang[key as keyof typeof newLang];
+    });
+    
+    // 等待 Vue 更新 DOM
+    nextTick(() => {
+      // 获取所有需要动画的文本元素
+       const elements = document.querySelectorAll('.header h1 span, .subtitle span, .tool-selection h3 span, .file-selection h3 span, .process-options h3 span, .results h3 span, .selected-files h4 span, .option-description span, .tool-btn span, .file-actions button span, .process-btn span, .checkbox-text span, .input-text span, .close-btn span, .ok-btn span, .error-item span, .error-header h3 span, .help-btn span, .language-btn span, .theme-btn span');
+      
+      // 添加淡入效果
+      elements.forEach(el => {
+        (el as HTMLElement).style.opacity = '1';
+      });
+      
+      // 等待动画完成
+      setTimeout(() => {
+        isTyping.value = false;
+        resolve();
+      }, duration);
+    });
+  });
+}
+
+// 完整的淡出淡入效果函数
+function fadeEffect(): Promise<void> {
+  return new Promise(async (resolve) => {
+    // 每个阶段1秒，总共2秒
+    const phaseDuration = 1000;
+    
+    // 先执行淡出效果
+    await fadeOutEffect(phaseDuration);
+    
+    // 再执行淡入效果
+    await fadeInEffect(phaseDuration);
+    
+    resolve();
+  });
+}
+
+// 执行淡出淡入动画
+async function executeTypewriterAnimations() {
+  // 执行淡出淡入效果
+  await fadeEffect();
+}
+
+// 单独为特定文本执行打字机动画（保留以备将来使用）
+// async function animateSpecificText(key: string, delay: number = 0) {
+//   const targetText = t(key);
+//   await typewriterEffect(key, targetText, delay);
+// }
+
 // 语言切换
-function toggleLanguage() {
-  currentLanguage.value = currentLanguage.value === 'zh' ? 'en' : 'zh';
-  localStorage.setItem('language', currentLanguage.value);
+async function toggleLanguage() {
+  if (isTyping.value) return; // 如果正在打字，忽略切换请求
+  
+  // 切换语言
+  const newLanguage = currentLanguage.value === 'zh' ? 'en' : 'zh';
+  currentLanguage.value = newLanguage;
+  localStorage.setItem('language', newLanguage);
+  
+  // 执行打字机动画
+  await executeTypewriterAnimations();
 }
 
 // 选择文件
@@ -285,6 +384,12 @@ onMounted(() => {
   // 初始化语言，默认中文
   const savedLanguage = localStorage.getItem('language');
   currentLanguage.value = savedLanguage || 'zh';
+  
+  // 初始化所有打字机文本
+  const initialLang = translations[currentLanguage.value as keyof typeof translations];
+  Object.keys(initialLang).forEach(key => {
+    typewriterTexts.value[key] = initialLang[key as keyof typeof initialLang];
+  });
 });
 </script>
 
@@ -309,8 +414,8 @@ onMounted(() => {
           <span>{{ isDarkMode ? (currentLanguage === 'zh' ? '暗' : 'Dark') : (currentLanguage === 'zh' ? '亮' : 'Light') }}</span>
         </button>
       </div>
-      <h1>CMTools</h1>
-      <p class="subtitle">{{ t('subtitle') }}</p>
+      <h1><span>CMTools</span></h1>
+      <p class="subtitle" :class="{ 'typewriter-text': isTextTyping('subtitle'), 'typing-complete': !isTextTyping('subtitle') && getTypewriterText('subtitle') }"><span>{{ getTypewriterText('subtitle') || t('subtitle') }}</span></p>
     </header>
 
     <div class="main-content">
@@ -318,7 +423,7 @@ onMounted(() => {
       <div class="left-panel">
         <!-- 工具选择 -->
         <div class="tool-selection">
-          <h3>{{ t('selectTool') }}</h3>
+          <h3 :class="{ 'typewriter-text': isTextTyping('selectTool'), 'typing-complete': !isTextTyping('selectTool') && getTypewriterText('selectTool') }"><span>{{ getTypewriterText('selectTool') || t('selectTool') }}</span></h3>
           <div class="tool-buttons">
             <button 
               v-for="tool in tools" 
@@ -326,25 +431,25 @@ onMounted(() => {
               :class="['tool-btn', { active: selectedTool === tool.name }]"
               @click="selectedTool = tool.name"
             >
-              {{ tool.label }}
+              <span>{{ tool.label }}</span>
             </button>
           </div>
         </div>
 
         <!-- 文件选择 -->
         <div class="file-selection">
-          <h3>{{ t('fileProcessing') }}</h3>
+          <h3 :class="{ 'typewriter-text': isTextTyping('fileProcessing'), 'typing-complete': !isTextTyping('fileProcessing') && getTypewriterText('fileProcessing') }"><span>{{ getTypewriterText('fileProcessing') || t('fileProcessing') }}</span></h3>
           <div class="file-actions">
             <button @click="selectFiles" class="select-btn">
-              {{ t('selectFilesBtn') }}
+              <span>{{ getTypewriterText('selectFilesBtn') || t('selectFilesBtn') }}</span>
             </button>
             <button @click="clearFiles" class="clear-btn" v-if="selectedFiles.length > 0">
-              {{ t('clearBtn') }}
+              <span>{{ getTypewriterText('clearBtn') || t('clearBtn') }}</span>
             </button>
           </div>
           
           <div v-if="selectedFiles.length > 0" class="selected-files">
-            <h4>{{ t('selectedFiles') }} ({{ selectedFiles.length }})</h4>
+            <h4 :class="{ 'typewriter-text': isTextTyping('selectedFiles'), 'typing-complete': !isTextTyping('selectedFiles') && getTypewriterText('selectedFiles') }"><span>{{ getTypewriterText('selectedFiles') || t('selectedFiles') }} ({{ selectedFiles.length }})</span></h4>
             <div class="file-list">
               <div v-for="(file, index) in selectedFiles" :key="index" class="file-item">
                 📄 {{ file.split('\\').pop() || file.split('/').pop() }}
@@ -355,7 +460,7 @@ onMounted(() => {
 
         <!-- 处理选项 -->
         <div class="process-options" v-if="selectedFiles.length > 0">
-          <h3>{{ t('processOptions') }}</h3>
+          <h3 :class="{ 'typewriter-text': isTextTyping('processOptions'), 'typing-complete': !isTextTyping('processOptions') && getTypewriterText('processOptions') }"><span>{{ getTypewriterText('processOptions') || t('processOptions') }}</span></h3>
           <div class="option-item">
             <label class="checkbox-label">
               <input 
@@ -364,9 +469,9 @@ onMounted(() => {
                 class="checkbox-input"
               />
               <span class="checkbox-custom"></span>
-              <span class="checkbox-text">{{ t('useAreaData') }}</span>
+              <span class="checkbox-text"><span>{{ getTypewriterText('useAreaData') || t('useAreaData') }}</span></span>
             </label>
-            <p class="option-description">{{ t('useAreaDataDesc') }}</p>
+            <p class="option-description"><span>{{ getTypewriterText('useAreaDataDesc') || t('useAreaDataDesc') }}</span></p>
           </div>
           
           <!-- Windows系统优化选项 -->
@@ -378,15 +483,15 @@ onMounted(() => {
                 class="checkbox-input"
               />
               <span class="checkbox-custom"></span>
-              <span class="checkbox-text">{{ t('windowsOptimization') }}</span>
+              <span class="checkbox-text"><span>{{ getTypewriterText('windowsOptimization') || t('windowsOptimization') }}</span></span>
             </label>
-            <p class="option-description">{{ t('windowsOptimizationDesc') }}</p>
+            <p class="option-description"><span>{{ getTypewriterText('windowsOptimizationDesc') || t('windowsOptimizationDesc') }}</span></p>
           </div>
           
           <!-- 标准品样本名称配置 -->
           <div class="option-item" v-if="getCurrentToolConfig().supportsStdSample">
             <label class="input-label">
-              <span class="input-text">{{ t('stdSampleName') }}</span>
+              <span class="input-text"><span>{{ getTypewriterText('stdSampleName') || t('stdSampleName') }}</span></span>
               <input 
                 type="text" 
                 v-model="stdSampleName" 
@@ -394,7 +499,7 @@ onMounted(() => {
                 placeholder="STD"
               />
             </label>
-            <p class="option-description">{{ t('stdSampleNameDesc') }}</p>
+            <p class="option-description"><span>{{ getTypewriterText('stdSampleNameDesc') || t('stdSampleNameDesc') }}</span></p>
           </div>
         </div>
 
@@ -405,8 +510,8 @@ onMounted(() => {
             :disabled="selectedFiles.length === 0 || processing"
             class="process-btn"
           >
-            <span v-if="processing">{{ t('processing') }}</span>
-            <span v-else>{{ t('startProcess') }}</span>
+            <span v-if="processing">{{ getTypewriterText('processing') || t('processing') }}</span>
+            <span v-else>{{ getTypewriterText('startProcess') || t('startProcess') }}</span>
            </button>
          </div>
       </div>
@@ -414,7 +519,7 @@ onMounted(() => {
       <!-- 右侧处理结果面板 -->
       <div v-if="results.length > 0" class="results-panel">
         <div class="results">
-          <h3>{{ t('processResults') }}</h3>
+          <h3 :class="{ 'typewriter-text': isTextTyping('processResults'), 'typing-complete': !isTextTyping('processResults') && getTypewriterText('processResults') }"><span>{{ getTypewriterText('processResults') || t('processResults') }}</span></h3>
           <div class="result-list">
             <div 
               v-for="(result, index) in results" 
@@ -436,16 +541,16 @@ onMounted(() => {
     <div v-if="showErrorDialog" class="error-dialog-overlay" @click="closeErrorDialog">
       <div class="error-dialog" @click.stop>
         <div class="error-header">
-          <h3>{{ t('processError') }}</h3>
-          <button @click="closeErrorDialog" class="close-btn">×</button>
+          <h3><span>{{ getTypewriterText('processError') || t('processError') }}</span></h3>
+          <button @click="closeErrorDialog" class="close-btn"><span>×</span></button>
         </div>
         <div class="error-content">
           <div v-for="(error, index) in errorMessages" :key="index" class="error-item">
-            {{ error }}
+            <span>{{ error }}</span>
           </div>
         </div>
         <div class="error-footer">
-          <button @click="closeErrorDialog" class="ok-btn">{{ t('confirm') }}</button>
+          <button @click="closeErrorDialog" class="ok-btn"><span>{{ getTypewriterText('confirm') || t('confirm') }}</span></button>
         </div>
       </div>
     </div>
@@ -466,6 +571,7 @@ html, body {
   width: 100%;
   height: 100%;
   overflow-x: hidden;
+  scroll-behavior: smooth;
 }
 
 #app {
@@ -475,9 +581,110 @@ html, body {
   height: 100%;
 }
 
+/* 全局动画优化 */
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* 页面加载动画 */
+@keyframes pageLoad {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.container {
+  animation: pageLoad 0.8s var(--ease-out-cubic);
+}
+
+/* 打字机效果样式 */
+@keyframes typewriterCursor {
+  0%, 50% {
+    opacity: 1;
+  }
+  51%, 100% {
+    opacity: 0;
+  }
+}
+
+.typewriter-text {
+  position: relative;
+  display: inline-block;
+}
+
+.typewriter-text::after {
+  content: '|';
+  color: var(--primary-500);
+  animation: typewriterCursor 1s infinite;
+  margin-left: 2px;
+}
+
+.typewriter-text.typing-complete::after {
+  display: none;
+}
+
+/* 打字机文本过渡效果 */
+.typewriter-transition {
+  transition: all 0.3s ease;
+  min-height: 1.2em;
+  display: inline-block;
+}
+
+/* 悬浮粒子效果 */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  33% {
+    transform: translateY(-10px) rotate(1deg);
+  }
+  66% {
+    transform: translateY(5px) rotate(-1deg);
+  }
+}
+
+/* 渐入动画 */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 为各个区域添加渐入动画 */
+.tool-selection {
+  animation: fadeInUp 0.6s var(--ease-out-cubic) 0.1s both;
+}
+
+.file-selection {
+  animation: fadeInUp 0.6s var(--ease-out-cubic) 0.2s both;
+}
+
+.process-options {
+  animation: fadeInUp 0.6s var(--ease-out-cubic) 0.3s both;
+}
+
+.process-section {
+  animation: fadeInUp 0.6s var(--ease-out-cubic) 0.4s both;
+}
+
+.results-panel {
+  animation: fadeInUp 0.6s var(--ease-out-cubic) 0.5s both;
+}
+
 /* CSS变量定义 - 亮色主题 */
 :root {
-  /* 主色调 - 柔和的蓝绿色调 */
+  /* 主色调 - 现代蓝紫渐变 */
   --primary-50: #f0f9ff;
   --primary-100: #e0f2fe;
   --primary-200: #bae6fd;
@@ -489,7 +696,7 @@ html, body {
   --primary-800: #075985;
   --primary-900: #0c4a6e;
   
-  /* 辅助色调 - 温和的紫色调 */
+  /* 辅助色调 - 炫彩紫色 */
   --secondary-50: #faf5ff;
   --secondary-100: #f3e8ff;
   --secondary-200: #e9d5ff;
@@ -501,44 +708,54 @@ html, body {
   --secondary-800: #6b21a8;
   --secondary-900: #581c87;
   
-  /* 中性色 - 温暖的灰色调 */
-  --gray-50: #fafaf9;
-  --gray-100: #f5f5f4;
-  --gray-200: #e7e5e4;
-  --gray-300: #d6d3d1;
-  --gray-400: #a8a29e;
-  --gray-500: #78716c;
-  --gray-600: #57534e;
-  --gray-700: #44403c;
-  --gray-800: #292524;
-  --gray-900: #1c1917;
+  /* 中性色 - 现代灰色调 */
+  --gray-50: #fafafa;
+  --gray-100: #f4f4f5;
+  --gray-200: #e4e4e7;
+  --gray-300: #d4d4d8;
+  --gray-400: #a1a1aa;
+  --gray-500: #71717a;
+  --gray-600: #52525b;
+  --gray-700: #3f3f46;
+  --gray-800: #27272a;
+  --gray-900: #18181b;
   
-  /* 语义色彩 - 柔和版本 */
-  --success: #22c55e;
+  /* 语义色彩 - 现代版本 */
+  --success: #10b981;
   --warning: #f59e0b;
   --error: #ef4444;
   --info: #06b6d4;
   
-  /* 背景和表面 */
-  --bg-primary: linear-gradient(135deg, #0ea5e9 0%, #a855f7 100%);
-  --bg-surface: #ffffff;
-  --bg-surface-variant: var(--gray-50);
+  /* 背景和表面 - 玻璃拟态设计 */
+  --bg-primary: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+  --bg-surface: rgba(255, 255, 255, 0.85);
+  --bg-surface-variant: rgba(255, 255, 255, 0.6);
+  --bg-glass: rgba(255, 255, 255, 0.25);
+  --bg-glass-hover: rgba(255, 255, 255, 0.35);
   
   /* 文本颜色 */
   --text-primary: var(--gray-800);
   --text-secondary: var(--gray-600);
   --text-on-primary: #ffffff;
   
-  /* 阴影 - 更柔和的阴影 */
+  /* 高级阴影系统 */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
   --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07), 0 2px 4px rgba(0, 0, 0, 0.03);
-  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.08), 0 4px 6px rgba(0, 0, 0, 0.03);
-  --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.1), 0 10px 10px rgba(0, 0, 0, 0.02);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1), 0 4px 6px rgba(0, 0, 0, 0.05);
+  --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.15), 0 10px 10px rgba(0, 0, 0, 0.04);
+  --shadow-2xl: 0 25px 50px rgba(0, 0, 0, 0.25);
+  --shadow-glow: 0 0 20px rgba(102, 126, 234, 0.4);
+  --shadow-glow-purple: 0 0 20px rgba(168, 85, 247, 0.4);
+  
+  /* 动画缓动函数 */
+  --ease-out-cubic: cubic-bezier(0.33, 1, 0.68, 1);
+  --ease-in-out-cubic: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-spring: cubic-bezier(0.68, -0.55, 0.265, 1.55);
 }
 
 /* 暗色主题 */
 .dark-theme {
-  /* 主色调 - 柔和的暗色蓝绿色调 */
+  /* 主色调 - 现代暗色蓝紫渐变 */
   --primary-50: #0c4a6e;
   --primary-100: #075985;
   --primary-200: #0369a1;
@@ -550,7 +767,7 @@ html, body {
   --primary-800: #e0f2fe;
   --primary-900: #f0f9ff;
   
-  /* 辅助色调 - 温和的暗色紫色调 */
+  /* 辅助色调 - 炫彩暗色紫色 */
   --secondary-50: #581c87;
   --secondary-100: #6b21a8;
   --secondary-200: #7c3aed;
@@ -562,39 +779,44 @@ html, body {
   --secondary-800: #f3e8ff;
   --secondary-900: #faf5ff;
   
-  /* 中性色 - 温暖的暗色调 */
-  --gray-50: #1c1917;
-  --gray-100: #292524;
-  --gray-200: #44403c;
-  --gray-300: #57534e;
-  --gray-400: #78716c;
-  --gray-500: #a8a29e;
-  --gray-600: #d6d3d1;
-  --gray-700: #e7e5e4;
-  --gray-800: #f5f5f4;
-  --gray-900: #fafaf9;
+  /* 中性色 - 现代暗色调 */
+  --gray-50: #18181b;
+  --gray-100: #27272a;
+  --gray-200: #3f3f46;
+  --gray-300: #52525b;
+  --gray-400: #71717a;
+  --gray-500: #a1a1aa;
+  --gray-600: #d4d4d8;
+  --gray-700: #e4e4e7;
+  --gray-800: #f4f4f5;
+  --gray-900: #fafafa;
   
-  /* 语义色彩 - 暗色柔和版本 */
-  --success: #16a34a;
+  /* 语义色彩 - 现代暗色版本 */
+  --success: #059669;
   --warning: #d97706;
   --error: #dc2626;
   --info: #0891b2;
   
-  /* 背景和表面 - 暗色版本 */
-  --bg-primary: linear-gradient(135deg, #0c4a6e 0%, #581c87 100%);
-  --bg-surface: #292524;
-  --bg-surface-variant: #44403c;
+  /* 背景和表面 - 暗色玻璃拟态设计 */
+  --bg-primary: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #581c87 100%);
+  --bg-surface: rgba(39, 39, 42, 0.85);
+  --bg-surface-variant: rgba(63, 63, 70, 0.6);
+  --bg-glass: rgba(255, 255, 255, 0.1);
+  --bg-glass-hover: rgba(255, 255, 255, 0.15);
   
   /* 文本颜色 - 暗色版本 */
   --text-primary: var(--gray-800);
   --text-secondary: var(--gray-600);
   --text-on-primary: #ffffff;
   
-  /* 阴影 - 柔和的暗色阴影 */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
-  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.15), 0 2px 4px rgba(0, 0, 0, 0.1);
-  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.2), 0 4px 6px rgba(0, 0, 0, 0.08);
-  --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.25), 0 10px 10px rgba(0, 0, 0, 0.1);
+  /* 高级暗色阴影系统 */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.2), 0 2px 4px rgba(0, 0, 0, 0.15);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.25), 0 4px 6px rgba(0, 0, 0, 0.1);
+  --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.3), 0 10px 10px rgba(0, 0, 0, 0.15);
+  --shadow-2xl: 0 25px 50px rgba(0, 0, 0, 0.4);
+  --shadow-glow: 0 0 20px rgba(56, 189, 248, 0.3);
+  --shadow-glow-purple: 0 0 20px rgba(192, 132, 252, 0.3);
 }
 </style>
 
@@ -603,16 +825,39 @@ html, body {
   min-height: 100vh;
   background: var(--bg-primary);
   padding: 0 0 32px 0;
-  font-family: 'Roboto', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  transition: all 0.3s ease;
+  font-family: 'Inter', 'Roboto', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  transition: all 0.6s var(--ease-out-cubic);
+  position: relative;
+  overflow-x: hidden;
+}
+
+.container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3) 0%, transparent 50%),
+    radial-gradient(circle at 40% 40%, rgba(120, 219, 255, 0.2) 0%, transparent 50%);
+  pointer-events: none;
+  animation: backgroundFloat 20s ease-in-out infinite;
+}
+
+@keyframes backgroundFloat {
+  0%, 100% { opacity: 1; transform: translateY(0px); }
+  50% { opacity: 0.8; transform: translateY(-10px); }
 }
 
 .header {
   text-align: center;
-  margin-bottom: 16px;
-  padding: 8px 0 0 0;
+  margin-bottom: 24px;
+  padding: 16px 0;
   color: var(--text-on-primary);
   position: relative;
+  z-index: 10;
 }
 
 .help-toggle {
@@ -667,8 +912,8 @@ html, body {
 .help-btn,
 .language-btn,
 .theme-btn {
-  background: transparent;
-  border: none;
+  background: var(--bg-glass);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 50%;
   width: 48px;
   height: 48px;
@@ -676,15 +921,49 @@ html, body {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.4s var(--ease-out-cubic);
   font-size: 14px;
   font-weight: 600;
   color: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(20px);
+  position: relative;
+  overflow: hidden;
 }
 
-.help-btn,
-.theme-btn {
-  font-size: 14px;
+.help-btn::before,
+.language-btn::before,
+.theme-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  transform: translateX(-100%);
+  transition: transform 0.6s ease;
+}
+
+.help-btn:hover,
+.language-btn:hover,
+.theme-btn:hover {
+  background: var(--bg-glass-hover);
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: var(--shadow-glow);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.help-btn:hover::before,
+.language-btn:hover::before,
+.theme-btn:hover::before {
+  transform: translateX(100%);
+}
+
+.help-btn:active,
+.language-btn:active,
+.theme-btn:active {
+  transform: translateY(0) scale(0.95);
+  transition: all 0.1s ease;
 }
 
 
@@ -708,15 +987,34 @@ html, body {
   max-width: 1400px;
   margin: 0 auto 48px auto;
   background: var(--bg-surface);
-  border-radius: 20px;
-  padding: 20px;
-  box-shadow: var(--shadow-xl);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  transition: all 0.3s ease;
+  border-radius: 24px;
+  padding: 32px;
+  box-shadow: var(--shadow-2xl);
+  backdrop-filter: blur(40px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.6s var(--ease-out-cubic);
   display: flex;
-  gap: 20px;
-  align-items: stretch; /* 改为 stretch 以便子元素等高 */
+  gap: 32px;
+  align-items: stretch;
+  position: relative;
+  overflow: hidden;
+}
+
+.main-content::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+  pointer-events: none;
+  border-radius: 24px;
+}
+
+.main-content:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-2xl), var(--shadow-glow);
 }
 
 /* 左侧面板 */
@@ -794,17 +1092,19 @@ h3 {
 }
 
 .tool-btn {
-  padding: 10px 20px;
-  border: 1px solid var(--gray-300);
-  background: var(--bg-surface);
-  border-radius: 10px;
+  padding: 14px 24px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: var(--bg-glass);
+  border-radius: 16px;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  font-weight: 500;
+  transition: all 0.4s var(--ease-out-cubic);
+  font-weight: 600;
   color: var(--text-primary);
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   position: relative;
   overflow: hidden;
+  backdrop-filter: blur(20px);
+  letter-spacing: 0.025em;
 }
 
 .tool-btn::before {
@@ -814,8 +1114,20 @@ h3 {
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-  transition: left 0.5s;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left 0.6s var(--ease-out-cubic);
+}
+
+.tool-btn::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(168, 85, 247, 0.1));
+  opacity: 0;
+  transition: opacity 0.3s ease;
 }
 
 .tool-btn:hover::before {
@@ -823,16 +1135,30 @@ h3 {
 }
 
 .tool-btn:hover {
-  border-color: var(--primary-500);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
+  border-color: var(--primary-400);
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: var(--shadow-xl), var(--shadow-glow);
+}
+
+.tool-btn:hover::after {
+  opacity: 1;
 }
 
 .tool-btn.active {
-  background: var(--primary-500);
+  background: linear-gradient(135deg, var(--primary-500), var(--secondary-500));
   color: var(--text-on-primary);
   border-color: var(--primary-500);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-lg), var(--shadow-glow);
+  transform: translateY(-2px);
+}
+
+.tool-btn.active::after {
+  opacity: 0;
+}
+
+.tool-btn:active {
+  transform: translateY(-1px) scale(0.98);
+  transition: all 0.1s ease;
 }
 
 .file-actions {
@@ -843,48 +1169,95 @@ h3 {
 
 .select-btn,
 .clear-btn {
-  padding: 10px 16px;
+  padding: 12px 20px;
   border: none;
-  border-radius: 10px;
+  border-radius: 14px;
   cursor: pointer;
-  font-weight: 500;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  font-size: 0.8125rem;
+  font-weight: 600;
+  transition: all 0.4s var(--ease-out-cubic);
+  font-size: 0.875rem;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
+  position: relative;
+  overflow: hidden;
+  letter-spacing: 0.025em;
+}
+
+.select-btn::before,
+.clear-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left 0.6s ease;
 }
 
 .select-btn {
-  background: var(--success);
+  background: linear-gradient(135deg, var(--success), #059669);
   color: white;
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-md);
 }
 
 .select-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
-  filter: brightness(1.1);
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: var(--shadow-xl), 0 0 20px rgba(16, 185, 129, 0.4);
+}
+
+.select-btn:hover::before {
+  left: 100%;
 }
 
 .clear-btn {
-  background: var(--error);
+  background: linear-gradient(135deg, var(--error), #dc2626);
   color: white;
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-md);
 }
 
 .clear-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
-  filter: brightness(1.1);
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: var(--shadow-xl), 0 0 20px rgba(239, 68, 68, 0.4);
+}
+
+.clear-btn:hover::before {
+  left: 100%;
+}
+
+.select-btn:active,
+.clear-btn:active {
+  transform: translateY(-1px) scale(0.98);
+  transition: all 0.1s ease;
 }
 
 .selected-files {
   background: var(--bg-surface-variant);
-  border-radius: 12px;
-  padding: 16px;
+  border-radius: 16px;
+  padding: 20px;
   border-left: 4px solid var(--primary-500);
-  border: 1px solid var(--gray-200);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(20px);
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s var(--ease-out-cubic);
+}
+
+.selected-files::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.05), rgba(168, 85, 247, 0.05));
+  pointer-events: none;
+}
+
+.selected-files:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
 }
 
 .selected-files h4 {
@@ -922,19 +1295,21 @@ h3 {
 }
 
 .process-btn {
-  padding: 12px 24px;
+  padding: 16px 32px;
   border: none;
-  border-radius: 12px;
+  border-radius: 20px;
   background: linear-gradient(135deg, var(--primary-500), var(--secondary-500));
   color: white;
-  font-size: 0.9375rem;
-  font-weight: 500;
+  font-size: 1rem;
+  font-weight: 700;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: var(--shadow-lg);
+  transition: all 0.4s var(--ease-out-cubic);
+  box-shadow: var(--shadow-xl), var(--shadow-glow);
   position: relative;
   overflow: hidden;
-  min-width: 140px;
+  min-width: 160px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
 }
 
 .process-btn::before {
@@ -944,24 +1319,52 @@ h3 {
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-  transition: left 0.6s;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  transition: left 0.8s var(--ease-out-cubic);
+}
+
+.process-btn::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1));
+  opacity: 0;
+  transition: opacity 0.3s ease;
 }
 
 .process-btn:hover:not(:disabled)::before {
   left: 100%;
 }
 
+.process-btn:hover:not(:disabled)::after {
+  opacity: 1;
+}
+
 .process-btn:hover:not(:disabled) {
-  transform: translateY(-3px);
-  box-shadow: var(--shadow-xl);
+  transform: translateY(-4px) scale(1.05);
+  box-shadow: var(--shadow-2xl), var(--shadow-glow-purple);
+  background: linear-gradient(135deg, var(--primary-400), var(--secondary-400));
+}
+
+.process-btn:active:not(:disabled) {
+  transform: translateY(-2px) scale(1.02);
+  transition: all 0.1s ease;
 }
 
 .process-btn:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
   transform: none;
-  filter: grayscale(0.3);
+  filter: grayscale(0.5);
+  box-shadow: var(--shadow-md);
+}
+
+.process-btn:disabled::before,
+.process-btn:disabled::after {
+  display: none;
 }
 
 .results {
@@ -1066,34 +1469,60 @@ h3 {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(0, 0, 0, 0.7);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  backdrop-filter: blur(4px);
+  backdrop-filter: blur(20px);
+  animation: overlayFadeIn 0.4s var(--ease-out-cubic);
+}
+
+@keyframes overlayFadeIn {
+  from {
+    opacity: 0;
+    backdrop-filter: blur(0px);
+  }
+  to {
+    opacity: 1;
+    backdrop-filter: blur(20px);
+  }
 }
 
 .error-dialog {
   background: var(--bg-surface);
-  border-radius: 20px;
+  border-radius: 24px;
   max-width: 500px;
   width: 90%;
   max-height: 80vh;
   overflow: hidden;
-  box-shadow: var(--shadow-xl);
-  border: 1px solid var(--gray-200);
-  animation: slideIn 0.3s ease-out;
+  box-shadow: var(--shadow-2xl);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(40px);
+  animation: dialogSlideIn 0.5s var(--ease-spring);
+  position: relative;
 }
 
-@keyframes slideIn {
+.error-dialog::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+  pointer-events: none;
+  border-radius: 24px;
+}
+
+@keyframes dialogSlideIn {
   from {
     opacity: 0;
-    transform: translateY(-20px) scale(0.95);
+    transform: translateY(-30px) scale(0.9) rotateX(10deg);
   }
   to {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: translateY(0) scale(1) rotateX(0deg);
   }
 }
 
@@ -1160,10 +1589,30 @@ h3 {
 /* 处理选项样式 */
 .process-options {
   background: var(--bg-surface-variant);
-  border-radius: 12px;
-  padding: 16px;
+  border-radius: 16px;
+  padding: 20px;
   border-left: 4px solid var(--primary-500);
-  border: 1px solid var(--gray-200);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(20px);
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s var(--ease-out-cubic);
+}
+
+.process-options::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.05), rgba(168, 85, 247, 0.05));
+  pointer-events: none;
+}
+
+.process-options:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
 }
 
 .option-item {
@@ -1189,21 +1638,30 @@ h3 {
 }
 
 .checkbox-custom {
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
   border: 2px solid var(--gray-300);
-  border-radius: 5px;
-  margin-right: 10px;
+  border-radius: 8px;
+  margin-right: 12px;
   position: relative;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  background: var(--bg-surface);
+  transition: all 0.4s var(--ease-spring);
+  background: var(--bg-glass);
   flex-shrink: 0;
+  backdrop-filter: blur(10px);
+  box-shadow: var(--shadow-sm);
+}
+
+/* 暗色模式下的复选框边框 */
+.dark-theme .checkbox-custom {
+  border-color: rgba(255, 255, 255, 0.3);
+  box-shadow: var(--shadow-sm), inset 0 0 0 1px rgba(255, 255, 255, 0.1);
 }
 
 .checkbox-input:checked + .checkbox-custom {
-  background: var(--primary-500);
+  background: linear-gradient(135deg, var(--primary-500), var(--secondary-500));
   border-color: var(--primary-500);
-  transform: scale(1.1);
+  transform: scale(1.1) rotate(5deg);
+  box-shadow: var(--shadow-glow);
 }
 
 .checkbox-input:checked + .checkbox-custom::after {
@@ -1211,16 +1669,36 @@ h3 {
   position: absolute;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%) scale(1.2);
   color: white;
   font-size: 12px;
   font-weight: bold;
+  animation: checkmarkPop 0.3s var(--ease-spring);
+}
+
+@keyframes checkmarkPop {
+  0% { transform: translate(-50%, -50%) scale(0) rotate(180deg); }
+  50% { transform: translate(-50%, -50%) scale(1.3) rotate(0deg); }
+  100% { transform: translate(-50%, -50%) scale(1.2) rotate(0deg); }
 }
 
 .checkbox-custom:hover {
-  border-color: var(--primary-500);
+  border-color: var(--primary-400);
   transform: scale(1.05);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-md), 0 0 10px rgba(14, 165, 233, 0.3);
+  background: var(--bg-glass-hover);
+}
+
+/* 亮色模式下的复选框悬停效果增强 */
+:root .checkbox-custom:hover {
+  border-color: var(--primary-500);
+  box-shadow: var(--shadow-lg), 0 0 15px rgba(14, 165, 233, 0.4), inset 0 0 0 1px rgba(14, 165, 233, 0.2);
+}
+
+/* 暗色模式下保持原有悬停效果 */
+.dark-theme .checkbox-custom:hover {
+  border-color: var(--primary-400);
+  box-shadow: var(--shadow-md), 0 0 10px rgba(14, 165, 233, 0.3), inset 0 0 0 1px rgba(255, 255, 255, 0.2);
 }
 
 .checkbox-text {
@@ -1252,30 +1730,70 @@ h3 {
 }
 
 .text-input {
-  padding: 10px 14px;
+  padding: 12px 16px;
   border: 2px solid var(--gray-300);
-  border-radius: 10px;
-  background: var(--bg-surface);
+  border-radius: 12px;
+  background: var(--bg-glass);
   color: var(--text-primary);
-  font-size: 0.8125rem;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: 0.875rem;
+  transition: all 0.4s var(--ease-out-cubic);
   outline: none;
   font-family: inherit;
+  backdrop-filter: blur(20px);
+  position: relative;
+  box-shadow: var(--shadow-sm);
+}
+
+/* 暗色模式下的文本输入框边框 */
+.dark-theme .text-input {
+  border-color: rgba(255, 255, 255, 0.3);
+  box-shadow: var(--shadow-sm), inset 0 0 0 1px rgba(255, 255, 255, 0.1);
 }
 
 .text-input:focus {
   border-color: var(--primary-500);
-  box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
-  transform: translateY(-1px);
+  box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.15), var(--shadow-glow);
+  transform: translateY(-2px) scale(1.02);
+  background: var(--bg-glass-hover);
 }
 
 .text-input:hover:not(:focus) {
   border-color: var(--primary-400);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+  background: var(--bg-glass-hover);
+}
+
+/* 亮色模式下的文本输入框聚焦和悬停效果增强 */
+:root .text-input:focus {
+  border-color: var(--primary-500);
+  box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.15), var(--shadow-glow), inset 0 0 0 1px rgba(14, 165, 233, 0.2);
+}
+
+:root .text-input:hover:not(:focus) {
+  border-color: var(--primary-500);
+  box-shadow: var(--shadow-lg), 0 0 10px rgba(14, 165, 233, 0.2), inset 0 0 0 1px rgba(14, 165, 233, 0.1);
+}
+
+/* 暗色模式下保持原有效果并增强 */
+.dark-theme .text-input:focus {
+  border-color: var(--primary-500);
+  box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.15), var(--shadow-glow), inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+}
+
+.dark-theme .text-input:hover:not(:focus) {
+  border-color: var(--primary-400);
+  box-shadow: var(--shadow-md), 0 0 8px rgba(14, 165, 233, 0.3), inset 0 0 0 1px rgba(255, 255, 255, 0.15);
 }
 
 .text-input::placeholder {
   color: var(--text-secondary);
   opacity: 0.7;
+  transition: opacity 0.3s ease;
+}
+
+.text-input:focus::placeholder {
+  opacity: 0.5;
 }
 
 .error-footer {
@@ -1286,23 +1804,80 @@ h3 {
 }
 
 .ok-btn {
-  padding: 12px 32px;
-  background: var(--primary-500);
+  padding: 14px 36px;
+  background: linear-gradient(135deg, var(--primary-500), var(--secondary-500));
   color: white;
   border: none;
-  border-radius: 12px;
+  border-radius: 16px;
   cursor: pointer;
-  font-weight: 500;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-weight: 600;
+  transition: all 0.4s var(--ease-out-cubic);
   font-size: 0.875rem;
-  box-shadow: var(--shadow-sm);
-  min-width: 100px;
+  box-shadow: var(--shadow-lg);
+  min-width: 120px;
+  position: relative;
+  overflow: hidden;
+  letter-spacing: 0.025em;
+}
+
+.ok-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left 0.6s ease;
 }
 
 .ok-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
-  filter: brightness(1.1);
+  transform: translateY(-3px) scale(1.05);
+  box-shadow: var(--shadow-xl), var(--shadow-glow);
+  background: linear-gradient(135deg, var(--primary-400), var(--secondary-400));
+}
+
+.ok-btn:hover::before {
+  left: 100%;
+}
+
+.ok-btn:active {
+  transform: translateY(-1px) scale(1.02);
+  transition: all 0.1s ease;
+}
+
+/* 淡出淡入动画效果 */
+.fade-transition {
+  transition: opacity 1s ease-in-out;
+}
+
+.fade-out {
+  opacity: 0;
+}
+
+.fade-in {
+  opacity: 1;
+}
+
+/* 为所有需要动画的文本元素添加过渡效果 */
+.header h1 span,
+.subtitle span,
+.tool-selection h3 span,
+.file-selection h3 span,
+.process-options h3 span,
+.results h3 span,
+.selected-files h4 span,
+.option-description span,
+.tool-btn span,
+.file-actions button span,
+.process-btn span,
+.checkbox-text span,
+.input-text span,
+.close-btn span,
+.ok-btn span,
+.error-item span,
+.error-header h3 span {
+  transition: opacity 1s ease-in-out;
 }
 
 /* 响应式设计 */
