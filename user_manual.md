@@ -120,6 +120,23 @@ Click on one of the tool buttons (`AneuFiler`, `Aneu23`, `SHCarrier`) to select 
     *   `Standard Sample Name`: For identifying the standard sample.
     *   `Windows System Optimization`: Ensures correct handling of character encoding on Windows.
 
+### 🔍 UPDFiler
+
+*   **Purpose:** Analyzes 3500dx instrument data for UPD and other abnormalities.
+*   **Input:** Data files from GeneMapper.
+*   **Options:**
+    *   `Use peak area data`: Toggles calculation mode.
+*   **Output:** Result files are generated in the same directory as the input files.
+
+### 📊 SMNFiler
+
+*   **Purpose:** Specialized analysis for SMN data processing.
+*   **Input:** Data files that may contain control samples.
+*   **Options:**
+    *   `Use peak area data`: Uses peak area instead of height for calculations.
+    *   `Standard Sample Name`: Specifies the control sample name for comparison.
+    *   `Windows System Optimization`: Optimizes encoding for Windows systems.
+
 ## 6. ❓ FAQ & Troubleshooting
 
 **❓ Q: What file formats are supported?**
@@ -336,6 +353,23 @@ CMTools 的主窗口分为几个部分：
     *   `使用峰面积数据`：切换计算模式。
     *   `标准品样本名称`：用于识别标准品样本。
     *   `Windows 系统优化`：确保在 Windows 上正确处理字符编码。
+
+### 🔍 UPDFiler
+
+*   **用途：** 分析 3500dx 仪器数据中的 UPD 和其他异常情况。
+*   **输入：** 来自 GeneMapper 的数据文件。
+*   **选项：**
+    *   `使用峰面积数据`：切换计算模式。
+*   **输出：** 结果文件生成在与输入文件相同的目录中。
+
+### 📊 SMNFiler
+
+*   **用途：** 专门用于 SMN 数据处理和分析。
+*   **输入：** 可能包含对照样本的数据文件。
+*   **选项：**
+    *   `使用峰面积数据`：使用峰面积而非峰高进行计算。
+    *   `标准品样本名称`：指定用于比较的对照样本名称。
+    *   `Windows 系统优化`：针对 Windows 系统优化文件编码。
 
 ## 6. ❓ 常见问题与故障排除
 

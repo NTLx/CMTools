@@ -7,7 +7,9 @@ import { open } from '@tauri-apps/plugin-dialog';
 enum ToolType {
   AneuFiler = 'AneuFiler',
   Aneu23 = 'Aneu23',
+  SMNFiler = 'SMNFiler',
   SHCarrier = 'SHCarrier',
+  UPDFiler = 'UPDFiler',
 }
 
 // 工具配置接口
@@ -49,6 +51,7 @@ const processing = ref<boolean>(false);
 const results = ref<ProcessResult[]>([]);
 const showErrorDialog = ref<boolean>(false);
 const errorMessages = ref<string[]>([]);
+const showVersionDialog = ref<boolean>(false);
 const isDarkMode = ref<boolean>(true); // 默认暗色模式
 const currentLanguage = ref<string>('zh'); // 默认中文
 
@@ -67,10 +70,22 @@ const tools: ToolConfig[] = [
     supportsWindowsOptimization: false,
   },
   {
+    name: ToolType.SMNFiler,
+    label: 'SMNFiler',
+    supportsStdSample: true,
+    supportsWindowsOptimization: true,
+  },
+  {
     name: ToolType.SHCarrier,
     label: 'SHCarrier',
     supportsStdSample: true,
     supportsWindowsOptimization: true,
+  },
+  {
+    name: ToolType.UPDFiler,
+    label: 'UPDFiler',
+    supportsStdSample: false,
+    supportsWindowsOptimization: false,
   },
 ];
 
@@ -112,6 +127,12 @@ const translations = {
     switchToLight: '切换到亮色模式',
     switchToDark: '切换到暗色模式',
     languageSwitch: '语言切换',
+    helpBtn: '帮助',
+    languageBtn: '中文',
+    themeBtnDark: '暗',
+    themeBtnLight: '亮',
+    versionUpdateTitle: '版本更新检查',
+    versionUpdateMessage: '暂不支持进行版本更新检查，请查看帮助中心获取最新版软件',
   },
   en: {
     subtitle: 'Result files are generated in the same directory as input files',
@@ -144,6 +165,12 @@ const translations = {
     switchToLight: 'Switch to light mode',
     switchToDark: 'Switch to dark mode',
     languageSwitch: 'Language Switch',
+    helpBtn: 'Help',
+    languageBtn: 'EN',
+    themeBtnDark: 'Dark',
+    themeBtnLight: 'Light',
+    versionUpdateTitle: 'Version Update Check',
+    versionUpdateMessage: 'Version update check is not currently supported. Please visit the help center to get the latest software version',
   },
 };
 
@@ -174,7 +201,7 @@ function fadeOutEffect(duration: number): Promise<void> {
     isTyping.value = true;
     
     // 获取所有需要动画的文本元素
-    const elements = document.querySelectorAll('.header h1 span, .subtitle span, .tool-selection h3 span, .file-selection h3 span, .process-options h3 span, .results h3 span, .selected-files h4 span, .option-description span, .tool-btn span, .file-actions button span, .process-btn span, .checkbox-text span, .input-text span, .close-btn span, .ok-btn span, .error-item span, .error-header h3 span, .help-btn span, .language-btn span, .theme-btn span');
+    const elements = document.querySelectorAll('.header h1 span, .subtitle span, .tool-selection h3 span, .file-selection h3 span, .process-options h3 span, .results h3 span, .selected-files h4 span, .option-description span, .tool-btn span, .file-actions button span, .process-btn span, .checkbox-text span, .input-text span, .close-btn span, .ok-btn span, .error-item span, .error-header h3 span, .help-btn span, .language-btn span, .theme-btn span, .version-text span');
     
     // 添加淡出效果
     elements.forEach(el => {
@@ -200,7 +227,7 @@ function fadeInEffect(duration: number): Promise<void> {
     // 等待 Vue 更新 DOM
     nextTick(() => {
       // 获取所有需要动画的文本元素
-       const elements = document.querySelectorAll('.header h1 span, .subtitle span, .tool-selection h3 span, .file-selection h3 span, .process-options h3 span, .results h3 span, .selected-files h4 span, .option-description span, .tool-btn span, .file-actions button span, .process-btn span, .checkbox-text span, .input-text span, .close-btn span, .ok-btn span, .error-item span, .error-header h3 span, .help-btn span, .language-btn span, .theme-btn span');
+       const elements = document.querySelectorAll('.header h1 span, .subtitle span, .tool-selection h3 span, .file-selection h3 span, .process-options h3 span, .results h3 span, .selected-files h4 span, .option-description span, .tool-btn span, .file-actions button span, .process-btn span, .checkbox-text span, .input-text span, .close-btn span, .ok-btn span, .error-item span, .error-header h3 span, .help-btn span, .language-btn span, .theme-btn span, .version-text span');
       
       // 添加淡入效果
       elements.forEach(el => {
@@ -332,6 +359,16 @@ function closeErrorDialog() {
   errorMessages.value = [];
 }
 
+// 显示版本更新对话框
+function showVersionUpdateDialog() {
+  showVersionDialog.value = true;
+}
+
+// 关闭版本更新对话框
+function closeVersionDialog() {
+  showVersionDialog.value = false;
+}
+
 // 打开文件所在目录
 async function openFileDirectory(filePath?: string) {
   if (!filePath) {
@@ -398,20 +435,22 @@ onMounted(() => {
     <header class="header">
       <div class="help-toggle">
         <button @click="openHelpCenter" class="help-btn" :title="t('helpCenter')">
-          <span>{{ currentLanguage === 'zh' ? '帮助' : 'Help' }}</span>
+          <span><span>{{ getTypewriterText('helpBtn') || t('helpBtn') }}</span></span>
         </button>
       </div>
       <div class="version-display">
-        <span class="version-text">v{{ appVersion }}</span>
+        <button @click="showVersionUpdateDialog" class="version-btn" :title="t('versionUpdateTitle')">
+          <span class="version-text"><span>v{{ appVersion }}</span></span>
+        </button>
       </div>
       <div class="language-toggle">
         <button @click="toggleLanguage" class="language-btn" :title="t('languageSwitch')">
-          <span>{{ currentLanguage === 'zh' ? '中文' : 'EN' }}</span>
+          <span><span>{{ getTypewriterText('languageBtn') || t('languageBtn') }}</span></span>
         </button>
       </div>
       <div class="theme-toggle">
         <button @click="toggleTheme" class="theme-btn" :title="isDarkMode ? t('switchToLight') : t('switchToDark')">
-          <span>{{ isDarkMode ? (currentLanguage === 'zh' ? '暗' : 'Dark') : (currentLanguage === 'zh' ? '亮' : 'Light') }}</span>
+          <span><span>{{ getTypewriterText(isDarkMode ? 'themeBtnDark' : 'themeBtnLight') || t(isDarkMode ? 'themeBtnDark' : 'themeBtnLight') }}</span></span>
         </button>
       </div>
       <h1><span>CMTools</span></h1>
@@ -551,6 +590,24 @@ onMounted(() => {
         </div>
         <div class="error-footer">
           <button @click="closeErrorDialog" class="ok-btn"><span>{{ getTypewriterText('confirm') || t('confirm') }}</span></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 版本更新对话框 -->
+    <div v-if="showVersionDialog" class="error-dialog-overlay" @click="closeVersionDialog">
+      <div class="error-dialog" @click.stop>
+        <div class="error-header">
+          <h3><span>{{ getTypewriterText('versionUpdateTitle') || t('versionUpdateTitle') }}</span></h3>
+          <button @click="closeVersionDialog" class="close-btn"><span>×</span></button>
+        </div>
+        <div class="error-content">
+          <div class="error-item">
+            <span>{{ getTypewriterText('versionUpdateMessage') || t('versionUpdateMessage') }}</span>
+          </div>
+        </div>
+        <div class="error-footer">
+          <button @click="closeVersionDialog" class="ok-btn"><span>{{ getTypewriterText('confirm') || t('confirm') }}</span></button>
         </div>
       </div>
     </div>
@@ -870,35 +927,81 @@ html, body {
 .version-display {
   position: absolute;
   top: 16px;
-  left: 80px;
+  left: 96px;
   z-index: 10;
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 48px;
+}
+
+.version-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: all 0.3s var(--ease-out-cubic);
+  border-radius: 12px;
+}
+
+.version-btn:hover {
+  transform: translateY(-2px) scale(1.05);
+  filter: brightness(1.1);
+}
+
+.version-btn:active {
+  transform: translateY(0) scale(0.98);
 }
 
 .version-text {
-  color: rgba(255, 255, 255, 0.8);
-  font-size: 12px;
-  font-weight: 500;
-  background: rgba(255, 255, 255, 0.1);
-  padding: 4px 8px;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 14px;
+  font-weight: 600;
+  background: var(--bg-glass);
+  width: 64px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border-radius: 12px;
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  transition: all 0.3s ease;
+  transition: all 0.4s var(--ease-out-cubic);
+  position: relative;
+  overflow: hidden;
+}
+
+.version-text::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  transform: translateX(-100%);
+  transition: transform 0.6s ease;
 }
 
 .version-text:hover {
-  background: rgba(255, 255, 255, 0.15);
-  color: rgba(255, 255, 255, 0.95);
+  background: var(--bg-glass-hover);
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: var(--shadow-glow);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.version-text:hover::before {
+  transform: translateX(100%);
+}
+
+.version-text:active {
+  transform: translateY(0) scale(0.95);
+  transition: all 0.1s ease;
 }
 
 .language-toggle {
   position: absolute;
   top: 16px;
-  right: 80px;
+  right: 96px;
   z-index: 10;
 }
 
@@ -914,8 +1017,8 @@ html, body {
 .theme-btn {
   background: var(--bg-glass);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 50%;
-  width: 48px;
+  border-radius: 12px;
+  width: 64px;
   height: 48px;
   display: flex;
   align-items: center;
@@ -1876,7 +1979,11 @@ h3 {
 .close-btn span,
 .ok-btn span,
 .error-item span,
-.error-header h3 span {
+.error-header h3 span,
+.help-btn span,
+.language-btn span,
+.theme-btn span,
+.version-text span {
   transition: opacity 1s ease-in-out;
 }
 

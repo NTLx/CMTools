@@ -41,7 +41,9 @@ impl From<std::io::Error> for ProcessError {
 enum Tool {
     AneuFiler,
     Aneu23,
+    SMNFiler,
     SHCarrier,
+    UPDFiler,
 }
 
 impl Tool {
@@ -50,7 +52,9 @@ impl Tool {
         match s {
             "AneuFiler" => Ok(Tool::AneuFiler),
             "Aneu23" => Ok(Tool::Aneu23),
+            "SMNFiler" => Ok(Tool::SMNFiler),
             "SHCarrier" => Ok(Tool::SHCarrier),
+            "UPDFiler" => Ok(Tool::UPDFiler),
             _ => Err(ProcessError::UnknownTool { tool: s.to_string() }),
         }
     }
@@ -60,7 +64,9 @@ impl Tool {
         match self {
             Tool::AneuFiler => "AneuFiler.exe",
             Tool::Aneu23 => "Aneu23.exe",
+            Tool::SMNFiler => "SMNFiler.exe",
             Tool::SHCarrier => "SHCarrier.exe",
+            Tool::UPDFiler => "UPDFiler.exe",
         }
     }
     
@@ -69,18 +75,22 @@ impl Tool {
         match self {
             Tool::AneuFiler => include_bytes!("../../AneuFiler.exe"),
             Tool::Aneu23 => include_bytes!("../../Aneu23.exe"),
+            Tool::SMNFiler => include_bytes!("../../SMNFiler.exe"),
             Tool::SHCarrier => include_bytes!("../../SHCarrier.exe"),
+            Tool::UPDFiler => include_bytes!("../../UPDFiler.exe"),
         }
     }
     
     // 检查工具是否支持标准品样本名称
     fn supports_std_sample(&self) -> bool {
-        matches!(self, Tool::Aneu23 | Tool::SHCarrier)
+        matches!(self, Tool::Aneu23 | Tool::SMNFiler | Tool::SHCarrier)
+        // UPDFiler 不需要标准品样本名称配置
     }
     
     // 检查工具是否支持 Windows 优化
     fn supports_windows_optimization(&self) -> bool {
-        matches!(self, Tool::SHCarrier)
+        matches!(self, Tool::SMNFiler | Tool::SHCarrier)
+        // UPDFiler 不需要 Windows 优化配置
     }
 }
 
@@ -301,22 +311,52 @@ async fn process_files_internal(_app: tauri::AppHandle, tool_name: String, file_
             
             // 添加峰面积数据参数（所有工具都支持）
             if use_area_data {
-                cmd.arg("-Area");
+                match tool {
+                    Tool::SMNFiler => cmd.arg("-a"),
+                    _ => cmd.arg("-Area"),
+                };
             }
             
             // 添加标准品样本名称参数（仅部分工具支持）
             if tool.supports_std_sample() {
                 if let Some(ref std_name) = std_sample_name {
                     if !std_name.trim().is_empty() {
-                        cmd.arg("-STD").arg(std_name.trim());
+                        match tool {
+                            Tool::SMNFiler => cmd.arg("-c").arg(std_name.trim()),
+                            _ => cmd.arg("-STD").arg(std_name.trim()),
+                        };
                     }
                 }
             }
             
-            // 添加 Windows 优化参数（仅 SHCarrier 支持）
+            // 添加 Windows 优化参数（SMNFiler 和 SHCarrier 支持）
             if tool.supports_windows_optimization() {
                 if windows_optimization.unwrap_or(false) {
-                    cmd.arg("-GBK");
+                    match tool {
+                        Tool::SMNFiler => cmd.arg("-e").arg("GBK"),
+                        _ => cmd.arg("-GBK"),
+                    };
+                }
+            }
+            
+            // 为 SMNFiler 添加特殊参数
+            if let Tool::SMNFiler = tool {
+                // 添加输出路径参数（使用输入文件所在目录）
+                if let Some(parent_dir) = file_path_obj.parent() {
+                    cmd.arg("-o").arg(parent_dir);
+                }
+                
+                // 添加语言参数（与当前界面语言一致）
+                if lang == "zh" {
+                    cmd.arg("-l");
+                }
+            }
+            
+            // 为 UPDFiler 添加输出路径参数
+            if let Tool::UPDFiler = tool {
+                // 添加输出路径参数（使用输入文件所在目录）
+                if let Some(parent_dir) = file_path_obj.parent() {
+                    cmd.arg("-o").arg(parent_dir);
                 }
             }
             
