@@ -18,6 +18,7 @@ interface ToolConfig {
   label: string;
   supportsStdSample: boolean;
   supportsWindowsOptimization: boolean;
+  supportsAreaData: boolean; // 新增：是否支持峰面积数据选项
 }
 
 // 处理选项接口
@@ -40,7 +41,7 @@ interface ProcessResult {
 }
 
 // 获取应用版本号
-const appVersion = (globalThis as any).__APP_VERSION__ || '2.2.0';
+const appVersion = (globalThis as any).__APP_VERSION__ || '2.3.0';
 
 const selectedFiles = ref<string[]>([]);
 const selectedTool = ref<ToolType>(ToolType.AneuFiler);
@@ -62,30 +63,35 @@ const tools: ToolConfig[] = [
     label: 'AneuFiler',
     supportsStdSample: false,
     supportsWindowsOptimization: false,
+    supportsAreaData: true,
   },
   {
     name: ToolType.Aneu23,
     label: 'Aneu23',
     supportsStdSample: true,
     supportsWindowsOptimization: false,
+    supportsAreaData: true,
   },
   {
     name: ToolType.SMNFiler,
     label: 'SMNFiler',
     supportsStdSample: true,
     supportsWindowsOptimization: true,
+    supportsAreaData: true,
   },
   {
     name: ToolType.SHCarrier,
     label: 'SHCarrier',
     supportsStdSample: true,
     supportsWindowsOptimization: true,
+    supportsAreaData: true,
   },
   {
     name: ToolType.UPDFiler,
     label: 'UPDFiler',
     supportsStdSample: false,
-    supportsWindowsOptimization: false,
+    supportsWindowsOptimization: true,
+    supportsAreaData: false, // UPDFiler 不支持峰面积数据选项
   },
 ];
 
@@ -318,7 +324,7 @@ async function processFiles() {
     const options: ProcessOptions = {
       toolName: selectedTool.value,
       filePaths: selectedFiles.value,
-      useAreaData: useAreaData.value,
+      useAreaData: currentTool.supportsAreaData ? useAreaData.value : false,
       stdSampleName: currentTool.supportsStdSample ? stdSampleName.value : undefined,
       windowsOptimization: currentTool.supportsWindowsOptimization ? windowsOptimization.value : undefined,
       language: currentLanguage.value
@@ -500,7 +506,7 @@ onMounted(() => {
         <!-- 处理选项 -->
         <div class="process-options" v-if="selectedFiles.length > 0">
           <h3 :class="{ 'typewriter-text': isTextTyping('processOptions'), 'typing-complete': !isTextTyping('processOptions') && getTypewriterText('processOptions') }"><span>{{ getTypewriterText('processOptions') || t('processOptions') }}</span></h3>
-          <div class="option-item">
+          <div class="option-item" v-if="getCurrentToolConfig().supportsAreaData">
             <label class="checkbox-label">
               <input 
                 type="checkbox" 

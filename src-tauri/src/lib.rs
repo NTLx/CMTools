@@ -89,8 +89,8 @@ impl Tool {
     
     // 检查工具是否支持 Windows 优化
     fn supports_windows_optimization(&self) -> bool {
-        matches!(self, Tool::SMNFiler | Tool::SHCarrier)
-        // UPDFiler 不需要 Windows 优化配置
+        matches!(self, Tool::SMNFiler | Tool::SHCarrier | Tool::UPDFiler)
+        // UPDFiler 现在也支持 Windows 优化配置
     }
 }
 
@@ -309,8 +309,8 @@ async fn process_files_internal(_app: tauri::AppHandle, tool_name: String, file_
             // 添加输入文件参数
             cmd.arg("-i").arg(&file_path);
             
-            // 添加峰面积数据参数（所有工具都支持）
-            if use_area_data {
+            // 添加峰面积数据参数（除 UPDFiler 外的工具都支持）
+            if use_area_data && !matches!(tool, Tool::UPDFiler) {
                 match tool {
                     Tool::SMNFiler => cmd.arg("-a"),
                     _ => cmd.arg("-Area"),
@@ -352,14 +352,6 @@ async fn process_files_internal(_app: tauri::AppHandle, tool_name: String, file_
                 }
             }
             
-            // 为 UPDFiler 添加输出路径参数
-            if let Tool::UPDFiler = tool {
-                // 添加输出路径参数（使用输入文件所在目录）
-                if let Some(parent_dir) = file_path_obj.parent() {
-                    cmd.arg("-o").arg(parent_dir);
-                }
-            }
-            
             // 在开发模式下输出调用命令到控制台
             #[cfg(debug_assertions)]
             {
@@ -367,13 +359,13 @@ async fn process_files_internal(_app: tauri::AppHandle, tool_name: String, file_
                 println!("[DEBUG] Executing command: {}", cmd_str);
                 println!("[DEBUG] Working directory: {:?}", file_dir);
                 println!("[DEBUG] Tool: {}, File: {}", _tool_name, file_path);
-                if use_area_data {
+                if use_area_data && !matches!(tool, Tool::UPDFiler) {
                     println!("[DEBUG] Using peak area data: true");
                 }
                 if let Some(ref std_name) = std_sample_name {
                     println!("[DEBUG] Standard sample name: {}", std_name);
                 }
-                if _tool_name == "SHCarrier" {
+                if matches!(tool, Tool::SMNFiler | Tool::SHCarrier | Tool::UPDFiler) {
                     println!("[DEBUG] Windows optimization: {}", windows_optimization.unwrap_or(false));
                 }
                 println!("[DEBUG] ----------------------------------------");
