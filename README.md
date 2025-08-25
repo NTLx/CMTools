@@ -40,8 +40,8 @@ CMTools 采用前后端分离的现代桌面应用架构，利用 Tauri 将基�
 ### 技术栈概览
 
 - **技术栈**：Vue `^3.5.13` (Composition API) + TypeScript `~5.6.2` + Vite `^6.0.3`
-- **后端**：Rust (Edition 2021) + Tauri `^2.0.0` + Tokio `^1.0`
-- **核心依赖**：`serde` `^1.0`, `tauri-plugin-dialog` `^2.3.0`, `tauri-plugin-shell` `^2.0.0`
+- **后端**：Rust (Edition 2024) + Tauri `^2.8.3` + Tokio `^1.0`
+- **核心依赖**：`serde` `^1.0`, `tauri-plugin-dialog` `^2.3.3`, `tauri-plugin-opener` `^2.5.0`, `@types/node` (开发依赖)
 
 ### 项目结构详解
 
