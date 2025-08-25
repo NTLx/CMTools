@@ -307,10 +307,6 @@ const results = await invoke('process_files', {
 
 本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情。
 
-## 👥 维护者
-
-- [@GitHub-Username](https://github.com/USERNAME) - 项目发起人
-
 ## 🙏 致谢
 
 感谢所有为这个项目做出贡献的开发者和提供反馈的用户！
