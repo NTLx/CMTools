@@ -41,9 +41,10 @@ impl From<std::io::Error> for ProcessError {
 enum Tool {
     AneuFiler,
     Aneu23,
-    SMNFiler,
+    SMNFilerV1,
     SHCarrier,
-    UPDFiler,
+    UpdfilerV1,
+    UpdfilerV2,
 }
 
 impl Tool {
@@ -52,9 +53,10 @@ impl Tool {
         match s {
             "AneuFiler" => Ok(Tool::AneuFiler),
             "Aneu23" => Ok(Tool::Aneu23),
-            "SMNFiler" => Ok(Tool::SMNFiler),
+            "SMNFiler_v1" => Ok(Tool::SMNFilerV1),
             "SHCarrier" => Ok(Tool::SHCarrier),
-            "UPDFiler" => Ok(Tool::UPDFiler),
+            "UPDFiler_v1" => Ok(Tool::UpdfilerV1),
+            "UPDFiler_v2" => Ok(Tool::UpdfilerV2),
             _ => Err(ProcessError::UnknownTool { tool: s.to_string() }),
         }
     }
@@ -64,9 +66,10 @@ impl Tool {
         match self {
             Tool::AneuFiler => "AneuFiler.exe",
             Tool::Aneu23 => "Aneu23.exe",
-            Tool::SMNFiler => "SMNFiler.exe",
+            Tool::SMNFilerV1 => "SMNFiler_v1.exe",
             Tool::SHCarrier => "SHCarrier.exe",
-            Tool::UPDFiler => "UPDFiler.exe",
+            Tool::UpdfilerV1 => "UPDFiler_v1.exe",
+            Tool::UpdfilerV2 => "UPDFiler_v2.exe",
         }
     }
     
@@ -75,22 +78,23 @@ impl Tool {
         match self {
             Tool::AneuFiler => include_bytes!("../../AneuFiler.exe"),
             Tool::Aneu23 => include_bytes!("../../Aneu23.exe"),
-            Tool::SMNFiler => include_bytes!("../../SMNFiler.exe"),
+            Tool::SMNFilerV1 => include_bytes!("../../SMNFiler_v1.exe"),
             Tool::SHCarrier => include_bytes!("../../SHCarrier.exe"),
-            Tool::UPDFiler => include_bytes!("../../UPDFiler.exe"),
+            Tool::UpdfilerV1 => include_bytes!("../../UPDFiler_v1.exe"),
+            Tool::UpdfilerV2 => include_bytes!("../../UPDFiler_v2.exe"),
         }
     }
     
     // 检查工具是否支持标准品样本名称
     fn supports_std_sample(&self) -> bool {
-        matches!(self, Tool::Aneu23 | Tool::SMNFiler | Tool::SHCarrier)
-        // UPDFiler 不需要标准品样本名称配置
+        matches!(self, Tool::Aneu23 | Tool::SMNFilerV1 | Tool::SHCarrier)
+        // UPDFiler_v1 和 UPDFiler_v2 不需要标准品样本名称配置
     }
     
     // 检查工具是否支持 Windows 优化
     fn supports_windows_optimization(&self) -> bool {
-        matches!(self, Tool::SMNFiler | Tool::SHCarrier | Tool::UPDFiler)
-        // UPDFiler 现在也支持 Windows 优化配置
+        matches!(self, Tool::SMNFilerV1 | Tool::SHCarrier | Tool::UpdfilerV1 | Tool::UpdfilerV2)
+        // UPDFiler_v1 和 UPDFiler_v2 都支持 Windows 优化配置
     }
 }
 
@@ -309,10 +313,10 @@ async fn process_files_internal(_app: tauri::AppHandle, tool_name: String, file_
             // 添加输入文件参数
             cmd.arg("-i").arg(&file_path);
             
-            // 添加峰面积数据参数（除 UPDFiler 外的工具都支持）
-            if use_area_data && !matches!(tool, Tool::UPDFiler) {
+            // 添加峰面积数据参数（除 UPDFiler_v1 和 UPDFiler_v2 外的工具都支持）
+            if use_area_data && !matches!(tool, Tool::UpdfilerV1 | Tool::UpdfilerV2) {
                 match tool {
-                    Tool::SMNFiler => cmd.arg("-a"),
+                    Tool::SMNFilerV1 => cmd.arg("-a"),
                     _ => cmd.arg("-Area"),
                 };
             }
@@ -322,25 +326,26 @@ async fn process_files_internal(_app: tauri::AppHandle, tool_name: String, file_
                 if let Some(ref std_name) = std_sample_name {
                     if !std_name.trim().is_empty() {
                         match tool {
-                            Tool::SMNFiler => cmd.arg("-c").arg(std_name.trim()),
+                            Tool::SMNFilerV1 => cmd.arg("-c").arg(std_name.trim()),
                             _ => cmd.arg("-STD").arg(std_name.trim()),
                         };
                     }
                 }
             }
             
-            // 添加 Windows 优化参数（SMNFiler 和 SHCarrier 支持）
+            // 添加 Windows 优化参数（SMNFiler_v1、SHCarrier、UPDFiler_v1 和 UPDFiler_v2 支持）
             if tool.supports_windows_optimization() {
                 if windows_optimization.unwrap_or(false) {
                     match tool {
-                        Tool::SMNFiler => cmd.arg("-e").arg("GBK"),
+                        Tool::SMNFilerV1 => cmd.arg("-e").arg("GBK"),
+                        Tool::UpdfilerV1 => cmd.arg("-e").arg("GBK"),
                         _ => cmd.arg("-GBK"),
                     };
                 }
             }
             
-            // 为 SMNFiler 添加特殊参数
-            if let Tool::SMNFiler = tool {
+            // 为 SMNFiler_v1 添加特殊参数
+            if let Tool::SMNFilerV1 = tool {
                 // 添加输出路径参数（使用输入文件所在目录）
                 if let Some(parent_dir) = file_path_obj.parent() {
                     cmd.arg("-o").arg(parent_dir);
@@ -352,6 +357,14 @@ async fn process_files_internal(_app: tauri::AppHandle, tool_name: String, file_
                 }
             }
             
+            // 为 UPDFiler_v1 添加特殊参数
+            if let Tool::UpdfilerV1 = tool {
+                // 添加输出路径参数（使用输入文件所在目录）
+                if let Some(parent_dir) = file_path_obj.parent() {
+                    cmd.arg("-o").arg(parent_dir);
+                }
+            }
+            
             // 在开发模式下输出调用命令到控制台
             #[cfg(debug_assertions)]
             {
@@ -359,13 +372,13 @@ async fn process_files_internal(_app: tauri::AppHandle, tool_name: String, file_
                 println!("[DEBUG] Executing command: {}", cmd_str);
                 println!("[DEBUG] Working directory: {:?}", file_dir);
                 println!("[DEBUG] Tool: {}, File: {}", _tool_name, file_path);
-                if use_area_data && !matches!(tool, Tool::UPDFiler) {
+                if use_area_data && !matches!(tool, Tool::UpdfilerV1 | Tool::UpdfilerV2) {
                     println!("[DEBUG] Using peak area data: true");
                 }
                 if let Some(ref std_name) = std_sample_name {
                     println!("[DEBUG] Standard sample name: {}", std_name);
                 }
-                if matches!(tool, Tool::SMNFiler | Tool::SHCarrier | Tool::UPDFiler) {
+                if matches!(tool, Tool::SMNFilerV1 | Tool::SHCarrier | Tool::UpdfilerV1 | Tool::UpdfilerV2) {
                     println!("[DEBUG] Windows optimization: {}", windows_optimization.unwrap_or(false));
                 }
                 println!("[DEBUG] ----------------------------------------");

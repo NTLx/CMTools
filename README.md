@@ -17,7 +17,7 @@ CMTools 是一个通用的、可扩展的数据处理与分析工具集，旨在
 
 ### 🤔 为什么选择 CMTools？
 
-- **🎯 专为数据分析设计**：深入理解通用数据处理工作流程，提供 `AneuFiler`、`Aneu23`、`SMNFiler`、`SHCarrier` 和 `UPDFiler` 等核心工具，并支持自定义扩展。
+- **🎯 专为数据分析设计**：深入理解通用数据处理工作流程，提供 `AneuFiler`、`Aneu23`、`SMNFiler_v1`、`SHCarrier`、`UPDFiler_v1` 和 `UPDFiler_v2` 等核心工具，并支持自定义扩展。
 - **🚀 性能卓越**：基于 Rust 的后端确保了强大的计算能力和内存安全，能够快速处理大型数据集。
 - **✨ 现代用户体验**：采用 Vue 3 构建的界面美观、响应迅速，并支持亮/暗色主题切换和多语言（中/英）支持。
 - **📦 绿色便携**：无需安装，开箱即用，不污染操作系统。
@@ -54,9 +54,10 @@ CMTools/
 ├── `src-tauri`/             # Tauri 后端源码 (Rust)
 │   ├── `AneuFiler.exe`      # 外部数据处理工具 (作为资源嵌入)
 │   ├── `Aneu23.exe`         # 外部数据处理工具 (作为资源嵌入)
-│   ├── `SMNFiler.exe`       # 外部数据处理工具 (作为资源嵌入)
+│   ├── `SMNFiler_v1.exe`     # 外部数据处理工具 (作为资源嵌入)
 │   ├── `SHCarrier.exe`      # 外部数据处理工具 (作为资源嵌入)
-│   ├── `UPDFiler.exe`       # 外部数据处理工具 (作为资源嵌入)
+│   ├── `UPDFiler_v1.exe`    # 外部数据处理工具 (作为资源嵌入)
+│   ├── `UPDFiler_v2.exe`    # 外部数据处理工具 (作为资源嵌入)
 │   ├── `src`/
 │   │   ├── `main.rs`        # Rust 应用主入口
 │   │   └── `lib.rs`         # 核心业务逻辑，封装并调用外部工具
@@ -189,9 +190,10 @@ const results = await invoke('process_files', {
     let (exe_name, exe_data): (&str, &[u8]) = match tool_name.as_str() {
         "AneuFiler" => ("AneuFiler.exe", include_bytes!("../../AneuFiler.exe")),
         "Aneu23" => ("Aneu23.exe", include_bytes!("../../Aneu23.exe")),
-        "SMNFiler" => ("SMNFiler.exe", include_bytes!("../../SMNFiler.exe")),
+        "SMNFiler_v1" => ("SMNFiler_v1.exe", include_bytes!("../../SMNFiler_v1.exe")),
         "SHCarrier" => ("SHCarrier.exe", include_bytes!("../../SHCarrier.exe")),
-        "UPDFiler" => ("UPDFiler.exe", include_bytes!("../../UPDFiler.exe")),
+        "UPDFiler_v1" => ("UPDFiler_v1.exe", include_bytes!("../../UPDFiler_v1.exe")),
+        "UPDFiler_v2" => ("UPDFiler_v2.exe", include_bytes!("../../UPDFiler_v2.exe")),
         "NewTool" => ("NewTool.exe", include_bytes!("../../NewTool.exe")), // <-- 新增此行
         _ => return Err(get_message("unknown_tool", lang, None)),
     };
@@ -202,7 +204,7 @@ const results = await invoke('process_files', {
     match tool_name.as_str() {
         "AneuFiler" => { /* ... */ }
         "Aneu23" | "SHCarrier" => { /* ... */ }
-        "SMNFiler" => { // SMNFiler 特有的参数处理
+        "SMNFiler_v1" => { // SMNFiler_v1 特有的参数处理
             cmd.arg("-i").arg(&file_path);
             // 使用峰面积数据
             if use_area_data { cmd.arg("-a"); }
@@ -231,9 +233,10 @@ const results = await invoke('process_files', {
     const tools = [
       { name: "AneuFiler", label: "AneuFiler" },
       { name: "Aneu23", label: "Aneu23" },
-      { name: "SMNFiler", label: "SMNFiler" },
+      { name: "SMNFiler_v1", label: "SMNFiler_v1" },
       { name: "SHCarrier", label: "SHCarrier" },
-      { name: "UPDFiler", label: "UPDFiler" },
+      { name: "UPDFiler_v1", label: "UPDFiler_v1" },
+      { name: "UPDFiler_v2", label: "UPDFiler_v2" },
       { name: "NewTool", label: "NewTool" } // <-- 新增此行
     ];
     ```

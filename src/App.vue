@@ -7,9 +7,10 @@ import { open } from '@tauri-apps/plugin-dialog';
 enum ToolType {
   AneuFiler = 'AneuFiler',
   Aneu23 = 'Aneu23',
-  SMNFiler = 'SMNFiler',
+  SMNFiler_v1 = 'SMNFiler_v1',
   SHCarrier = 'SHCarrier',
-  UPDFiler = 'UPDFiler',
+  UPDFiler_v1 = 'UPDFiler_v1',
+  UPDFiler_v2 = 'UPDFiler_v2',
 }
 
 // 工具配置接口
@@ -41,7 +42,7 @@ interface ProcessResult {
 }
 
 // 获取应用版本号
-const appVersion = (globalThis as any).__APP_VERSION__ || '2.3.1';
+const appVersion = (globalThis as any).__APP_VERSION__ || '2.4.0';
 
 const selectedFiles = ref<string[]>([]);
 const selectedTool = ref<ToolType>(ToolType.AneuFiler);
@@ -73,8 +74,8 @@ const tools: ToolConfig[] = [
     supportsAreaData: true,
   },
   {
-    name: ToolType.SMNFiler,
-    label: 'SMNFiler',
+    name: ToolType.SMNFiler_v1,
+    label: 'SMNFiler_v1',
     supportsStdSample: true,
     supportsWindowsOptimization: true,
     supportsAreaData: true,
@@ -87,11 +88,18 @@ const tools: ToolConfig[] = [
     supportsAreaData: true,
   },
   {
-    name: ToolType.UPDFiler,
-    label: 'UPDFiler',
+    name: ToolType.UPDFiler_v1,
+    label: 'UPDFiler_v1',
     supportsStdSample: false,
     supportsWindowsOptimization: true,
-    supportsAreaData: false, // UPDFiler 不支持峰面积数据选项
+    supportsAreaData: false, // UPDFiler_v1 不支持峰面积数据选项
+  },
+  {
+    name: ToolType.UPDFiler_v2,
+    label: 'UPDFiler_v2',
+    supportsStdSample: false,
+    supportsWindowsOptimization: true,
+    supportsAreaData: false, // UPDFiler_v2 不支持峰面积数据选项
   },
 ];
 

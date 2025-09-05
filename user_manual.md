@@ -6,7 +6,7 @@ CMTools is a desktop application designed to process analytical data files. It p
 
 **Key Features:**
 
-*   **🔧 Multiple Processing Tools:** Supports various tools like `AneuFiler`, `Aneu23`, `SMNFiler`, `SHCarrier`, and `UPDFiler`.
+*   **🔧 Multiple Processing Tools:** Supports various tools like `AneuFiler`, `Aneu23`, `SMNFiler_v1`, `SHCarrier`, `UPDFiler_v1`, and `UPDFiler_v2`.
 *   **🗂️ Batch Processing:** Process multiple files at once.
 *   **⚙️ Customizable Options:** Adjust processing parameters like using peak area data and specifying standard sample names.
 *   **💻 Cross-Platform:** Runs on Windows, macOS, and Linux.
@@ -36,13 +36,13 @@ The main window of CMTools is divided into several sections:
 
 1.  **Header:**
     *   **Help (`帮助`/`Help`):** Opens the online help documentation (https://docs.dingtalk.com/i/nodes/mExel2BLV5xvg52YSErl4LvbWgk9rpMq).
-    *   **Version Display:** Shows the current version of the application (e.g., `v2.3.1`).
+    *   **Version Display:** Shows the current version of the application (e.g., `v2.4.0`).
     *   **Language Switch (`中文`/`English`):** Toggles the interface language between Chinese and English.
     *   **Theme Toggle (`暗`/`亮` or `Dark`/`Light`):** Switches between light and dark mode. The button's `title` attribute dynamically displays `切换到亮色模式`/`Switch to light mode` or `切换到暗色模式`/`Switch to dark mode`.
     *   **Logo and Title:** Displays the application's branding.
 
 2.  **Tool Selection:**
-    *   Choose the processing tool you want to use: `AneuFiler`, `Aneu23`, `SMNFiler`, `SHCarrier`, or `UPDFiler`.
+    *   Choose the processing tool you want to use: `AneuFiler`, `Aneu23`, `SMNFiler_v1`, `SHCarrier`, `UPDFiler_v1`, or `UPDFiler_v2`.
 
 3.  **File Processing:**
     *   **Select Files (`📁 选择文件`/`📁 Select Files`):** Opens a dialog to select one or more data files for processing.
@@ -68,7 +68,7 @@ The main window of CMTools is divided into several sections:
 
 ### 📝 Step 1: Select a Tool
 
-Click on one of the tool buttons (`AneuFiler`, `Aneu23`, `SMNFiler`, `SHCarrier`, `UPDFiler`) to select the desired processing algorithm.
+Click on one of the tool buttons (`AneuFiler`, `Aneu23`, `SMNFiler_v1`, `SHCarrier`, `UPDFiler_v1`, `UPDFiler_v2`) to select the desired processing algorithm.
 
 ### 📂 Step 2: Select Files
 
@@ -78,9 +78,9 @@ Click on one of the tool buttons (`AneuFiler`, `Aneu23`, `SMNFiler`, `SHCarrier`
 
 ### ⚙️ Step 3: Configure Processing Options
 
--   **For most tools:** Decide if you want to use peak area data by checking or unchecking the corresponding box. (Note: UPDFiler does not support this option)
--   **For `Aneu23`, `SMNFiler`, and `SHCarrier`:** If your dataset includes a standard, enter its name in the `Standard Sample Name` text field.
--   **For `SMNFiler`, `SHCarrier` and `UPDFiler` on Windows:** It is recommended to keep the `Windows System Optimization` option checked.
+-   **For most tools:** Decide if you want to use peak area data by checking or unchecking the corresponding box. (Note: UPDFiler_v1 and UPDFiler_v2 do not support this option)
+-   **For `Aneu23`, `SMNFiler_v1`, and `SHCarrier`:** If your dataset includes a standard, enter its name in the `Standard Sample Name` text field.
+-   **For `SMNFiler_v1`, `SHCarrier`, `UPDFiler_v1` and `UPDFiler_v2` on Windows:** It is recommended to keep the `Windows System Optimization` option checked.
 
 ### 🚀 Step 4: Start Processing
 
@@ -120,22 +120,31 @@ Click on one of the tool buttons (`AneuFiler`, `Aneu23`, `SMNFiler`, `SHCarrier`
     *   `Standard Sample Name`: For identifying the standard sample.
     *   `Windows System Optimization`: Ensures correct handling of character encoding on Windows.
 
-### 🔍 UPDFiler
+### 🔍 UPDFiler_v1
+
+*   **Purpose:** Analyzes 3500dx instrument data for UPD and other abnormalities (version 1).
+*   **Input:** Data files from GeneMapper.
+*   **Options:**
+    *   `Windows System Optimization`: Ensures correct handling of character encoding on Windows (uses `-e GBK` parameter).
+*   **Output:** Result files are generated in the same directory as the input files. The tool supports custom output path configuration.
+*   **Note:** UPDFiler_v1 does not support peak area data calculation options.
+
+### 🔍 UPDFiler_v2
 
 *   **Purpose:** Analyzes 3500dx instrument data for UPD and other abnormalities.
 *   **Input:** Data files from GeneMapper.
-*   **Options:**
+*   **Options:****
     *   `Windows System Optimization`: Ensures correct handling of character encoding on Windows.
 *   **Output:** Result files are generated in the same directory as the input files.
 
-### 📊 SMNFiler
+### 📊 SMNFiler_v1
 
-*   **Purpose:** Specialized analysis for SMN data processing.
-*   **Input:** Data files that may contain control samples.
-*   **Options:**
-    *   `Use peak area data`: Uses peak area instead of height for calculations.
-    *   `Standard Sample Name`: Specifies the control sample name for comparison.
-    *   `Windows System Optimization`: Optimizes encoding for Windows systems.
+*   **用途：** 专门用于 SMN 数据处理和分析（版本 1）。
+*   **输入：** 可能包含对照样本的数据文件。
+*   **选项：**
+    *   `使用峰面积数据`：使用峰面积而非峰高进行计算。
+    *   `标准品样本名称`：指定用于比较的对照样本名称。
+    *   `Windows 系统优化`：针对 Windows 系统优化文件编码。
 
 ## 6. ❓ FAQ & Troubleshooting
 
@@ -240,7 +249,7 @@ CMTools 是一款专为处理分析数据文件而设计的桌面应用程序。
 
 **主要功能：**
 
-*   **🔧 多种处理工具：** 支持 `AneuFiler`、`Aneu23`、`SMNFiler`、`SHCarrier` 和 `UPDFiler` 等多种工具。
+*   **🔧 多种处理工具：** 支持 `AneuFiler`、`Aneu23`、`SMNFiler_v1`、`SHCarrier`、`UPDFiler_v1` 和 `UPDFiler_v2` 等多种工具。
 *   **🗂️ 批量处理：** 一次性处理多个文件。
 *   **⚙️ 可自定义选项：** 可调整处理参数，如使用峰面积数据和指定标准品样本名称。
 *   **💻 跨平台：** 可在 Windows、macOS 和 Linux 上运行。
@@ -270,13 +279,13 @@ CMTools 的主窗口分为几个部分：
 
 1.  **标题栏：**
     *   **帮助 (`帮助`/`Help`)：** 打开在线帮助文档 (https://docs.dingtalk.com/i/nodes/mExel2BLV5xvg52YSErl4LvbWgk9rpMq)。
-    *   **版本显示：** 显示应用程序的当前版本（例如 `v2.3.1`）。
+    *   **版本显示：** 显示应用程序的当前版本（例如 `v2.4.0`）。
     *   **语言切换 (`中文`/`English`)：** 在中文和英文之间切换界面语言。
     *   **主题切换 (`暗`/`亮` 或 `Dark`/`Light`)：** 在亮色和暗色模式之间切换。按钮的 `title` 属性会根据当前语言动态显示 `切换到亮色模式`/`Switch to light mode` 或 `切换到暗色模式`/`Switch to dark mode`。
     *   **Logo 和标题：** 显示应用程序的品牌标识。
 
 2.  **工具选择：**
-    *   选择您要使用的处理工具：`AneuFiler`、`Aneu23`、`SMNFiler`、`SHCarrier` 或 `UPDFiler`。
+    *   选择您要使用的处理工具：`AneuFiler`、`Aneu23`、`SMNFiler_v1`、`SHCarrier`、`UPDFiler_v1` 或 `UPDFiler_v2`。
 
 3.  **文件处理：**
     *   **选择文件 (`📁 选择文件`/`📁 Select Files`)：** 打开一个对话框，用于选择一个或多个要处理的数据文件。
@@ -302,7 +311,7 @@ CMTools 的主窗口分为几个部分：
 
 ### 📝 第 1 步：选择工具
 
-点击工具按钮（`AneuFiler`、`Aneu23`、`SMNFiler`、`SHCarrier`、`UPDFiler`）之一，以选择所需的处理算法。
+点击工具按钮（`AneuFiler`、`Aneu23`、`SMNFiler_v1`、`SHCarrier`、`UPDFiler_v1`、`UPDFiler_v2`）之一，以选择所需的处理算法。
 
 ### 📂 第 2 步：选择文件
 
@@ -312,9 +321,9 @@ CMTools 的主窗口分为几个部分：
 
 ### ⚙️ 第 3 步：配置处理选项
 
--   **所有工具：** 通过勾选或取消勾选相应的复选框，决定是否要使用峰面积数据。（注意：UPDFiler 不支持此选项）
--   **对于 `Aneu23`、`SMNFiler` 和 `SHCarrier`：** 如果您的数据集包含标准品，请在 `标准品样本名称` 文本字段中输入其名称。
--   **对于 Windows 上的 `SMNFiler`、`SHCarrier` 和 `UPDFiler`：** 建议保持 `Windows 系统优化` 选项为勾选状态。
+-   **所有工具：** 通过勾选或取消勾选相应的复选框，决定是否要使用峰面积数据。（注意：UPDFiler_v1 和 UPDFiler_v2 不支持此选项）
+-   **对于 `Aneu23`、`SMNFiler_v1` 和 `SHCarrier`：** 如果您的数据集包含标准品，请在 `标准品样本名称` 文本字段中输入其名称。
+-   **对于 Windows 上的 `SMNFiler_v1`、`SHCarrier`、`UPDFiler_v1` 和 `UPDFiler_v2`：** 建议保持 `Windows 系统优化` 选项为勾选状态。
 
 ### 🚀 第 4 步：开始处理
 
@@ -354,7 +363,16 @@ CMTools 的主窗口分为几个部分：
     *   `标准品样本名称`：用于识别标准品样本。
     *   `Windows 系统优化`：确保在 Windows 上正确处理字符编码。
 
-### 🔍 UPDFiler
+### 🔍 UPDFiler_v1
+
+*   **用途：** 分析 3500dx 仪器数据中的 UPD 和其他异常情况（版本1）。
+*   **输入：** 来自 GeneMapper 的数据文件。
+*   **选项：**
+    *   `Windows 系统优化`：确保在 Windows 上正确处理字符编码（使用 `-e GBK` 参数）。
+*   **输出：** 结果文件生成在与输入文件相同的目录中。该工具支持自定义输出路径配置。
+*   **注意：** UPDFiler_v1 不支持峰面积数据计算选项。
+
+### 🔍 UPDFiler_v2
 
 *   **用途：** 分析 3500dx 仪器数据中的 UPD 和其他异常情况。
 *   **输入：** 来自 GeneMapper 的数据文件。
@@ -362,9 +380,9 @@ CMTools 的主窗口分为几个部分：
     *   `Windows 系统优化`：确保在 Windows 上正确处理字符编码。
 *   **输出：** 结果文件生成在与输入文件相同的目录中。
 
-### 📊 SMNFiler
+### 📊 SMNFiler_v1
 
-*   **用途：** 专门用于 SMN 数据处理和分析。
+*   **用途：** 专门用于 SMN 数据处理和分析（版本 1）。
 *   **输入：** 可能包含对照样本的数据文件。
 *   **选项：**
     *   `使用峰面积数据`：使用峰面积而非峰高进行计算。
