@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, nextTick } from 'vue';
+import { ref, onMounted } from 'vue';
 import { invoke } from '@tauri-apps/api/core';
 import { open } from '@tauri-apps/plugin-dialog';
 
@@ -191,7 +191,7 @@ const translations = {
 // 打字机动画状态
 const typewriterTexts = ref<Record<string, string>>({});
 const typingStates = ref<Record<string, boolean>>({});
-const isTyping = ref(false);
+
 
 // 获取翻译文本
 function t(key: string): string {
@@ -208,76 +208,13 @@ function isTextTyping(key: string): boolean {
   return typingStates.value[key] || false;
 }
 
-// 淡出效果函数
-function fadeOutEffect(duration: number): Promise<void> {
-  return new Promise((resolve) => {
-    // 设置淡出状态
-    isTyping.value = true;
-    
-    // 获取所有需要动画的文本元素
-    const elements = document.querySelectorAll('.header h1 span, .subtitle span, .tool-selection h3 span, .file-selection h3 span, .process-options h3 span, .results h3 span, .selected-files h4 span, .option-description span, .tool-btn span, .file-actions button span, .process-btn span, .checkbox-text span, .input-text span, .close-btn span, .ok-btn span, .error-item span, .error-header h3 span, .help-btn span, .language-btn span, .theme-btn span, .version-text span');
-    
-    // 添加淡出效果
-    elements.forEach(el => {
-      (el as HTMLElement).style.opacity = '0';
-    });
-    
-    // 等待动画完成
-    setTimeout(() => {
-      resolve();
-    }, duration);
-  });
-}
 
-// 淡入效果函数
-function fadeInEffect(duration: number): Promise<void> {
-  return new Promise((resolve) => {
-    // 更新所有文本内容
-    const newLang = translations[currentLanguage.value as keyof typeof translations];
-    Object.keys(newLang).forEach(key => {
-      typewriterTexts.value[key] = newLang[key as keyof typeof newLang];
-    });
-    
-    // 等待 Vue 更新 DOM
-    nextTick(() => {
-      // 获取所有需要动画的文本元素
-       const elements = document.querySelectorAll('.header h1 span, .subtitle span, .tool-selection h3 span, .file-selection h3 span, .process-options h3 span, .results h3 span, .selected-files h4 span, .option-description span, .tool-btn span, .file-actions button span, .process-btn span, .checkbox-text span, .input-text span, .close-btn span, .ok-btn span, .error-item span, .error-header h3 span, .help-btn span, .language-btn span, .theme-btn span, .version-text span');
-      
-      // 添加淡入效果
-      elements.forEach(el => {
-        (el as HTMLElement).style.opacity = '1';
-      });
-      
-      // 等待动画完成
-      setTimeout(() => {
-        isTyping.value = false;
-        resolve();
-      }, duration);
-    });
-  });
-}
 
-// 完整的淡出淡入效果函数
-function fadeEffect(): Promise<void> {
-  return new Promise(async (resolve) => {
-    // 每个阶段1秒，总共2秒
-    const phaseDuration = 1000;
-    
-    // 先执行淡出效果
-    await fadeOutEffect(phaseDuration);
-    
-    // 再执行淡入效果
-    await fadeInEffect(phaseDuration);
-    
-    resolve();
-  });
-}
 
-// 执行淡出淡入动画
-async function executeTypewriterAnimations() {
-  // 执行淡出淡入效果
-  await fadeEffect();
-}
+
+
+
+
 
 // 单独为特定文本执行打字机动画（保留以备将来使用）
 // async function animateSpecificText(key: string, delay: number = 0) {
