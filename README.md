@@ -63,7 +63,10 @@ CMTools/
 │   │   └── `lib.rs`         # 核心业务逻辑，封装并调用外部工具
 │   ├── `Cargo.toml`         # Rust 依赖配置
 │   └── `tauri.conf.json`    # Tauri 应用核心配置
+├── `scripts`/               # 构建脚本
+│   └── `build-multi-arch.cjs` # 多架构自动构建脚本
 ├── `user_manual.md`         # 用户手册
+├── `build-config-options.md` # 构建配置选项说明
 ├── `package.json`           # Node.js 项目元数据和依赖配置
 └── `README.md`              # 开发者文档
 ```
@@ -74,9 +77,13 @@ CMTools/
 
 - **Node.js**：`^18.0.0` 或更高版本
 - **Rust**：`^1.70.0` 或更高版本 (通过 `rustup` 安装)
-- **操作系统**：Windows 10+, macOS 10.15+, 或主流 Linux 发行版
+- **操作系统**：Windows 10 版本1809 (17763)或更高，macOS 10.15+, 或主流 Linux 发行版
+- **架构支持**：x64、x86 或 ARM64
+- **存储空间**：至少200MB可用存储空间
 
-> **注意**：请确保已根据 [Tauri 官方文档](https://tauri.app/v1/guides/getting-started/prerequisites) 完成了特定于您操作系统的环境配置，例如在 Windows 上安装 `WebView2`，在 Linux 上安装 `webkit2gtk`。
+> **Windows用户特别注意**：本项目基于Tauri框架开发，在Windows系统上运行时需要安装Microsoft Edge WebView2运行时。如果系统缺少该运行时，会导致应用无法启动。可通过[微软官方下载页面](https://developer.microsoft.com/en-us/microsoft-edge/webview2/)获取WebView2运行时。
+
+> **多架构构建要求**：如需构建32位版本，请先安装对应的Rust目标：`rustup target add i686-pc-windows-msvc`
 
 ### 安装与运行
 
@@ -99,12 +106,42 @@ CMTools/
 
 ### 构建生产版本
 
+#### 单架构构建（推荐用于开发测试）
 ```bash
-# 构建绿色版应用
+# 构建绿色版应用（默认64位）
 npm run tauri build
+
+# 构建64位Windows版本
+npm run tauri:build:x64
+
+# 构建32位Windows版本（需要先安装32位目标）
+rustup target add i686-pc-windows-msvc
+npm run tauri:build:x86
 ```
 
-构建产物位于 `src-tauri/target/release/` 目录。由于本项目旨在分发绿色软件，您只需关注此目录下的可执行文件 (`cmtools.exe` 或 `cmtools`)。您可以将此文件与 `AneuFiler.exe`、`Aneu23.exe`、`SHCarrier.exe` 等外部工具一同打包分发。
+#### 多架构自动构建（推荐用于发布分发）
+```bash
+# 自动构建32位和64位版本，并按规范命名
+npm run tauri:build
+```
+
+此命令将：
+1. 自动检查并安装所需的Rust构建目标
+2. 构建32位和64位Windows版本
+3. 按照命名规范重命名文件为 `CMTools.x86.exe` 和 `CMTools.x64.exe`
+4. 将重命名后的文件复制到项目根目录便于访问
+
+#### 构建产物说明
+
+**软件命名规范：**
+- **64位版本：** `CMTools.x64.exe`
+- **32位版本：** `CMTools.x86.exe`
+
+**文件位置：**
+- **便于使用：** 项目根目录下的重命名版本（推荐）
+- **原始构建：** `src-tauri/target/[架构]/release/cmtools.exe`
+
+由于本项目旨在分发绿色软件，您只需关注根目录下按规范命名的可执行文件。这些文件包含了所有必要的外部工具（`AneuFiler.exe`、`Aneu23.exe`、`SHCarrier.exe` 等），无需额外打包。
 
 若需创建传统安装包，可在 `src-tauri/target/release/bundle/` 目录下查找。
 
@@ -230,14 +267,14 @@ const results = await invoke('process_files', {
 
 4.  **更新前端界面**：在 `src/App.vue` 中，将您的新工具添加到 `tools` 数组中，以便用户可以在界面上选择它。
     ```typescript
-    const tools = [
-      { name: "AneuFiler", label: "AneuFiler" },
-      { name: "Aneu23", label: "Aneu23" },
-      { name: "SMNFiler_v1", label: "SMNFiler_v1" },
-      { name: "SHCarrier", label: "SHCarrier" },
-      { name: "UPDFiler_v1", label: "UPDFiler_v1" },
-      { name: "UPDFiler_v2", label: "UPDFiler_v2" },
-      { name: "NewTool", label: "NewTool" } // <-- 新增此行
+    const tools: ToolConfig[] = [
+      { name: ToolType.AneuFiler, label: "AneuFiler", supportsStdSample: false, supportsWindowsOptimization: false, supportsAreaData: true },
+      { name: ToolType.Aneu23, label: "Aneu23", supportsStdSample: true, supportsWindowsOptimization: false, supportsAreaData: true },
+      { name: ToolType.SMNFiler_v1, label: "SMNFiler_v1", supportsStdSample: true, supportsWindowsOptimization: true, supportsAreaData: true },
+      { name: ToolType.SHCarrier, label: "SHCarrier", supportsStdSample: true, supportsWindowsOptimization: true, supportsAreaData: true },
+      { name: ToolType.UPDFiler_v1, label: "UPDFiler_v1", supportsStdSample: false, supportsWindowsOptimization: true, supportsAreaData: false },
+      { name: ToolType.UPDFiler_v2, label: "UPDFiler_v2", supportsStdSample: false, supportsWindowsOptimization: true, supportsAreaData: false },
+      { name: ToolType.NewTool, label: "NewTool", supportsStdSample: false, supportsWindowsOptimization: true, supportsAreaData: true } // <-- 新增此行
     ];
     ```
 
@@ -247,6 +284,7 @@ const results = await invoke('process_files', {
 
 - **查看后端日志**：在开发模式下 (`npm run tauri dev`)，后端 Rust 代码中的 `println!` 宏输出会直接显示在启动应用的控制台中。`lib.rs` 中已包含用于打印执行命令、工作目录和参数的调试代码 (`#[cfg(debug_assertions)]`)，这对于调试参数是否正确传递非常有用。
 - **检查临时文件**：您可以前往系统的临时目录（Windows 上通常是 `%TEMP%`）查找名为 `cmtools_*.exe` 的文件，以确认可执行文件是否被正确释放。
+- **多架构构建调试**：使用 `scripts/build-multi-arch.cjs` 脚本时，可以查看控制台输出了解构建进度和可能的错误信息。脚本会自动检查Rust目标安装情况并显示构建结果。
 
 ## 🧪 测试
 
@@ -265,7 +303,27 @@ const results = await invoke('process_files', {
 
 ## 📦 部署
 
+### 自动化构建
+
 项目已配置 GitHub Actions (`.github/workflows/build.yml`)，可在推送 `v*` 标签时自动为 Windows, macOS, 和 Linux 构建、打包和创建 Release。
+
+### 多架构构建部署
+
+对于Windows平台，推荐使用多架构构建脚本进行部署：
+
+```bash
+# 一键构建32位和64位版本
+npm run tauri:build
+```
+
+构建完成后，您将获得：
+- `CMTools.x64.exe` - 64位Windows版本
+- `CMTools.x86.exe` - 32位Windows版本
+
+**分发建议：**
+- 64位版本适用于大多数现代Windows系统
+- 32位版本适用于老旧系统或特殊环境需求
+- 两个版本功能完全一致，用户可根据系统架构选择
 
 ## 🤝 贡献指南
 

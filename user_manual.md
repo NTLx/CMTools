@@ -18,8 +18,13 @@ CMTools is a desktop application designed to process analytical data files. It p
 CMTools is a portable (green) software, which means it doesn't require any installation. Simply follow these steps:
 
 1.  Download the latest version for your operating system from the official release page.
-2.  Unzip the downloaded file to any location you prefer.
-3.  Double-click the `cmtools.exe` executable file to run the application directly.
+    - **For 64-bit Windows systems:** Download `CMTools.x64.exe`
+    - **For 32-bit Windows systems:** Download `CMTools.x86.exe`
+    - **For other operating systems:** Download the appropriate version
+2.  Unzip the downloaded file to any location you prefer (if applicable).
+3.  Double-click the executable file to run the application directly.
+    - For 64-bit: Double-click `CMTools.x64.exe`
+    - For 32-bit: Double-click `CMTools.x86.exe`
 
 ![CMTools Interface](https://cdn.jsdelivr.net/gh/NTLx/Pic/PicGo/202507170855602.gif)
 
@@ -29,6 +34,18 @@ CMTools is a portable (green) software, which means it doesn't require any insta
 *   **🧹 System Cleanliness:** It does not write data to the system registry or create hidden files on your computer, preventing system clutter.
 *   **🎒 Portability:** You can store it on a USB drive or cloud storage and run it on any compatible computer.
 *   **🗑️ Easy Removal:** To uninstall, simply delete the application folder. No residue will be left on your system.
+
+**System Requirements:**
+
+*   **Operating System:** Windows 10 version 1809 (17763) or higher
+*   **Architecture:** x64, x86, or ARM64
+*   **Storage:** At least 200MB available storage space
+*   **Runtime:** Microsoft Edge WebView2 runtime (automatically installed on most modern Windows systems)
+
+**Version Selection Guide:**
+
+*   **64-bit version (CMTools.x64.exe):** Recommended for most modern Windows systems. Offers better performance and memory handling.
+*   **32-bit version (CMTools.x86.exe):** Suitable for older systems or specific environment requirements. Fully compatible with both 32-bit and 64-bit Windows systems.
 
 ## 3. 🖥️ User Interface Overview
 
@@ -261,8 +278,13 @@ CMTools 是一款专为处理分析数据文件而设计的桌面应用程序。
 CMTools 是一款绿色软件，这意味着它无需安装。只需按照以下步骤操作：
 
 1.  从官方发布页面下载适用于您操作系统的最新版本。
-2.  将下载的文件解压缩到您喜欢的任何位置。
-3.  双击可执行文件 `cmtools.exe` 直接运行应用程序。
+    - **对于64位Windows系统：** 下载 `CMTools.x64.exe`
+    - **对于32位Windows系统：** 下载 `CMTools.x86.exe`
+    - **对于其他操作系统：** 下载相应版本
+2.  将下载的文件解压缩到您喜欢的任何位置（如适用）。
+3.  双击可执行文件直接运行应用程序。
+    - 对于64位：双击 `CMTools.x64.exe`
+    - 对于32位：双击 `CMTools.x86.exe`
 
 ![CMTools 界面](https://cdn.jsdelivr.net/gh/NTLx/Pic/PicGo/202507170855602.gif)
 
@@ -272,6 +294,18 @@ CMTools 是一款绿色软件，这意味着它无需安装。只需按照以下
 *   **🧹 保持系统纯净：** 它不会向系统注册表写入数据，也不会在您的计算机上创建隐藏文件，从而避免系统变得臃肿。
 *   **🎒 便携性：** 您可以将其存储在 U 盘或云存储中，并在任何兼容的计算机上运行。
 *   **🗑️ 轻松删除：** 要卸载软件，只需删除应用程序文件夹即可，不会在您的系统上留下任何残留物。
+
+**系统要求：**
+
+*   **操作系统：** Windows 10 版本 1809 (17763) 或更高
+*   **架构：** x64、x86 或 ARM64
+*   **存储空间：** 至少 200MB 的可用存储空间
+*   **运行时：** Microsoft Edge WebView2 运行时（大多数现代 Windows 系统上自动安装）
+
+**版本选择指南：**
+
+*   **64 位版本 (CMTools.x64.exe)：** 适用于大多数现代 Windows 系统。提供更好的性能和内存管理。
+*   **32 位版本 (CMTools.x86.exe)：** 适用于较旧的系统或特定环境要求。兼容 32 位和 64 位 Windows 系统。
 
 ## 3. 🖥️ 用户界面概览
 
