@@ -42,7 +42,7 @@ interface ProcessResult {
 }
 
 // 获取应用版本号
-const appVersion = (globalThis as any).__APP_VERSION__ || '2.4.0';
+const appVersion = (globalThis as any).__APP_VERSION__ || '2.4.2';
 
 const selectedFiles = ref<string[]>([]);
 const selectedTool = ref<ToolType>(ToolType.AneuFiler);
@@ -286,16 +286,17 @@ async function executeTypewriterAnimations() {
 // }
 
 // 语言切换
-async function toggleLanguage() {
-  if (isTyping.value) return; // 如果正在打字，忽略切换请求
-  
+function toggleLanguage() {
   // 切换语言
   const newLanguage = currentLanguage.value === 'zh' ? 'en' : 'zh';
   currentLanguage.value = newLanguage;
   localStorage.setItem('language', newLanguage);
   
-  // 执行打字机动画
-  await executeTypewriterAnimations();
+  // 立即更新所有文本内容，不使用动画
+  const newLang = translations[currentLanguage.value as keyof typeof translations];
+  Object.keys(newLang).forEach(key => {
+    typewriterTexts.value[key] = newLang[key as keyof typeof newLang];
+  });
 }
 
 // 选择文件
@@ -448,24 +449,24 @@ onMounted(() => {
   <main class="container">
     <header class="header">
       <div class="help-toggle">
-        <button @click="openHelpCenter" class="help-btn" :title="t('helpCenter')">
-          <span><span>{{ getTypewriterText('helpBtn') || t('helpBtn') }}</span></span>
-        </button>
+        <span @click="openHelpCenter" class="help-link" :title="t('helpCenter')">
+          <span>{{ getTypewriterText('helpBtn') || t('helpBtn') }}</span>
+        </span>
       </div>
       <div class="version-display">
-        <button @click="showVersionUpdateDialog" class="version-btn" :title="t('versionUpdateTitle')">
-          <span class="version-text"><span>v{{ appVersion }}</span></span>
-        </button>
+        <span @click="showVersionUpdateDialog" class="version-link" :title="t('versionUpdateTitle')">
+          <span>v{{ appVersion }}</span>
+        </span>
       </div>
       <div class="language-toggle">
-        <button @click="toggleLanguage" class="language-btn" :title="t('languageSwitch')">
-          <span><span>{{ getTypewriterText('languageBtn') || t('languageBtn') }}</span></span>
-        </button>
+        <span @click="toggleLanguage" class="language-link" :title="t('languageSwitch')">
+          <span>{{ getTypewriterText('languageBtn') || t('languageBtn') }}</span>
+        </span>
       </div>
       <div class="theme-toggle">
-        <button @click="toggleTheme" class="theme-btn" :title="isDarkMode ? t('switchToLight') : t('switchToDark')">
-          <span><span>{{ getTypewriterText(isDarkMode ? 'themeBtnDark' : 'themeBtnLight') || t(isDarkMode ? 'themeBtnDark' : 'themeBtnLight') }}</span></span>
-        </button>
+        <span @click="toggleTheme" class="theme-link" :title="isDarkMode ? t('switchToLight') : t('switchToDark')">
+          <span>{{ getTypewriterText(isDarkMode ? 'themeBtnDark' : 'themeBtnLight') || t(isDarkMode ? 'themeBtnDark' : 'themeBtnLight') }}</span>
+        </span>
       </div>
       <h1><span>CMTools</span></h1>
       <p class="subtitle" :class="{ 'typewriter-text': isTextTyping('subtitle'), 'typing-complete': !isTextTyping('subtitle') && getTypewriterText('subtitle') }"><span>{{ getTypewriterText('subtitle') || t('subtitle') }}</span></p>
@@ -948,69 +949,22 @@ html, body {
   justify-content: center;
 }
 
-.version-btn {
-  background: none;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-  transition: all 0.3s var(--ease-out-cubic);
-  border-radius: 12px;
-}
-
-.version-btn:hover {
-  transform: translateY(-2px) scale(1.05);
-  filter: brightness(1.1);
-}
-
-.version-btn:active {
-  transform: translateY(0) scale(0.98);
-}
-
-.version-text {
+.version-link {
   color: rgba(255, 255, 255, 0.9);
   font-size: 14px;
   font-weight: 600;
-  background: var(--bg-glass);
-  width: 64px;
-  height: 48px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 12px;
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  transition: all 0.4s var(--ease-out-cubic);
-  position: relative;
-  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.3s var(--ease-out-cubic);
+  display: inline-block;
+  user-select: none;
 }
 
-.version-text::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-  transform: translateX(-100%);
-  transition: transform 0.6s ease;
+.version-link:hover {
+  color: rgba(255, 255, 255, 1);
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+  transform: translateY(-1px);
 }
 
-.version-text:hover {
-  background: var(--bg-glass-hover);
-  transform: translateY(-2px) scale(1.05);
-  box-shadow: var(--shadow-glow);
-  border-color: rgba(255, 255, 255, 0.3);
-}
-
-.version-text:hover::before {
-  transform: translateX(100%);
-}
-
-.version-text:active {
-  transform: translateY(0) scale(0.95);
-  transition: all 0.1s ease;
-}
 
 .language-toggle {
   position: absolute;
@@ -1026,61 +980,24 @@ html, body {
   z-index: 10;
 }
 
-.help-btn,
-.language-btn,
-.theme-btn {
-  background: var(--bg-glass);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 12px;
-  width: 64px;
-  height: 48px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.4s var(--ease-out-cubic);
+.help-link,
+.language-link,
+.theme-link {
+  color: rgba(255, 255, 255, 0.9);
   font-size: 14px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(20px);
-  position: relative;
-  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.3s var(--ease-out-cubic);
+  display: inline-block;
+  user-select: none;
 }
 
-.help-btn::before,
-.language-btn::before,
-.theme-btn::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-  transform: translateX(-100%);
-  transition: transform 0.6s ease;
-}
-
-.help-btn:hover,
-.language-btn:hover,
-.theme-btn:hover {
-  background: var(--bg-glass-hover);
-  transform: translateY(-2px) scale(1.05);
-  box-shadow: var(--shadow-glow);
-  border-color: rgba(255, 255, 255, 0.3);
-}
-
-.help-btn:hover::before,
-.language-btn:hover::before,
-.theme-btn:hover::before {
-  transform: translateX(100%);
-}
-
-.help-btn:active,
-.language-btn:active,
-.theme-btn:active {
-  transform: translateY(0) scale(0.95);
-  transition: all 0.1s ease;
+.help-link:hover,
+.language-link:hover,
+.theme-link:hover {
+  color: rgba(255, 255, 255, 1);
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+  transform: translateY(-1px);
 }
 
 
@@ -2027,12 +1944,11 @@ h3 {
     right: 10px;
   }
   
-  .help-btn,
-  .language-btn,
-  .theme-btn {
-    width: 36px;
-    height: 36px;
-    font-size: 16px;
+  .help-link,
+  .language-link,
+  .theme-link,
+  .version-link {
+    font-size: 12px;
   }
   
   .main-content {
