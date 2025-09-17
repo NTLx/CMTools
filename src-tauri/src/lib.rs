@@ -313,6 +313,11 @@ async fn process_files_internal(_app: tauri::AppHandle, tool_name: String, file_
             // 添加输入文件参数
             cmd.arg("-i").arg(&file_path);
             
+            // 为 AneuFiler、Aneu23 和 SHCarrier 添加默认的 -dev 参数
+            if let Tool::AneuFiler | Tool::Aneu23 | Tool::SHCarrier = tool {
+                cmd.arg("-dev");
+            }
+            
             // 添加峰面积数据参数（除 UPDFiler_v1 和 UPDFiler_v2 外的工具都支持）
             if use_area_data && !matches!(tool, Tool::UpdfilerV1 | Tool::UpdfilerV2) {
                 match tool {
@@ -372,6 +377,9 @@ async fn process_files_internal(_app: tauri::AppHandle, tool_name: String, file_
                 println!("[DEBUG] Executing command: {}", cmd_str);
                 println!("[DEBUG] Working directory: {:?}", file_dir);
                 println!("[DEBUG] Tool: {}, File: {}", _tool_name, file_path);
+                if let Tool::AneuFiler | Tool::Aneu23 | Tool::SHCarrier = tool {
+                    println!("[DEBUG] Added default -dev parameter for AneuFiler/Aneu23/SHCarrier");
+                }
                 if use_area_data && !matches!(tool, Tool::UpdfilerV1 | Tool::UpdfilerV2) {
                     println!("[DEBUG] Using peak area data: true");
                 }
