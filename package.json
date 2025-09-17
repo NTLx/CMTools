@@ -1,16 +1,15 @@
 {
   "name": "cmtools",
   "private": true,
-  "version": "2.4.2",
+  "version": "2.5.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc --noEmit && vite build",
-    "preview": "vite preview",
     "tauri": "tauri",
-    "tauri:build": "node scripts/build-multi-arch.cjs",
-    "tauri:build:x64": "npm run build && tauri build --target x86_64-pc-windows-msvc",
-    "tauri:build:x86": "npm run build && tauri build --target i686-pc-windows-msvc"
+    "tauri:build": "node scripts/build-current-system.cjs",
+    "tauri:build:win": "node scripts/build-windows-all.cjs",
+    "tauri:build:all": "node scripts/build-all-platforms.cjs"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.8.0",

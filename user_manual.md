@@ -20,11 +20,13 @@ CMTools is a portable (green) software, which means it doesn't require any insta
 1.  Download the latest version for your operating system from the official release page.
     - **For 64-bit Windows systems:** Download `CMTools.x64.exe`
     - **For 32-bit Windows systems:** Download `CMTools.x86.exe`
+    - **For Windows 7 systems:** Download `CMTools.Win7.x86.exe`
     - **For other operating systems:** Download the appropriate version
 2.  Unzip the downloaded file to any location you prefer (if applicable).
 3.  Double-click the executable file to run the application directly.
     - For 64-bit: Double-click `CMTools.x64.exe`
     - For 32-bit: Double-click `CMTools.x86.exe`
+    - For Windows 7: Double-click `CMTools.Win7.x86.exe`
 
 ![CMTools Interface](https://cdn.jsdelivr.net/gh/NTLx/Pic/PicGo/202507170855602.gif)
 
@@ -46,6 +48,9 @@ CMTools is a portable (green) software, which means it doesn't require any insta
 
 *   **64-bit version (CMTools.x64.exe):** Recommended for most modern Windows systems. Offers better performance and memory handling.
 *   **32-bit version (CMTools.x86.exe):** Suitable for older systems or specific environment requirements. Fully compatible with both 32-bit and 64-bit Windows systems.
+*   **Windows 7 Compatible version (CMTools.Win7.x86.exe):** Specifically optimized for Windows 7 systems, resolving API compatibility issues.
+
+> **Important Note:** If you encounter `ProcessPrng could not be located` error on Windows 7 systems, please use the `CMTools.Win7.x86.exe` version. For detailed information, refer to the [Windows 7 Compatibility Guide](WINDOWS7_COMPATIBILITY.md).
 
 ## 3. 🖥️ User Interface Overview
 
@@ -53,7 +58,7 @@ The main window of CMTools is divided into several sections:
 
 1.  **Header:**
     *   **Help (`帮助`/`Help`):** Opens the online help documentation (https://docs.dingtalk.com/i/nodes/mExel2BLV5xvg52YSErl4LvbWgk9rpMq).
-    *   **Version Display:** Shows the current version of the application (e.g., `v2.4.2`).
+    *   **Version Display:** Shows the current version of the application (e.g., `v2.5.0`).
     *   **Language Switch (`中文`/`English`):** Toggles the interface language between Chinese and English.
     *   **Theme Toggle (`暗`/`亮` or `Dark`/`Light`):** Switches between light and dark mode. The button's `title` attribute dynamically displays `切换到亮色模式`/`Switch to light mode` or `切换到暗色模式`/`Switch to dark mode`.
     *   **Logo and Title:** Displays the application's branding.
@@ -213,7 +218,11 @@ CMTools displays the following specific error messages:
    - **Symptom**: `Unable to write executable file data`
    - **Solution**: Free up disk space, especially in system temp directory
 
-5. **Antivirus Software Interference**
+6. **Windows 7 System Specific Errors**
+   - **Symptom**: `ProcessPrng could not be located in the dynamic link library bcryptprimitives.dll`
+   - **Solution**: Use Windows 7 compatible version `CMTools.Win7.x86.exe`, refer to [Windows 7 Compatibility Guide](WINDOWS7_COMPATIBILITY.md)
+
+7. **Antivirus Software Interference**
    - **Symptom**: `Failed to execute program` or `Command execution failed`
    - **Solution**: Add CMTools to antivirus software whitelist
 
@@ -244,11 +253,11 @@ A: Yes, CMTools is completely safe. The warning appears because the application 
 1. If Windows Security blocks the file, go to `Windows Security` → `Virus & threat protection`
 2. Under "Virus & threat protection settings", click `Manage settings`
 3. Scroll down to "Exclusions" and click `Add or remove exclusions`
-4. Click `Add an exclusion` → `File` and select `cmtools.exe`
+4. Click `Add an exclusion` → `File` and select `CMTools.exe`
 5. The file will be permanently trusted
 
 **Method 3: File Properties**
-1. Right-click on `cmtools.exe` and select `Properties`
+1. Right-click on `CMTools.exe` and select `Properties`
 2. Check the box `Unblock` at the bottom (if present)
 3. Click `OK` and try running the application again
 
@@ -257,6 +266,45 @@ A: Yes, CMTools is completely safe. The warning appears because the application 
 - Windows treats unsigned software with caution as a security measure
 - This is normal behavior and doesn't indicate any actual security risk
 - Many legitimate open-source applications show similar warnings
+
+---
+
+## 📚 Related Documentation
+
+### 📖 Complete Documentation Set
+- **[Version Selection Guide](VERSION_SELECTION_GUIDE.md)** - Detailed version selection and compatibility guide
+- **[Windows 7 Compatibility](WINDOWS7_COMPATIBILITY.md)** - Windows 7 system compatibility details
+- **[Windows 7 Solution](WIN7_COMPATIBILITY_SOLUTION.md)** - Windows 7 compatibility technical solutions
+- **[Build Configuration](build-config-options.md)** - Developer build configuration guide
+- **[README.md](README.md)** - Complete developer documentation
+
+### 🆘 Getting Help
+If you encounter issues during use:
+1. First consult the related documentation, especially the version selection guide and compatibility notes
+2. Confirm you're using the correct software version
+3. Check the common solutions in the troubleshooting section
+4. If the issue persists, seek technical support through the project page
+
+### 💡 Quick Links
+- **Online Help**: https://docs.dingtalk.com/i/nodes/mExel2BLV5xvg52YSErl4LvbWgk9rpMq
+- **GitHub Project**: https://github.com/Cubicise/CMTools
+- **Issue Reports**: Submit issue reports via GitHub Issues page
+
+### 🛠️ Developer Build Command Reference
+
+For developers and advanced users, here are the available build commands:
+
+| Command | Description | Use Case |
+|---------|-------------|----------|
+| `npm run tauri:build` | Build version matching current system environment | Daily development and testing |
+| `npm run tauri:build:win` | Build all Windows versions | Windows platform release |
+| `npm run tauri:build:all` | Build all supported platform versions | Multi-platform full release |
+
+> **Note**: The `npm run tauri:build` command automatically detects the current system environment and builds the corresponding version. For example, on a Windows 64-bit system it will build `CMTools.x64.exe`, and on a Windows 32-bit system it will build `CMTools.x86.exe`. The `npm run tauri:build:all` command builds all supported platform versions, including Windows, macOS, and Linux.
+
+---
+
+**CMTools Team** | Made with ❤️ for data analysis professionals
 
 # 📖 CMTools 用户手册
 
@@ -278,13 +326,15 @@ CMTools 是一款专为处理分析数据文件而设计的桌面应用程序。
 CMTools 是一款绿色软件，这意味着它无需安装。只需按照以下步骤操作：
 
 1.  从官方发布页面下载适用于您操作系统的最新版本。
-    - **对于64位Windows系统：** 下载 `CMTools.x64.exe`
-    - **对于32位Windows系统：** 下载 `CMTools.x86.exe`
+    - **对64位Windows系统：** 下载 `CMTools.x64.exe`
+    - **对32位Windows系统：** 下载 `CMTools.x86.exe`
+    - **对于Windows 7系统：** 下载 `CMTools.Win7.x86.exe`
     - **对于其他操作系统：** 下载相应版本
 2.  将下载的文件解压缩到您喜欢的任何位置（如适用）。
 3.  双击可执行文件直接运行应用程序。
-    - 对于64位：双击 `CMTools.x64.exe`
-    - 对于32位：双击 `CMTools.x86.exe`
+    - 对64位：双击 `CMTools.x64.exe`
+    - 对32位：双击 `CMTools.x86.exe`
+    - 对于Windows 7：双击 `CMTools.Win7.x86.exe`
 
 ![CMTools 界面](https://cdn.jsdelivr.net/gh/NTLx/Pic/PicGo/202507170855602.gif)
 
@@ -306,6 +356,9 @@ CMTools 是一款绿色软件，这意味着它无需安装。只需按照以下
 
 *   **64 位版本 (CMTools.x64.exe)：** 适用于大多数现代 Windows 系统。提供更好的性能和内存管理。
 *   **32 位版本 (CMTools.x86.exe)：** 适用于较旧的系统或特定环境要求。兼容 32 位和 64 位 Windows 系统。
+*   **Windows 7兼容版 (CMTools.Win7.x86.exe)：** 专门为Windows 7系统优化，解决API兼容性问题。
+
+> **重要提示：** 如果您在Windows 7系统上遇到 `ProcessPrng could not be located` 错误，请使用 `CMTools.Win7.x86.exe` 版本。详细信息请参考 [Windows 7兼容性指南](WINDOWS7_COMPATIBILITY.md)。
 
 ## 3. 🖥️ 用户界面概览
 
@@ -313,7 +366,7 @@ CMTools 的主窗口分为几个部分：
 
 1.  **标题栏：**
     *   **帮助 (`帮助`/`Help`)：** 打开在线帮助文档 (https://docs.dingtalk.com/i/nodes/mExel2BLV5xvg52YSErl4LvbWgk9rpMq)。
-    *   **版本显示：** 显示应用程序的当前版本（例如 `v2.4.2`）。
+    *   **版本显示：** 显示应用程序的当前版本（例如 `v2.5.0`）。
     *   **语言切换 (`中文`/`English`)：** 在中文和英文之间切换界面语言。
     *   **主题切换 (`暗`/`亮` 或 `Dark`/`Light`)：** 在亮色和暗色模式之间切换。按钮的 `title` 属性会根据当前语言动态显示 `切换到亮色模式`/`Switch to light mode` 或 `切换到暗色模式`/`Switch to dark mode`。
     *   **Logo 和标题：** 显示应用程序的品牌标识。
@@ -388,6 +441,15 @@ CMTools 的主窗口分为几个部分：
     *   `使用峰面积数据`：切换计算模式。
     *   `标准品样本名称`：对于识别用于归一化或比较的标准品至关重要。
 
+### 📊 SMNFiler_v1
+
+*   **用途：** 专门用于 SMN 数据处理和分析（版本 1）。
+*   **输入：** 可能包含对照样本的数据文件。
+*   **选项：**
+    *   `使用峰面积数据`：使用峰面积而非峰高进行计算。
+    *   `标准品样本名称`：指定用于比较的对照样本名称。
+    *   `Windows 系统优化`：针对 Windows 系统优化文件编码。
+
 ### 💉 SHCarrier
 
 *   **用途：** 另一种专业分析，可能用于携带者筛查。
@@ -402,26 +464,17 @@ CMTools 的主窗口分为几个部分：
 *   **用途：** 分析 3500dx 仪器数据中的 UPD 和其他异常情况（版本1）。
 *   **输入：** 来自 GeneMapper 的数据文件。
 *   **选项：**
-    *   `Windows 系统优化`：确保在 Windows 上正确处理字符编码（使用 `-e GBK` 参数）。
+    *   `Windows 系统优化`：确保在 Windows 上正确处理字符编码。
 *   **输出：** 结果文件生成在与输入文件相同的目录中。该工具支持自定义输出路径配置。
 *   **注意：** UPDFiler_v1 不支持峰面积数据计算选项。
 
 ### 🔍 UPDFiler_v2
 
-*   **用途：** 分析 3500dx 仪器数据中的 UPD 和其他异常情况。
+*   **用途：** 分析 3500dx 仪器数据中的 UPD 和其他异常情况（版本2）。
 *   **输入：** 来自 GeneMapper 的数据文件。
 *   **选项：**
     *   `Windows 系统优化`：确保在 Windows 上正确处理字符编码。
 *   **输出：** 结果文件生成在与输入文件相同的目录中。
-
-### 📊 SMNFiler_v1
-
-*   **用途：** 专门用于 SMN 数据处理和分析（版本 1）。
-*   **输入：** 可能包含对照样本的数据文件。
-*   **选项：**
-    *   `使用峰面积数据`：使用峰面积而非峰高进行计算。
-    *   `标准品样本名称`：指定用于比较的对照样本名称。
-    *   `Windows 系统优化`：针对 Windows 系统优化文件编码。
 
 ## 6. ❓ 常见问题与故障排除
 
@@ -473,7 +526,11 @@ CMTools 会显示以下具体的错误信息：
    - **现象**：`无法写入可执行文件数据`
    - **解决**：清理磁盘空间，特别是系统临时目录
 
-5. **防病毒软件干扰**
+6. **Windows 7系统特殊错误**
+   - **现象**: `ProcessPrng could not be located in the dynamic link library bcryptprimitives.dll`
+   - **解决**: 使用Windows 7兼容版本 `CMTools.Win7.x86.exe`，参考[Windows 7兼容性指南](WINDOWS7_COMPATIBILITY.md)
+
+7. **防病毒软件干扰**
    - **现象**：`执行程序失败` 或 `命令执行失败`
    - **解决**：将 CMTools 添加到防病毒软件白名单
 
@@ -504,11 +561,11 @@ CMTools 会显示以下具体的错误信息：
 1. 如果 Windows 安全中心阻止了文件，请转到 `Windows 安全中心` → `病毒和威胁防护`
 2. 在"病毒和威胁防护设置"下，点击 `管理设置`
 3. 向下滚动到"排除项"并点击 `添加或删除排除项`
-4. 点击 `添加排除项` → `文件`，然后选择 `cmtools.exe`
+4. 点击 `添加排除项` → `文件`，然后选择 `CMTools.exe`
 5. 该文件将被永久信任
 
 **方法三：文件属性设置**
-1. 右键点击 `cmtools.exe` 并选择 `属性`
+1. 右键点击 `CMTools.exe` 并选择 `属性`
 2. 在底部勾选 `解除阻止` 复选框（如果存在）
 3. 点击 `确定` 并重新尝试运行应用程序
 
@@ -517,3 +574,42 @@ CMTools 会显示以下具体的错误信息：
 - Windows 出于安全考虑对未签名软件保持谨慎态度
 - 这是正常行为，并不表示存在实际的安全风险
 - 许多合法的开源应用程序都会显示类似的警告
+
+---
+
+## 📚 相关文档
+
+### 📖 完整文档集合
+- **[版本选择指南](VERSION_SELECTION_GUIDE.md)** - 详细的版本选择和兼容性指南
+- **[Windows 7兼容性说明](WINDOWS7_COMPATIBILITY.md)** - Windows 7系统兼容性详细说明
+- **[Windows 7问题解决方案](WIN7_COMPATIBILITY_SOLUTION.md)** - Windows 7兼容性技术解决方案
+- **[构建配置选项](build-config-options.md)** - 开发者构建配置说明
+- **[README.md](README.md)** - 开发者完整文档
+
+### 🆘 获取帮助
+如果您在使用过程中遇到问题：
+1. 首先查阅相关文档，特别是版本选择指南和兼容性说明
+2. 确认使用了正确的软件版本
+3. 查看故障排除部分的常见问题解决方案
+4. 如问题仍未解决，可通过项目页面获取技术支持
+
+### 💡 快速链接
+- **在线帮助**: https://docs.dingtalk.com/i/nodes/mExel2BLV5xvg52YSErl4LvbWgk9rpMq
+- **GitHub项目页**: https://github.com/Cubicise/CMTools
+- **问题反馈**: 通过GitHub Issues页面提交问题报告
+
+### 🛠️ 开发者构建命令参考
+
+对于开发者和高级用户，以下是可用的构建命令：
+
+| 命令 | 说明 | 适用场景 |
+|------|------|----------|
+| `npm run tauri:build` | 构建当前系统环境匹配的版本 | 日常开发和测试 |
+| `npm run tauri:build:win` | 构建所有Windows版本 | Windows平台发布 |
+| `npm run tauri:build:all` | 构建所有支持的平台版本 | 多平台完整发布 |
+
+> **注意**：`npm run tauri:build` 命令会自动检测当前系统环境并构建相应的版本。例如在Windows 64位系统上会构建 `CMTools.x64.exe`，在Windows 32位系统上会构建 `CMTools.x86.exe`。`npm run tauri:build:all` 命令则会构建所有支持的平台版本，包括Windows、macOS和Linux。
+
+---
+
+**CMTools Team** | Made with ❤️ for data analysis professionals

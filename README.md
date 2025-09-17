@@ -5,9 +5,9 @@
   <h3>现代化的色谱数据处理工具集</h3>
   <p>基于 Tauri 2.0 + Vue 3 + TypeScript 构建的跨平台、高性能桌面应用</p>
   
-  [![Version](https://img.shields.io/badge/version--blue.svg)](https://github.com/USERNAME/REPOSITORY)
+  [![Version](https://img.shields.io/badge/version-2.5.0-blue.svg)](https://github.com/Cubicise/CMTools)
   [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-  [![Tauri](https://img.shields.io/badge/Tauri-2.0-orange.svg)](https://tauri.app/)
+  [![Tauri](https://img.shields.io/badge/Tauri-2.8-orange.svg)](https://tauri.app/)
   [![Vue](https://img.shields.io/badge/Vue-3.5-green.svg)](https://vuejs.org/)
 </div>
 
@@ -63,10 +63,15 @@ CMTools/
 │   │   └── `lib.rs`         # 核心业务逻辑，封装并调用外部工具
 │   ├── `Cargo.toml`         # Rust 依赖配置
 │   └── `tauri.conf.json`    # Tauri 应用核心配置
-├── `scripts`/               # 构建脚本
-│   └── `build-multi-arch.cjs` # 多架构自动构建脚本
+├── `scripts`/               # 构建脚本集合
+│   ├── `build-current-system.cjs` # 当前系统环境构建脚本
+│   ├── `build-windows-all.cjs` # Windows全版本构建脚本
+│   ├── `build-all-platforms.cjs` # 全平台构建脚本
 ├── `user_manual.md`         # 用户手册
 ├── `build-config-options.md` # 构建配置选项说明
+├── `WINDOWS7_COMPATIBILITY.md` # Windows 7兼容性详细说明
+├── `WIN7_COMPATIBILITY_SOLUTION.md` # Windows 7兼容性问题解决方案
+├── `VERSION_SELECTION_GUIDE.md` # 版本选择指南
 ├── `package.json`           # Node.js 项目元数据和依赖配置
 └── `README.md`              # 开发者文档
 ```
@@ -106,24 +111,25 @@ CMTools/
 
 ### 构建生产版本
 
-#### 单架构构建（推荐用于开发测试）
-```bash
-# 构建绿色版应用（默认64位）
-npm run tauri build
+#### 构建命令说明
 
-# 构建64位Windows版本
-npm run tauri:build:x64
+| 命令 | 说明 | 适用场景 |
+|------|------|----------|
+| `npm run tauri:build` | 构建当前系统环境匹配的版本 | 日常开发和测试 |
+| `npm run tauri:build:win` | 构建所有Windows版本 | Windows平台发布 |
+| `npm run tauri:build:all` | 构建所有支持的平台版本 | 多平台完整发布 |
 
-# 构建32位Windows版本（需要先安装32位目标）
-rustup target add i686-pc-windows-msvc
-npm run tauri:build:x86
+#### 构建当前系统环境版本
 ```
-
-#### 多架构自动构建（推荐用于发布分发）
-```bash
-# 自动构建32位和64位版本，并按规范命名
+# 构建当前系统环境匹配的版本
 npm run tauri:build
 ```
+
+此命令将自动检测当前系统环境并构建对应的版本：
+- Windows x64系统：构建 `CMTools.x64.exe`
+- Windows x86系统：构建 `CMTools.x86.exe`
+- Windows 7系统：建议使用 `npm run tauri:build:win`
+- 其他系统：构建默认目标平台版本
 
 此命令将：
 1. 自动检查并安装所需的Rust构建目标
@@ -131,11 +137,33 @@ npm run tauri:build
 3. 按照命名规范重命名文件为 `CMTools.x86.exe` 和 `CMTools.x64.exe`
 4. 将重命名后的文件复制到项目根目录便于访问
 
+#### 构建所有Windows版本
+```
+# 构建所有Windows版本（64位、32位、Windows 7兼容版）
+npm run tauri:build:win
+```
+
+此命令将构建所有Windows支持的版本：
+- `CMTools.x64.exe` - 64位Windows版本
+- `CMTools.x86.exe` - 32位Windows版本
+- `CMTools.Win7.x86.exe` - Windows 7兼容版本
+
+#### 构建所有平台版本
+```
+# 构建所有支持的平台版本
+npm run tauri:build:all
+```
+
+此命令将构建所有支持的平台版本，包括Windows、macOS和Linux。
+
+> **注意**：跨平台构建需要相应的开发环境。在Windows系统上，默认构建Windows版本；在macOS上构建macOS版本；在Linux上构建Linux版本。
+
 #### 构建产物说明
 
 **软件命名规范：**
 - **64位版本：** `CMTools.x64.exe`
 - **32位版本：** `CMTools.x86.exe`
+- **Windows 7兼容版：** `CMTools.Win7.x86.exe`
 
 **文件位置：**
 - **便于使用：** 项目根目录下的重命名版本（推荐）
@@ -146,6 +174,15 @@ npm run tauri:build
 若需创建传统安装包，可在 `src-tauri/target/release/bundle/` 目录下查找。
 
 ## 🛠️ 开发指南
+
+### 快速参考：构建命令
+
+| 命令 | 说明 | 适用场景 |
+|------|------|----------|
+| `npm run tauri:build` | 构建当前系统环境匹配的版本 | 日常开发和测试 |
+| `npm run tauri:build:win` | 构建所有Windows版本 | Windows平台发布 |
+| `npm run tauri:build:all` | 构建所有支持的平台版本 | 多平台完整发布 |
+| `npm run tauri dev` | 启动开发模式 | 日常开发 |
 
 ### 代码规范
 
@@ -284,7 +321,7 @@ const results = await invoke('process_files', {
 
 - **查看后端日志**：在开发模式下 (`npm run tauri dev`)，后端 Rust 代码中的 `println!` 宏输出会直接显示在启动应用的控制台中。`lib.rs` 中已包含用于打印执行命令、工作目录和参数的调试代码 (`#[cfg(debug_assertions)]`)，这对于调试参数是否正确传递非常有用。
 - **检查临时文件**：您可以前往系统的临时目录（Windows 上通常是 `%TEMP%`）查找名为 `cmtools_*.exe` 的文件，以确认可执行文件是否被正确释放。
-- **多架构构建调试**：使用 `scripts/build-multi-arch.cjs` 脚本时，可以查看控制台输出了解构建进度和可能的错误信息。脚本会自动检查Rust目标安装情况并显示构建结果。
+- **多架构构建调试**：使用 `scripts/build-all-platforms.cjs` 脚本时，可以查看控制台输出了解构建进度和可能的错误信息。脚本会自动检查Rust目标安装情况并显示构建结果。
 
 ## 🧪 测试
 
@@ -351,7 +388,7 @@ npm run tauri:build
 
 ## 🐛 问题报告
 
-如果您发现了 Bug 或有功能建议，请前往 [Issues](https://github.com/USERNAME/REPOSITORY/issues) 页面：
+如果您发现了 Bug 或有功能建议，请前往 [Issues](https://github.com/Cubicise/CMTools/issues) 页面：
 
 1.  搜索现有 Issue，避免重复提交。
 2.  若无相关问题，请创建一个新的 Issue。
@@ -360,6 +397,10 @@ npm run tauri:build
 ## 📚 相关资源
 
 - **用户手册**：[user_manual.md](user_manual.md)
+- **版本选择指南**：[VERSION_SELECTION_GUIDE.md](VERSION_SELECTION_GUIDE.md)
+- **Windows 7兼容性说明**：[WINDOWS7_COMPATIBILITY.md](WINDOWS7_COMPATIBILITY.md)
+- **Windows 7问题解决方案**：[WIN7_COMPATIBILITY_SOLUTION.md](WIN7_COMPATIBILITY_SOLUTION.md)
+- **构建配置选项**：[build-config-options.md](build-config-options.md)
 - **Tauri 官方文档**：[tauri.app](https://tauri.app/)
 - **Vue 3 官方文档**：[vuejs.org](https://vuejs.org/)
 - **Rust 官方文档**：[doc.rust-lang.org](https://doc.rust-lang.org/)

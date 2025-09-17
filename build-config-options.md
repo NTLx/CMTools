@@ -5,7 +5,7 @@
 
 ### 多架构构建支持
 
-项目支持Windows平台32位和64位架构的自动构建，通过专门的构建脚本 `scripts/build-multi-arch.cjs` 实现。
+项目支持Windows平台32位和64位架构的自动构建，通过专门的构建脚本 `scripts/build-current-system.cjs` 实现。
 
 **支持的架构：**
 - **x64** (x86_64-pc-windows-msvc): 64位Windows版本
@@ -76,19 +76,20 @@
 
 ### 当前推荐命令
 
-```bash
-# 多架构自动构建（推荐）
+```
+# 构建当前系统环境匹配的版本
 npm run tauri:build
 
-# 单个架构构建
-npm run tauri build  # 默认64位
-npm run tauri:build:x64  # 明确指定64位
-npm run tauri:build:x86  # 明确指定32位
+# 构建所有Windows版本
+npm run tauri:build:win
+
+# 构建所有支持的平台版本
+npm run tauri:build:all
 ```
 
 ### 多架构构建脚本说明
 
-`npm run tauri:build` 命令使用 `scripts/build-multi-arch.cjs` 脚本，自动执行以下操作：
+`npm run tauri:build` 命令使用 `scripts/build-current-system.cjs` 脚本，自动执行以下操作：
 
 1. **环境检查**：自动检查并安装所需的Rust构建目标
 2. **清理旧文件**：删除之前的构建产物
@@ -107,7 +108,7 @@ npm run build
 npm run tauri dev
 
 # 检查配置
-npm run tauri build --help
+npm run tauri -- build --help
 ```
 
 ## 输出文件位置
@@ -172,8 +173,9 @@ npm run tauri build --help
    - 便于软件分发和部署
 
 2. **使用建议：**
-   - **开发阶段：** 使用单架构构建 (`npm run tauri build`)
-   - **发布阶段：** 使用多架构构建 (`npm run tauri:build`)
+   - **开发阶段：** 使用当前系统环境构建 (`npm run tauri:build`)
+   - **Windows发布阶段：** 使用Windows全版本构建 (`npm run tauri:build:win`)
+   - **多平台发布阶段：** 使用全平台构建 (`npm run tauri:build:all`)
    - **特殊需求：** 根据目标用户群体选择对应架构
 
 3. **文件管理：**
