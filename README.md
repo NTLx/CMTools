@@ -265,6 +265,7 @@ const results = await invoke('process_files', {
         "AneuFiler" => ("AneuFiler.exe", include_bytes!("../../AneuFiler.exe")),
         "Aneu23" => ("Aneu23.exe", include_bytes!("../../Aneu23.exe")),
         "SMNFiler_v1" => ("SMNFiler_v1.exe", include_bytes!("../../SMNFiler_v1.exe")),
+        "SMNFiler_v2" => ("SMNFiler_v2.exe", include_bytes!("../../SMNFiler_v2.exe")),
         "SHCarrier" => ("SHCarrier.exe", include_bytes!("../../SHCarrier.exe")),
         "UPDFiler_v1" => ("UPDFiler_v1.exe", include_bytes!("../../UPDFiler_v1.exe")),
         "UPDFiler_v2" => ("UPDFiler_v2.exe", include_bytes!("../../UPDFiler_v2.exe")),
@@ -293,6 +294,17 @@ const results = await invoke('process_files', {
             // 语言设置
             if language == "zh-CN" { cmd.arg("-l"); }
         }
+        "SMNFiler_v2" => { // SMNFiler_v2 特有的参数处理
+            cmd.arg("-i").arg(&file_path);
+            // 标准品样本名称
+            if let Some(std_name) = &std_sample_name {
+                cmd.arg("-STD").arg(std_name);
+            }
+            // Windows 系统优化
+            if windows_optimization { cmd.arg("-GBK"); }
+            // 开发者模式
+            cmd.arg("-dev");
+        }
         "NewTool" => { // <-- 新增此分支
             cmd.arg("-i").arg(&file_path);
             // 添加 NewTool 特有的参数
@@ -308,6 +320,7 @@ const results = await invoke('process_files', {
       { name: ToolType.AneuFiler, label: "AneuFiler", supportsStdSample: false, supportsWindowsOptimization: false, supportsAreaData: true },
       { name: ToolType.Aneu23, label: "Aneu23", supportsStdSample: true, supportsWindowsOptimization: false, supportsAreaData: true },
       { name: ToolType.SMNFiler_v1, label: "SMNFiler_v1", supportsStdSample: true, supportsWindowsOptimization: true, supportsAreaData: true },
+      { name: ToolType.SMNFiler_v2, label: "SMNFiler_v2", supportsStdSample: true, supportsWindowsOptimization: true, supportsAreaData: false }, // SMNFiler_v2 不支持峰面积数据选项
       { name: ToolType.SHCarrier, label: "SHCarrier", supportsStdSample: true, supportsWindowsOptimization: true, supportsAreaData: true },
       { name: ToolType.UPDFiler_v1, label: "UPDFiler_v1", supportsStdSample: false, supportsWindowsOptimization: true, supportsAreaData: false },
       { name: ToolType.UPDFiler_v2, label: "UPDFiler_v2", supportsStdSample: false, supportsWindowsOptimization: true, supportsAreaData: false },

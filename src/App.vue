@@ -8,6 +8,7 @@ enum ToolType {
   AneuFiler = 'AneuFiler',
   Aneu23 = 'Aneu23',
   SMNFiler_v1 = 'SMNFiler_v1',
+  SMNFiler_v2 = 'SMNFiler_v2',
   SHCarrier = 'SHCarrier',
   UPDFiler_v1 = 'UPDFiler_v1',
   UPDFiler_v2 = 'UPDFiler_v2',
@@ -42,7 +43,7 @@ interface ProcessResult {
 }
 
 // 获取应用版本号
-const appVersion = (globalThis as any).__APP_VERSION__ || '2.5.1';
+const appVersion = (globalThis as any).__APP_VERSION__ || '2.6.0';
 
 const selectedFiles = ref<string[]>([]);
 const selectedTool = ref<ToolType>(ToolType.AneuFiler);
@@ -78,7 +79,14 @@ const tools: ToolConfig[] = [
     label: 'SMNFiler_v1',
     supportsStdSample: true,
     supportsWindowsOptimization: true,
-    supportsAreaData: true,
+    supportsAreaData: true, // SMNFiler_v1 支持峰面积数据选项
+  },
+  {
+    name: ToolType.SMNFiler_v2,
+    label: 'SMNFiler_v2',
+    supportsStdSample: true,
+    supportsWindowsOptimization: true,
+    supportsAreaData: false, // SMNFiler_v2 不支持峰面积数据选项
   },
   {
     name: ToolType.SHCarrier,

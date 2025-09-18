@@ -58,7 +58,7 @@ The main window of CMTools is divided into several sections:
 
 1.  **Header:**
     *   **Help (`帮助`/`Help`):** Opens the online help documentation (https://docs.dingtalk.com/i/nodes/mExel2BLV5xvg52YSErl4LvbWgk9rpMq).
-    *   **Version Display:** Shows the current version of the application (e.g., `v2.5.1`).
+    *   **Version Display:** Shows the current version of the application (e.g., `v2.6.0`).
     *   **Language Switch (`中文`/`English`):** Toggles the interface language between Chinese and English.
     *   **Theme Toggle (`暗`/`亮` or `Dark`/`Light`):** Switches between light and dark mode. The button's `title` attribute dynamically displays `切换到亮色模式`/`Switch to light mode` or `切换到暗色模式`/`Switch to dark mode`.
     *   **Logo and Title:** Displays the application's branding.
@@ -167,6 +167,24 @@ Click on one of the tool buttons (`AneuFiler`, `Aneu23`, `SMNFiler_v1`, `SHCarri
     *   `使用峰面积数据`：使用峰面积而非峰高进行计算。
     *   `标准品样本名称`：指定用于比较的对照样本名称。
     *   `Windows 系统优化`：针对 Windows 系统优化文件编码。
+
+### 📊 SMNFiler_v2
+
+*   **用途：** 专门用于 SMN 数据处理和分析（版本 2）。
+*   **输入：** 可能包含对照样本的数据文件。
+*   **选项：**
+    *   `标准品样本名称`：指定用于比较的对照样本名称。
+    *   `Windows 系统优化`：针对 Windows 系统优化文件编码。
+*   **注意：** SMNFiler_v2 不支持使用峰面积数据进行计算，算法文档要求使用峰高数据。
+
+### 💉 SHCarrier
+
+*   **用途：** 另一种专业分析，可能用于携带者筛查。
+*   **输入：** 数据文件，可能带有标准品。
+*   **选项：**
+    *   `使用峰面积数据`：切换计算模式。
+    *   `标准品样本名称`：用于识别标准品样本。
+    *   `Windows 系统优化`：确保在 Windows 上正确处理字符编码。
 
 ## 6. ❓ FAQ & Troubleshooting
 
@@ -366,7 +384,7 @@ CMTools 的主窗口分为几个部分：
 
 1.  **标题栏：**
     *   **帮助 (`帮助`/`Help`)：** 打开在线帮助文档 (https://docs.dingtalk.com/i/nodes/mExel2BLV5xvg52YSErl4LvbWgk9rpMq)。
-    *   **版本显示：** 显示应用程序的当前版本（例如 `v2.5.1`）。
+    *   **版本显示：** 显示应用程序的当前版本（例如 `v2.6.0`）。
     *   **语言切换 (`中文`/`English`)：** 在中文和英文之间切换界面语言。
     *   **主题切换 (`暗`/`亮` 或 `Dark`/`Light`)：** 在亮色和暗色模式之间切换。按钮的 `title` 属性会根据当前语言动态显示 `切换到亮色模式`/`Switch to light mode` 或 `切换到暗色模式`/`Switch to dark mode`。
     *   **Logo 和标题：** 显示应用程序的品牌标识。
@@ -449,6 +467,15 @@ CMTools 的主窗口分为几个部分：
     *   `使用峰面积数据`：使用峰面积而非峰高进行计算。
     *   `标准品样本名称`：指定用于比较的对照样本名称。
     *   `Windows 系统优化`：针对 Windows 系统优化文件编码。
+
+### 📊 SMNFiler_v2
+
+*   **用途：** 专门用于 SMN 数据处理和分析（版本 2）。
+*   **输入：** 可能包含对照样本的数据文件。
+*   **选项：**
+    *   `标准品样本名称`：指定用于比较的对照样本名称。
+    *   `Windows 系统优化`：针对 Windows 系统优化文件编码。
+*   **注意：** SMNFiler_v2 不支持使用峰面积数据进行计算，算法文档要求使用峰高数据。
 
 ### 💉 SHCarrier
 
