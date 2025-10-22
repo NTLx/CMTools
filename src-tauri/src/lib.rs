@@ -79,13 +79,13 @@ impl Tool {
     // 获取嵌入的可执行文件数据
     fn exe_data(&self) -> &'static [u8] {
         match self {
-            Tool::AneuFiler => include_bytes!("../../AneuFiler.exe"),
-            Tool::Aneu23 => include_bytes!("../../Aneu23.exe"),
-            Tool::SMNFilerV1 => include_bytes!("../../SMNFiler_v1.exe"),
-            Tool::SMNFilerV2 => include_bytes!("../../SMNFiler_v2.exe"),
-            Tool::SHCarrier => include_bytes!("../../SHCarrier.exe"),
-            Tool::UpdfilerV1 => include_bytes!("../../UPDFiler_v1.exe"),
-            Tool::UpdfilerV2 => include_bytes!("../../UPDFiler_v2.exe"),
+            Tool::AneuFiler => include_bytes!("../../src/assets/AneuFiler.exe"),
+            Tool::Aneu23 => include_bytes!("../../src/assets/Aneu23.exe"),
+            Tool::SMNFilerV1 => include_bytes!("../../src/assets/SMNFiler_v1.exe"),
+            Tool::SMNFilerV2 => include_bytes!("../../src/assets/SMNFiler_v2.exe"),
+            Tool::SHCarrier => include_bytes!("../../src/assets/SHCarrier.exe"),
+            Tool::UpdfilerV1 => include_bytes!("../../src/assets/UPDFiler_v1.exe"),
+            Tool::UpdfilerV2 => include_bytes!("../../src/assets/UPDFiler_v2.exe"),
         }
     }
     
