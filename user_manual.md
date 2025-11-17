@@ -13,44 +13,35 @@ CMTools is a desktop application designed to process analytical data files. It p
 *   **🌍 Multi-language Support:** Available in English and Chinese.
 *   **🎨 Light/Dark Mode:** Switch between themes for your visual comfort.
 
-## 2. 🚀 How to Run
+## 2. 🚀 快速开始
 
-CMTools is a portable (green) software, which means it doesn't require any installation. Simply follow these steps:
+### 系统要求
 
-1.  Download the latest version for your operating system from the official release page.
-    - **For 64-bit Windows systems:** Download `CMTools.x64.exe`
-    - **For 32-bit Windows systems:** Download `CMTools.x86.exe`
-    - **For Windows 7 systems:** Download `CMTools.Win7.x86.exe`
-    - **For other operating systems:** Download the appropriate version
-2.  Unzip the downloaded file to any location you prefer (if applicable).
-3.  Double-click the executable file to run the application directly.
-    - For 64-bit: Double-click `CMTools.x64.exe`
-    - For 32-bit: Double-click `CMTools.x86.exe`
-    - For Windows 7: Double-click `CMTools.Win7.x86.exe`
+- **操作系统**：Windows 10 版本 1809 或更高版本
+- **存储空间**：至少 200MB 可用空间
+- **运行时**：Microsoft Edge WebView2（现代 Windows 系统通常已预装）
 
-![CMTools Interface](https://cdn.jsdelivr.net/gh/NTLx/Pic/PicGo/202507170855602.gif)
+### 安装步骤
 
-**Benefits of Portable Software:**
+CMTools 是绿色软件，无需安装：
 
-*   **✅ No Installation Needed:** Runs directly without a complex setup process.
-*   **🧹 System Cleanliness:** It does not write data to the system registry or create hidden files on your computer, preventing system clutter.
-*   **🎒 Portability:** You can store it on a USB drive or cloud storage and run it on any compatible computer.
-*   **🗑️ Easy Removal:** To uninstall, simply delete the application folder. No residue will be left on your system.
+1. **下载适合您系统的版本**：
+   - **64位 Windows**：下载 `CMTools.x64.exe`（推荐）
+   - **32位 Windows**：下载 `CMTools.x86.exe`
+   - **Windows 7**：下载 `CMTools.Win7.x86.exe`
 
-**System Requirements:**
+2. **运行软件**：双击下载的 `.exe` 文件即可启动
 
-*   **Operating System:** Windows 10 version 1809 (17763) or higher
-*   **Architecture:** x64, x86, or ARM64
-*   **Storage:** At least 200MB available storage space
-*   **Runtime:** Microsoft Edge WebView2 runtime (automatically installed on most modern Windows systems)
+3. **Windows 安全警告**：如果系统提示安全警告，点击"更多信息" → "仍要运行"
 
-**Version Selection Guide:**
+### 绿色软件优势
 
-*   **64-bit version (CMTools.x64.exe):** Recommended for most modern Windows systems. Offers better performance and memory handling.
-*   **32-bit version (CMTools.x86.exe):** Suitable for older systems or specific environment requirements. Fully compatible with both 32-bit and 64-bit Windows systems.
-*   **Windows 7 Compatible version (CMTools.Win7.x86.exe):** Specifically optimized for Windows 7 systems, resolving API compatibility issues.
+✅ **无需安装** - 双击即可运行  
+✅ **系统干净** - 不向注册表写入数据  
+✅ **便携使用** - 可放在U盘或云端  
+✅ **轻松删除** - 直接删除文件即可卸载
 
-> **Important Note:** If you encounter `ProcessPrng could not be located` error on Windows 7 systems, please use the `CMTools.Win7.x86.exe` version. For detailed information, refer to the [Windows 7 Compatibility Guide](WINDOWS7_COMPATIBILITY.md).
+> **Windows 7 用户注意**：如果遇到 `ProcessPrng could not be located` 错误，请确保使用 `CMTools.Win7.x86.exe` 版本
 
 ## 3. 🖥️ User Interface Overview
 
@@ -116,75 +107,73 @@ Click on one of the tool buttons (`AneuFiler`, `Aneu23`, `SMNFiler_v1`, `SHCarri
 -   If any errors occurred, a dialog box will pop up with detailed error messages.
 -   You can click on any result item to quickly locate the original file in your file explorer.
 
-## 5. ⚙️ Tool-Specific Details
+## 5. ⚙️ 工具使用指南
 
-### 🧬 AneuFiler
+### 🧬 AneuFiler（通用数据筛选）
+**用途**：通用数据筛选和过滤
 
-*   **Purpose:** General-purpose data filtering.
-*   **Input:** Data files.
-*   **Options:**
-    *   `Use peak area data`: Toggles between peak height and peak area for calculations.
+**选项说明**：
+- **使用峰面积数据**：勾选后使用峰面积计算，不勾选使用峰高计算
 
-### 🔬 Aneu23
+---
 
-*   **Purpose:** Specialized analysis, possibly related to aneuploidy screening with 23 chromosome pairs.
-*   **Input:** Data files that may contain a standard sample.
-*   **Options:**
-    *   `Use peak area data`: Toggles calculation mode.
-    *   `Standard Sample Name`: Crucial for identifying the standard for normalization or comparison.
+### 🔬 Aneu23（染色体非整倍性筛查）
+**用途**：专门用于23对染色体非整倍性筛查分析
 
-### 💉 SHCarrier
+**选项说明**：
+- **使用峰面积数据**：切换计算模式（峰面积/峰高）
+- **标准品样本名称**：输入标准品样本名称（如：STD）
 
-*   **Purpose:** Another specialized analysis, potentially for carrier screening.
-*   **Input:** Data files, possibly with a standard.
-*   **Options:**
-    *   `Use peak area data`: Toggles calculation mode.
-    *   `Standard Sample Name`: For identifying the standard sample.
-    *   `Windows System Optimization`: Ensures correct handling of character encoding on Windows.
+---
 
-### 🔍 UPDFiler_v1
+### 📊 SMNFiler_v1（SMN数据分析 v1）
+**用途**：专门用于SMN基因数据处理和分析（版本1）
 
-*   **Purpose:** Analyzes 3500dx instrument data for UPD and other abnormalities (version 1).
-*   **Input:** Data files from GeneMapper.
-*   **Options:**
-    *   `Windows System Optimization`: Ensures correct handling of character encoding on Windows (uses `-e GBK` parameter).
-*   **Output:** Result files are generated in the same directory as the input files. The tool supports custom output path configuration.
-*   **Note:** UPDFiler_v1 does not support peak area data calculation options.
+**选项说明**：
+- **使用峰面积数据**：使用峰面积而非峰高进行计算
+- **标准品样本名称**：指定标准品样本名称
+- **Windows系统优化**：建议Windows用户保持勾选
 
-### 🔍 UPDFiler_v2
+---
 
-*   **Purpose:** Analyzes 3500dx instrument data for UPD and other abnormalities.
-*   **Input:** Data files from GeneMapper.
-*   **Options:****
-    *   `Windows System Optimization`: Ensures correct handling of character encoding on Windows.
-*   **Output:** Result files are generated in the same directory as the input files.
+### 📊 SMNFiler_v2（SMN数据分析 v2）
+**用途**：专门用于SMN基因数据处理和分析（版本2）
 
-### 📊 SMNFiler_v1
+**选项说明**：
+- **标准品样本名称**：指定标准品样本名称
+- **Windows系统优化**：建议Windows用户保持勾选
 
-*   **用途：** 专门用于 SMN 数据处理和分析（版本 1）。
-*   **输入：** 可能包含对照样本的数据文件。
-*   **选项：**
-    *   `使用峰面积数据`：使用峰面积而非峰高进行计算。
-    *   `标准品样本名称`：指定用于比较的对照样本名称。
-    *   `Windows 系统优化`：针对 Windows 系统优化文件编码。
+⚠️ **注意**：此版本不支持峰面积数据选项，必须使用峰高数据
 
-### 📊 SMNFiler_v2
+---
 
-*   **用途：** 专门用于 SMN 数据处理和分析（版本 2）。
-*   **输入：** 可能包含对照样本的数据文件。
-*   **选项：**
-    *   `标准品样本名称`：指定用于比较的对照样本名称。
-    *   `Windows 系统优化`：针对 Windows 系统优化文件编码。
-*   **注意：** SMNFiler_v2 不支持使用峰面积数据进行计算，算法文档要求使用峰高数据。
+### 💉 SHCarrier（携带者筛查）
+**用途**：用于携带者筛查分析
 
-### 💉 SHCarrier
+**选项说明**：
+- **使用峰面积数据**：切换计算模式（峰面积/峰高）
+- **标准品样本名称**：指定标准品样本名称
+- **Windows系统优化**：建议Windows用户保持勾选
 
-*   **用途：** 另一种专业分析，可能用于携带者筛查。
-*   **输入：** 数据文件，可能带有标准品。
-*   **选项：**
-    *   `使用峰面积数据`：切换计算模式。
-    *   `标准品样本名称`：用于识别标准品样本。
-    *   `Windows 系统优化`：确保在 Windows 上正确处理字符编码。
+---
+
+### 🔍 UPDFiler_v1（UPD分析 v1）
+**用途**：分析3500dx仪器数据中的UPD和其他异常情况（版本1）
+
+**选项说明**：
+- **Windows系统优化**：建议Windows用户保持勾选
+
+⚠️ **注意**：此版本不支持峰面积数据选项
+
+---
+
+### 🔍 UPDFiler_v2（UPD分析 v2）
+**用途**：分析3500dx仪器数据中的UPD和其他异常情况（版本2）
+
+**选项说明**：
+- **Windows系统优化**：建议Windows用户保持勾选
+
+⚠️ **注意**：此版本不支持峰面积数据选项
 
 ## 6. ❓ FAQ & Troubleshooting
 
@@ -290,15 +279,11 @@ A: Yes, CMTools is completely safe. The warning appears because the application 
 ## 📚 Related Documentation
 
 ### 📖 Complete Documentation Set
-- **[Version Selection Guide](VERSION_SELECTION_GUIDE.md)** - Detailed version selection and compatibility guide
-- **[Windows 7 Compatibility](WINDOWS7_COMPATIBILITY.md)** - Windows 7 system compatibility details
-- **[Windows 7 Solution](WIN7_COMPATIBILITY_SOLUTION.md)** - Windows 7 compatibility technical solutions
-- **[Build Configuration](build-config-options.md)** - Developer build configuration guide
 - **[README.md](README.md)** - Complete developer documentation
 
 ### 🆘 Getting Help
 If you encounter issues during use:
-1. First consult the related documentation, especially the version selection guide and compatibility notes
+1. First consult this user manual and the README.md documentation
 2. Confirm you're using the correct software version
 3. Check the common solutions in the troubleshooting section
 4. If the issue persists, seek technical support through the project page
@@ -503,140 +488,88 @@ CMTools 的主窗口分为几个部分：
     *   `Windows 系统优化`：确保在 Windows 上正确处理字符编码。
 *   **输出：** 结果文件生成在与输入文件相同的目录中。
 
-## 6. ❓ 常见问题与故障排除
+## 6. ❓ 常见问题与解决方法
 
-**❓ 问：支持哪些文件格式？**
+### 📋 问题速查表
 
-答：支持的文件格式取决于底层的处理工具。请参考您正在使用的特定工具的文档。
+| 问题现象 | 可能原因 | 解决方法 |
+|---------|---------|---------|
+| 文件处理失败 | 文件格式不支持 | 确保文件为 .txt 或 .csv 格式 |
+| 文件不存在错误 | 文件路径有误 | 检查文件路径，避免特殊字符 |
+| 无法创建临时文件 | 权限不足 | 以管理员身份运行软件 |
+| 磁盘空间不足 | 临时目录已满 | 清理系统临时文件夹 |
+| Windows 7 运行错误 | 版本不兼容 | 使用 `CMTools.Win7.x86.exe` 版本 |
+| 防病毒软件拦截 | 误报为病毒 | 将 CMTools 添加到白名单 |
 
-**❓ 问：输出文件保存在哪里？**
+### 🔧 常见错误及解决方法
 
-答：输出文件保存在与原始输入文件相同的目录中。
+**1. 文件格式错误**
+- **现象**：提示"文件处理错误"或处理后无输出文件
+- **解决**：确保选择正确的文件格式（通常是 .txt 或 .csv 文件）
 
-**❓ 问：我在处理过程中遇到了错误。我该怎么办？**
+**2. 文件路径问题**
+- **现象**：提示"文件不存在"或"无法打开目录"
+- **解决**：确保文件路径中没有特殊字符，避免使用中文路径
 
-**答：** 如果您在处理过程中遇到错误，请按照以下步骤进行故障排除：
+**3. 权限不足**
+- **现象**：提示"无法创建临时可执行文件"或"IO 错误"
+- **解决**：右键点击 CMTools.exe，选择"以管理员身份运行"
 
-#### 🔍 软件明确定义的错误信息
+**4. 磁盘空间不足**
+- **现象**：提示"无法写入可执行文件数据"
+- **解决**：清理磁盘空间，特别是系统临时目录（%TEMP%）
 
-CMTools 会显示以下具体的错误信息：
+**5. Windows 7 特殊错误**
+- **现象**：提示 `ProcessPrng could not be located`
+- **解决**：必须使用 `CMTools.Win7.x86.exe` 版本
 
-**中文错误信息：**
-- `文件不存在` - 选择的文件路径无效或文件已被删除
-- `处理文件失败` - 文件处理过程中出现问题
-- `执行程序失败` - 内部工具程序无法正常启动
-- `未知的工具名称` - 选择了不支持的处理工具
-- `无法打开目录` - 无法访问文件所在的文件夹
-- `无法创建临时可执行文件` - 系统临时目录权限不足
-- `无法写入可执行文件数据` - 磁盘空间不足或权限问题
-- `无法获取文件权限` / `无法设置可执行权限` - 文件权限相关问题
-- `任务执行失败` - 处理任务异常终止
-- `IO 错误` - 文件读写操作失败
-- `命令执行失败` - 底层命令执行出错
-- `文件处理错误` - 文件格式或内容问题
+**6. 防病毒软件拦截**
+- **现象**：提示"执行程序失败"或"命令执行失败"
+- **解决**：将 CMTools 添加到防病毒软件白名单
 
-#### 🛠️ 常见错误及解决方案
+### 🛡️ Windows 安全警告处理
 
-1. **文件格式错误**
-   - **现象**：`文件处理错误` 或处理后无输出文件
-   - **解决**：确保选择正确的文件格式（通常是 .txt 或 .csv 文件）
+**为什么出现安全警告？**
+- CMTools 是绿色软件，没有商业代码签名
+- Windows 对未签名软件显示安全警告是正常保护机制
+- 这并不表示软件不安全
 
-2. **文件路径问题**
-   - **现象**：`文件不存在` 或 `无法打开目录`
-   - **解决**：确保文件路径中没有特殊字符，避免使用中文路径
+**如何运行 CMTools？**
 
-3. **权限不足**
-   - **现象**：`无法创建临时可执行文件` 或 `IO 错误`
-   - **解决**：以管理员身份运行软件，或检查文件夹读写权限
+**方法 1：直接运行**
+1. 双击 CMTools.exe
+2. 如果出现 Windows SmartScreen 警告：
+   - 点击"更多信息"
+   - 点击"仍要运行"
 
-4. **磁盘空间不足**
-   - **现象**：`无法写入可执行文件数据`
-   - **解决**：清理磁盘空间，特别是系统临时目录
+**方法 2：添加到排除项（推荐）**
+1. 打开 Windows 安全中心 → 病毒和威胁防护
+2. 点击"管理设置"
+3. 滚动到"排除项" → "添加或删除排除项"
+4. 点击"添加排除项" → "文件"
+5. 选择 CMTools.exe
 
-6. **Windows 7系统特殊错误**
-   - **现象**: `ProcessPrng could not be located in the dynamic link library bcryptprimitives.dll`
-   - **解决**: 使用Windows 7兼容版本 `CMTools.Win7.x86.exe`，参考[Windows 7兼容性指南](WINDOWS7_COMPATIBILITY.md)
-
-7. **防病毒软件干扰**
-   - **现象**：`执行程序失败` 或 `命令执行失败`
-   - **解决**：将 CMTools 添加到防病毒软件白名单
-
-#### 📋 故障排除步骤
-
-1. **检查文件格式**：确保您选择的文件是正确的格式（通常是 .txt 或 .csv 文件）。
-2. **检查文件路径**：确保文件路径中没有特殊字符或非英文字符。
-3. **检查文件权限**：确保您有读取和写入文件的权限。
-4. **重新启动软件**：有时重新启动 CMTools 可以解决临时问题。
-5. **查看错误信息**：仔细阅读错误对话框中的具体错误信息，这通常会提供解决问题的线索。
-
-如果问题仍然存在，请记录具体的错误信息和您正在处理的文件类型，以便进一步诊断。
-
-**❓ 问：我可以同时处理来自不同文件夹的文件吗？**
-
-答：可以，您可以在文件选择对话框中从多个目录中选择文件。
-
-**❓ 问：Windows 显示安全警告，不让我运行 CMTools，这安全吗？**
-
-答：是的，CMTools 完全安全。出现警告是因为应用程序没有使用商业证书进行数字签名。这对于开源和独立软件来说很常见。以下是安全运行 CMTools 的方法：
-
-**方法一：Windows SmartScreen 警告**
-1. 当您看到"Windows 已保护你的电脑"时，点击 `更多信息`
-2. 点击 `仍要运行` 按钮
-3. CMTools 将正常启动
-
-**方法二：Windows 安全中心阻止**
-1. 如果 Windows 安全中心阻止了文件，请转到 `Windows 安全中心` → `病毒和威胁防护`
-2. 在"病毒和威胁防护设置"下，点击 `管理设置`
-3. 向下滚动到"排除项"并点击 `添加或删除排除项`
-4. 点击 `添加排除项` → `文件`，然后选择 `CMTools.exe`
-5. 该文件将被永久信任
-
-**方法三：文件属性设置**
-1. 右键点击 `CMTools.exe` 并选择 `属性`
-2. 在底部勾选 `解除阻止` 复选框（如果存在）
-3. 点击 `确定` 并重新尝试运行应用程序
-
-**为什么会出现这种情况：**
-- CMTools 作为绿色软件分发，没有商业代码签名
-- Windows 出于安全考虑对未签名软件保持谨慎态度
-- 这是正常行为，并不表示存在实际的安全风险
-- 许多合法的开源应用程序都会显示类似的警告
+**方法 3：解除文件阻止**
+1. 右键点击 CMTools.exe → 属性
+2. 在底部勾选"解除阻止"（如果有此选项）
+3. 点击确定
 
 ---
 
-## 📚 相关文档
+## 📚 获取帮助
 
-### 📖 完整文档集合
-- **[版本选择指南](VERSION_SELECTION_GUIDE.md)** - 详细的版本选择和兼容性指南
-- **[Windows 7兼容性说明](WINDOWS7_COMPATIBILITY.md)** - Windows 7系统兼容性详细说明
-- **[Windows 7问题解决方案](WIN7_COMPATIBILITY_SOLUTION.md)** - Windows 7兼容性技术解决方案
-- **[构建配置选项](build-config-options.md)** - 开发者构建配置说明
-- **[README.md](README.md)** - 开发者完整文档
+### 🆘 遇到问题？
 
-### 🆘 获取帮助
-如果您在使用过程中遇到问题：
-1. 首先查阅相关文档，特别是版本选择指南和兼容性说明
-2. 确认使用了正确的软件版本
-3. 查看故障排除部分的常见问题解决方案
-4. 如问题仍未解决，可通过项目页面获取技术支持
+1. **查阅本手册**：大多数问题可以在使用指南和故障排除部分找到答案
+2. **查看错误信息**：软件会显示明确的错误提示，请仔细阅读
+3. **常见问题**：参考第6节的常见问题与解决方法
+4. **在线帮助**：访问 https://docs.dingtalk.com/i/nodes/mExel2BLV5xvg52YSErl4LvbWgk9rpMq
 
-### 💡 快速链接
-- **在线帮助**: https://docs.dingtalk.com/i/nodes/mExel2BLV5xvg52YSErl4LvbWgk9rpMq
-- **GitHub项目页**: https://github.com/Cubicise/CMTools
-- **问题反馈**: 通过GitHub Issues页面提交问题报告
+### 💡 联系我们
 
-### 🛠️ 开发者构建命令参考
-
-对于开发者和高级用户，以下是可用的构建命令：
-
-| 命令 | 说明 | 适用场景 |
-|------|------|----------|
-| `npm run tauri:build` | 构建当前系统环境匹配的版本 | 日常开发和测试 |
-| `npm run tauri:build:win` | 构建所有Windows版本 | Windows平台发布 |
-| `npm run tauri:build:all` | 构建所有支持的平台版本 | 多平台完整发布 |
-
-> **注意**：`npm run tauri:build` 命令会自动检测当前系统环境并构建相应的版本。例如在Windows 64位系统上会构建 `CMTools.x64.exe`，在Windows 32位系统上会构建 `CMTools.x86.exe`。`npm run tauri:build:all` 命令则会构建所有支持的平台版本，包括Windows、macOS和Linux。
+- **项目主页**：https://github.com/Cubicise/CMTools
+- **问题反馈**：通过 GitHub Issues 提交问题
 
 ---
 
-**CMTools Team** | Made with ❤️ for data analysis professionals
+**CMTools 团队** | 为数据分析专业人士打造 ❤️
