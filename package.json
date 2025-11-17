@@ -1,7 +1,7 @@
 {
   "name": "cmtools",
   "private": true,
-  "version": "2.6.2",
+  "version": "2.6.3",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -12,13 +12,13 @@
     "tauri:build:all": "node scripts/build-all-platforms.cjs"
   },
   "dependencies": {
-    "@tauri-apps/api": "^2.8.0",
-    "@tauri-apps/plugin-dialog": "^2.3.3",
-    "@tauri-apps/plugin-opener": "^2.5.0",
+    "@tauri-apps/api": "2.9.0",
+    "@tauri-apps/plugin-dialog": "2.4.2",
+    "@tauri-apps/plugin-opener": "2.5.2",
     "vue": "^3.5.13"
   },
   "devDependencies": {
-    "@tauri-apps/cli": "^2.8.2",
+    "@tauri-apps/cli": "2.9.4",
     "@types/node": "^24.3.0",
     "@vitejs/plugin-vue": "^5.2.1",
     "typescript": "~5.6.2",

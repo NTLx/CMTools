@@ -58,7 +58,7 @@ The main window of CMTools is divided into several sections:
 
 1.  **Header:**
     *   **Help (`帮助`/`Help`):** Opens the online help documentation (https://docs.dingtalk.com/i/nodes/mExel2BLV5xvg52YSErl4LvbWgk9rpMq).
-    *   **Version Display:** Shows the current version of the application (e.g., `v2.6.2`).
+    *   **Version Display:** Shows the current version of the application (e.g., `v2.6.3`).
     *   **Language Switch (`中文`/`English`):** Toggles the interface language between Chinese and English.
     *   **Theme Toggle (`暗`/`亮` or `Dark`/`Light`):** Switches between light and dark mode. The button's `title` attribute dynamically displays `切换到亮色模式`/`Switch to light mode` or `切换到暗色模式`/`Switch to dark mode`.
     *   **Logo and Title:** Displays the application's branding.
@@ -384,7 +384,7 @@ CMTools 的主窗口分为几个部分：
 
 1.  **标题栏：**
     *   **帮助 (`帮助`/`Help`)：** 打开在线帮助文档 (https://docs.dingtalk.com/i/nodes/mExel2BLV5xvg52YSErl4LvbWgk9rpMq)。
-    *   **版本显示：** 显示应用程序的当前版本（例如 `v2.6.2`）。
+    *   **版本显示：** 显示应用程序的当前版本（例如 `v2.6.3`）。
     *   **语言切换 (`中文`/`English`)：** 在中文和英文之间切换界面语言。
     *   **主题切换 (`暗`/`亮` 或 `Dark`/`Light`)：** 在亮色和暗色模式之间切换。按钮的 `title` 属性会根据当前语言动态显示 `切换到亮色模式`/`Switch to light mode` 或 `切换到暗色模式`/`Switch to dark mode`。
     *   **Logo 和标题：** 显示应用程序的品牌标识。

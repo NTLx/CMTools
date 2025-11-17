@@ -1,20 +1,12 @@
-# Windows 7 兼容性配置
-
-[target.i686-pc-windows-msvc]
-rustflags = [
-    # 设置最低Windows版本为Windows 7 (0x0601)
-    "-C", "link-arg=/SUBSYSTEM:WINDOWS,6.01",
-    # 禁用新的Windows API特性
-    "-C", "target-feature=-crt-static",
-]
+# Tauri 2.9.x 兼容配置 - 已移除Windows 7限制
 
 [target.x86_64-pc-windows-msvc]
 rustflags = [
-    # 设置最低Windows版本为Windows 7 (0x0601)  
-    "-C", "link-arg=/SUBSYSTEM:WINDOWS,6.01",
+    # 允许新的Windows API特性
+    "-C", "target-feature=-crt-static",
 ]
 
 [env]
-# 强制使用Windows 7兼容的API
-WINVER = "0x0601"
-_WIN32_WINNT = "0x0601"
+# 使用现代Windows API (Windows 10)
+WINVER = "0x0a00"
+_WIN32_WINNT = "0x0a00"
