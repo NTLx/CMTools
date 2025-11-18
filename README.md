@@ -1,7 +1,7 @@
 # CMTools
 
 <div align="center">
-  <img src="assets/Cubicise.Logo.png" alt="CMTools Logo" width="120" height="120">
+  <img src="src/assets/Cubicise.Logo.png" alt="CMTools Logo" width="120" height="120">
   <h3>现代化的色谱数据处理工具集</h3>
   <p>基于 Tauri 2.0 + Vue 3 + TypeScript 构建的跨平台、高性能桌面应用</p>
   
