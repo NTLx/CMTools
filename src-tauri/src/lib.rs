@@ -240,7 +240,7 @@ async fn open_file_directory(file_path: String, language: Option<String>) -> Res
 }
 
 // 内部处理函数，使用 ProcessError
-async fn process_files_internal(_app: tauri::AppHandle, tool_name: String, file_paths: Vec<String>, use_area_data: bool, std_sample_name: Option<String>, windows_optimization: Option<bool>, language: Option<String>) -> Result<Vec<ProcessResult>, ProcessError> {
+async fn process_files_internal(_app: tauri::AppHandle, tool_name: String, file_paths: Vec<String>, use_area_data: bool, std_sample_name: Option<String>, windows_optimization: Option<bool>, verbose_log: Option<bool>, language: Option<String>) -> Result<Vec<ProcessResult>, ProcessError> {
     let lang = language.as_deref().unwrap_or("en");
     let mut results = Vec::new();
     
@@ -382,6 +382,13 @@ async fn process_files_internal(_app: tauri::AppHandle, tool_name: String, file_
                 }
             }
             
+            // 为 UPDFiler_v2 添加 -verbose 参数
+            if let Tool::UpdfilerV2 = tool {
+                if verbose_log.unwrap_or(false) {
+                    cmd.arg("-verbose");
+                }
+            }
+            
             // 在开发模式下输出调用命令到控制台
             #[cfg(debug_assertions)]
             {
@@ -400,6 +407,9 @@ async fn process_files_internal(_app: tauri::AppHandle, tool_name: String, file_
                 }
                 if matches!(tool, Tool::SMNFilerV1 | Tool::SMNFilerV2 | Tool::SHCarrier | Tool::UpdfilerV1 | Tool::UpdfilerV2) {
                     println!("[DEBUG] Windows optimization: {}", windows_optimization.unwrap_or(false));
+                }
+                if let Tool::UpdfilerV2 = tool {
+                    println!("[DEBUG] Verbose log: {}", verbose_log.unwrap_or(false));
                 }
                 println!("[DEBUG] ----------------------------------------");
             }
@@ -462,9 +472,9 @@ async fn process_files_internal(_app: tauri::AppHandle, tool_name: String, file_
 
 // 处理文件的命令
 #[tauri::command]
-async fn process_files(app: tauri::AppHandle, tool_name: String, file_paths: Vec<String>, use_area_data: bool, std_sample_name: Option<String>, windows_optimization: Option<bool>, language: Option<String>) -> Result<Vec<ProcessResult>, String> {
+async fn process_files(app: tauri::AppHandle, tool_name: String, file_paths: Vec<String>, use_area_data: bool, std_sample_name: Option<String>, windows_optimization: Option<bool>, verbose_log: Option<bool>, language: Option<String>) -> Result<Vec<ProcessResult>, String> {
     let lang = language.as_deref().unwrap_or("en");
-    process_files_internal(app, tool_name, file_paths, use_area_data, std_sample_name, windows_optimization, language.clone())
+    process_files_internal(app, tool_name, file_paths, use_area_data, std_sample_name, windows_optimization, verbose_log, language.clone())
         .await
         .map_err(|e| process_error_to_localized_string(&e, lang))
 }

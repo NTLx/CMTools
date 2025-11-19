@@ -30,6 +30,7 @@ interface ProcessOptions {
   useAreaData: boolean;
   stdSampleName?: string;
   windowsOptimization?: boolean;
+  verboseLog?: boolean;
   language: string;
   [key: string]: unknown;
 }
@@ -45,13 +46,14 @@ interface ProcessResult {
 }
 
 // 获取应用版本号
-const appVersion = (globalThis as any).__APP_VERSION__ || '2.6.3';
+const appVersion = (globalThis as any).__APP_VERSION__ || '2.6.4';
 
 const selectedFiles = ref<string[]>([]);
 const selectedTool = ref<ToolType>(ToolType.AneuFiler);
 const useAreaData = ref<boolean>(false);
 const stdSampleName = ref<string>("STD");
 const windowsOptimization = ref<boolean>(true); // Windows系统优化，默认选中
+const verboseLog = ref<boolean>(false); // 输出详细运行日志文件，默认不选中
 const processing = ref<boolean>(false);
 const results = ref<ProcessResult[]>([]);
 const showErrorDialog = ref<boolean>(false);
@@ -135,6 +137,8 @@ const translations = {
     stdSampleNameDesc: '指定标准品样本的名称，用于数据处理时的标准品识别',
     windowsOptimization: 'Windows 系统优化',
     windowsOptimizationDesc: '针对Windows系统进行编码优化，建议在Windows环境下保持选中状态',
+    verboseLog: '输出详细运行日志文件',
+    verboseLogDesc: '选中此选项将在调用UPDFiler_v2时传入-verbose参数，用于输出详细运行日志文件',
     processing: '⏳ 处理中...',
     startProcess: '🚀 开始处理',
     processResults: '处理结果',
@@ -173,6 +177,8 @@ const translations = {
     stdSampleNameDesc: 'Specify the name of the standard sample for standard identification during data processing',
     windowsOptimization: 'Windows System Optimization',
     windowsOptimizationDesc: 'Optimize encoding for Windows systems, recommended to keep checked in Windows environment',
+    verboseLog: 'Output detailed runtime log file',
+    verboseLogDesc: 'Check this option to pass -verbose parameter when calling UPDFiler_v2, for outputting detailed runtime log file',
     processing: '⏳ Processing...',
     startProcess: '🚀 Start Processing',
     processResults: 'Processing Results',
@@ -320,6 +326,7 @@ async function processFiles() {
       useAreaData: currentTool.supportsAreaData ? useAreaData.value : false,
       stdSampleName: currentTool.supportsStdSample ? stdSampleName.value : undefined,
       windowsOptimization: currentTool.supportsWindowsOptimization ? windowsOptimization.value : undefined,
+      verboseLog: selectedTool.value === ToolType.UPDFiler_v2 ? verboseLog.value : undefined,
       language: currentLanguage.value
     };
     
@@ -558,6 +565,20 @@ onMounted(() => {
               <span class="checkbox-text"><span>{{ getTypewriterText('windowsOptimization') || t('windowsOptimization') }}</span></span>
             </label>
             <p class="option-description"><span>{{ getTypewriterText('windowsOptimizationDesc') || t('windowsOptimizationDesc') }}</span></p>
+          </div>
+          
+          <!-- 输出详细运行日志文件选项 - 仅 UPDFiler_v2 支持 -->
+          <div class="option-item" v-if="selectedTool === ToolType.UPDFiler_v2">
+            <label class="checkbox-label">
+              <input 
+                type="checkbox" 
+                v-model="verboseLog" 
+                class="checkbox-input"
+              />
+              <span class="checkbox-custom"></span>
+              <span class="checkbox-text"><span>{{ getTypewriterText('verboseLog') || t('verboseLog') }}</span></span>
+            </label>
+            <p class="option-description"><span>{{ getTypewriterText('verboseLogDesc') || t('verboseLogDesc') }}</span></p>
           </div>
           
           <!-- 标准品样本名称配置 -->
