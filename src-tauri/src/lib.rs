@@ -239,6 +239,100 @@ async fn open_file_directory(file_path: String, language: Option<String>) -> Res
     Ok(())
 }
 
+// 获取工具版本号的命令
+#[tauri::command]
+async fn get_tool_version(tool_name: String, language: Option<String>) -> Result<String, String> {
+    let lang = language.as_deref().unwrap_or("en");
+    
+    // 解析工具类型
+    let tool = Tool::from_str(&tool_name)
+        .map_err(|e| process_error_to_localized_string(&e, lang))?;
+    
+    // 获取工具的可执行文件信息
+    let exe_name = tool.exe_name();
+    let exe_data = tool.exe_data();
+    
+    // 获取临时目录
+    let temp_dir = std::env::temp_dir();
+    let exe_path = temp_dir.join(format!("cmtools_{}", exe_name));
+    
+    // 如果临时文件不存在或大小不匹配，则重新写入
+    let should_write = !exe_path.exists() || {
+        fs::metadata(&exe_path)
+            .map(|m| m.len() != exe_data.len() as u64)
+            .unwrap_or(true)
+    };
+    
+    if should_write {
+        // 将嵌入的可执行文件写入临时目录
+        let mut file = fs::File::create(&exe_path)
+            .map_err(|e| format!("{}: {}", get_message("unable_create_temp_file", lang, None), e))?;
+        file.write_all(exe_data)
+            .map_err(|e| format!("{}: {}", get_message("unable_write_file_data", lang, None), e))?;
+        
+        // 在Unix系统上设置可执行权限
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let mut perms = fs::metadata(&exe_path)
+                .map_err(|e| format!("{}: {}", get_message("unable_get_permissions", lang, None), e))?
+                .permissions();
+            perms.set_mode(0o755);
+            fs::set_permissions(&exe_path, perms)
+                .map_err(|e| format!("{}: {}", get_message("unable_set_permissions", lang, None), e))?;
+        }
+    }
+    
+    // 执行工具的 --version 命令
+    let mut cmd = Command::new(&exe_path);
+    cmd.arg("--version");
+    
+    // 在 Windows 上隐藏命令行窗口
+    #[cfg(target_os = "windows")]
+    {
+        use std::os::windows::process::CommandExt;
+        cmd.creation_flags(0x08000000);
+    }
+    
+    // 执行命令并获取输出
+    match cmd.output() {
+        Ok(output) => {
+            if output.status.success() {
+                // 从 stdout 获取版本信息
+                let version_output = String::from_utf8_lossy(&output.stdout);
+                let version = version_output.trim().to_string();
+                
+                // 如果 stdout 为空，尝试从 stderr 获取
+                if version.is_empty() {
+                    let stderr_output = String::from_utf8_lossy(&output.stderr);
+                    let stderr_version = stderr_output.trim().to_string();
+                    if !stderr_version.is_empty() {
+                        return Ok(stderr_version);
+                    }
+                    // 如果都为空，返回默认信息
+                    return Ok(if lang == "zh" { "版本信息未知".to_string() } else { "Version unknown".to_string() });
+                }
+                
+                Ok(version)
+            } else {
+                // 命令执行失败，尝试从 stderr 获取错误信息
+                let error_output = String::from_utf8_lossy(&output.stderr);
+                if !error_output.trim().is_empty() {
+                    return Ok(error_output.trim().to_string());
+                }
+                Ok(if lang == "zh" { "版本信息不可用".to_string() } else { "Version unavailable".to_string() })
+            }
+        }
+        Err(e) => {
+            // 命令执行异常
+            Err(format!("{}: {}", 
+                if lang == "zh" { "获取版本信息失败" } else { "Failed to get version info" },
+                e
+            ))
+        }
+    }
+}
+
 // 内部处理函数，使用 ProcessError
 async fn process_files_internal(_app: tauri::AppHandle, tool_name: String, file_paths: Vec<String>, use_area_data: bool, std_sample_name: Option<String>, windows_optimization: Option<bool>, verbose_log: Option<bool>, language: Option<String>) -> Result<Vec<ProcessResult>, ProcessError> {
     let lang = language.as_deref().unwrap_or("en");
@@ -484,7 +578,7 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
-        .invoke_handler(tauri::generate_handler![process_files, open_file_directory])
+        .invoke_handler(tauri::generate_handler![process_files, open_file_directory, get_tool_version])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

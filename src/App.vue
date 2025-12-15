@@ -59,6 +59,8 @@ const results = ref<ProcessResult[]>([]);
 const showErrorDialog = ref<boolean>(false);
 const errorMessages = ref<string[]>([]);
 const showVersionDialog = ref<boolean>(false);
+const toolVersion = ref<string>('');
+const loadingToolVersion = ref<boolean>(false);
 const isDarkMode = ref<boolean>(true); // 默认暗色模式
 const currentLanguage = ref<string>('zh'); // 默认中文
 
@@ -161,6 +163,10 @@ const translations = {
     themeBtnLight: '亮',
     versionUpdateTitle: '版本更新检查',
     versionUpdateMessage: '暂不支持进行版本更新检查，请查看帮助中心获取最新版软件',
+    currentTool: '当前选择的工具',
+    toolVersion: '工具版本',
+    loadingVersion: '正在获取版本信息...',
+    cmtoolsVersion: 'CMTools 版本',
   },
   en: {
     subtitle: 'Result files are generated in the same directory as input files',
@@ -201,6 +207,10 @@ const translations = {
     themeBtnLight: 'Light',
     versionUpdateTitle: 'Version Update Check',
     versionUpdateMessage: 'Version update check is not currently supported. Please visit the help center to get the latest software version',
+    currentTool: 'Current Tool',
+    toolVersion: 'Tool Version',
+    loadingVersion: 'Loading version info...',
+    cmtoolsVersion: 'CMTools Version',
   },
 };
 
@@ -402,8 +412,23 @@ function closeErrorDialog() {
 }
 
 // 显示版本更新对话框
-function showVersionUpdateDialog() {
+async function showVersionUpdateDialog() {
   showVersionDialog.value = true;
+  toolVersion.value = '';
+  loadingToolVersion.value = true;
+  
+  try {
+    const version = await invoke<string>('get_tool_version', {
+      toolName: selectedTool.value,
+      language: currentLanguage.value
+    });
+    toolVersion.value = version;
+  } catch (error) {
+    console.error('Failed to get tool version:', error);
+    toolVersion.value = currentLanguage.value === 'zh' ? '获取失败' : 'Failed to retrieve';
+  } finally {
+    loadingToolVersion.value = false;
+  }
 }
 
 // 关闭版本更新对话框
@@ -655,8 +680,24 @@ onMounted(() => {
           <h3><span>{{ getTypewriterText('versionUpdateTitle') || t('versionUpdateTitle') }}</span></h3>
           <button @click="closeVersionDialog" class="close-btn"><span>×</span></button>
         </div>
-        <div class="error-content">
-          <div class="error-item">
+        <div class="version-content">
+          <div class="version-info-container">
+            <div class="version-item">
+              <strong><span>{{ getTypewriterText('cmtoolsVersion') || t('cmtoolsVersion') }}:</span></strong>
+              <span class="version-value">v{{ appVersion }}</span>
+            </div>
+            <div class="version-divider"></div>
+            <div class="version-item">
+              <strong><span>{{ getTypewriterText('currentTool') || t('currentTool') }}:</span></strong>
+              <span class="version-value">{{ getCurrentToolConfig().label }}</span>
+            </div>
+            <div class="version-item">
+              <strong><span>{{ getTypewriterText('toolVersion') || t('toolVersion') }}:</span></strong>
+              <span v-if="loadingToolVersion" class="version-loading">{{ getTypewriterText('loadingVersion') || t('loadingVersion') }}</span>
+              <span v-else class="version-value">{{ toolVersion || (currentLanguage === 'zh' ? '未知' : 'Unknown') }}</span>
+            </div>
+          </div>
+          <div class="version-notice">
             <span>{{ getTypewriterText('versionUpdateMessage') || t('versionUpdateMessage') }}</span>
           </div>
         </div>
@@ -1749,7 +1790,9 @@ h3 {
   scrollbar-color: var(--gray-400) transparent;
 }
 
-
+.version-content {
+  padding: 24px;
+}
 
 .error-item {
   padding: 16px;
@@ -1762,6 +1805,72 @@ h3 {
   color: var(--md-sys-color-on-error-container);
   line-height: 1.5;
   border: 1px solid var(--md-sys-color-outline);
+}
+
+/* 版本信息容器样式 */
+.version-info-container {
+  background: var(--md-sys-color-surface-variant);
+  border-radius: var(--md-sys-shape-corner-medium);
+  padding: 20px;
+  margin-bottom: 16px;
+  border: 1px solid var(--md-sys-color-outline-variant);
+}
+
+.version-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  font-family: var(--md-sys-typescale-body-large-font-family);
+  font-size: var(--md-sys-typescale-body-large-font-size);
+  color: var(--md-sys-color-on-surface);
+}
+
+.version-item strong {
+  color: var(--md-sys-color-primary);
+  font-weight: 500;
+}
+
+.version-value {
+  font-family: 'Consolas', 'Monaco', monospace;
+  color: var(--md-sys-color-on-surface-variant);
+  background: var(--md-sys-color-surface);
+  padding: 4px 12px;
+  border-radius: var(--md-sys-shape-corner-small);
+  border: 1px solid var(--md-sys-color-outline-variant);
+}
+
+.version-loading {
+  font-style: italic;
+  color: var(--md-sys-color-on-surface-variant);
+  opacity: 0.7;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.version-divider {
+  height: 1px;
+  background: var(--md-sys-color-outline-variant);
+  margin: 8px 0;
+  opacity: 0.5;
+}
+
+.version-notice {
+  padding: 12px;
+  background: var(--md-sys-color-surface);
+  border-radius: var(--md-sys-shape-corner-small);
+  border-left: 3px solid var(--md-sys-color-primary);
+  font-size: 14px;
+  color: var(--md-sys-color-on-surface-variant);
+  line-height: 1.6;
 }
 
 /* 处理选项样式 */
