@@ -1,0 +1,142 @@
+@import "tailwindcss";
+
+@theme {
+  /* Colors */
+  --color-primary: #0ea5e9;
+  --color-primary-dark: #0284c7;
+  --color-background-light: #f3f4f6;
+  --color-background-dark: #0f172a;
+  --color-surface-light: #ffffff;
+  --color-surface-dark: #1e293b;
+  --color-panel-light: #f8fafc;
+  --color-panel-dark: #334155;
+  --color-success: #10b981;
+  --color-danger: #ef4444;
+
+  /* Fonts */
+  --font-display: 'Inter', 'Noto Sans SC', sans-serif;
+  --font-body: 'Inter', 'Noto Sans SC', sans-serif;
+
+  /* Radius */
+  --radius: 0.5rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+
+  /* Shadows */
+  --shadow-soft: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
+  --shadow-glow: 0 0 15px rgba(14, 165, 233, 0.3);
+}
+
+/* 自定义 Dark Mode 变体 (基于 Class) */
+@variant dark (&:where(.dark, .dark *));
+
+/* 全局样式 */
+body {
+  font-family: var(--font-body);
+  @apply antialiased bg-background-light dark:bg-background-dark;
+}
+
+/* 滚动条样式 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-slate-300 dark:bg-slate-600 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-slate-400 dark:bg-slate-500;
+}
+
+/* 
+  动画定义
+  Tailwind v4 自动支持 animation-* 工具
+  但我们需要定义关键帧
+*/
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pageLoad {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes overlayFadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes dialogSlideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* 
+  辅助类：将动画应用到工具类 
+  Tailwind v4 可以通过 --animate-* 变量配置，但这里直接写类也行
+*/
+.animate-fadeInUp {
+  animation: fadeInUp 0.6s ease-out forwards;
+}
+
+.animate-page-load {
+  animation: pageLoad 0.8s ease-out forwards;
+}
+
+.animate-slideInRight {
+  animation: slideInRight 0.4s ease-out forwards;
+}
+
+.animate-overlayFadeIn {
+  animation: overlayFadeIn 0.2s ease-out forwards;
+}
+
+.animate-dialogSlideIn {
+  animation: dialogSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}

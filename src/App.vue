@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { invoke } from '@tauri-apps/api/core';
 import { open } from '@tauri-apps/plugin-dialog';
 
@@ -46,7 +46,7 @@ interface ProcessResult {
 }
 
 // 获取应用版本号
-const appVersion = (globalThis as any).__APP_VERSION__ || '2.6.8';
+const appVersion = (globalThis as any).__APP_VERSION__ || '2.6.9';
 
 const selectedFiles = ref<string[]>([]);
 const selectedTool = ref<ToolType>(ToolType.AneuFiler);
@@ -61,7 +61,26 @@ const errorMessages = ref<string[]>([]);
 const showVersionDialog = ref<boolean>(false);
 const toolVersion = ref<string>('');
 const loadingToolVersion = ref<boolean>(false);
-const isDarkMode = ref<boolean>(true); // 默认暗色模式
+
+// Toast 状态
+const showToast = ref<boolean>(false);
+const toastMessage = ref<string>('');
+let toastTimer: number | null = null;
+const isDarkMode = ref<boolean>(false);
+
+// 显示 Toast
+function displayToast(message: string) {
+  toastMessage.value = message;
+  showToast.value = true;
+  
+  if (toastTimer) {
+    clearTimeout(toastTimer);
+  }
+  
+  toastTimer = window.setTimeout(() => {
+    showToast.value = false;
+  }, 2000); // 2秒后自动消失
+} 
 const currentLanguage = ref<string>('zh'); // 默认中文
 
 // 工具配置数组
@@ -118,9 +137,9 @@ const tools: ToolConfig[] = [
 ];
 
 // 获取当前选中工具的配置
-const getCurrentToolConfig = (): ToolConfig => {
+const getCurrentToolConfig = computed((): ToolConfig => {
   return tools.find(tool => tool.name === selectedTool.value) || tools[0];
-};
+});
 
 // 翻译文本
 const translations = {
@@ -129,8 +148,8 @@ const translations = {
     selectTool: '选择工具',
     fileProcessing: '文件处理',
     selectFiles: '选择文件',
-    selectFilesBtn: '📁 选择文件',
-    clearBtn: '🗑️ 清除',
+    selectFilesBtn: '选择文件',
+    clearBtn: '清除',
     selectedFiles: '已选择的文件',
     processOptions: '处理选项',
     useAreaData: '使用峰面积数据进行计算',
@@ -141,10 +160,10 @@ const translations = {
     windowsOptimizationDesc: '针对Windows系统进行编码优化，建议在Windows环境下保持选中状态',
     verboseLog: '输出详细运行日志文件',
     verboseLogDesc: '选中此选项将在调用UPDFiler_v2时输出详细运行日志文件',
-    processing: '⏳ 处理中...',
-    startProcess: '🚀 开始处理',
+    processing: '处理中...',
+    startProcess: '开始处理',
     processResults: '处理结果',
-    processError: '❌ 处理错误',
+    processError: '处理错误',
     confirm: '确定',
     selectFilesFirst: '请先选择文件',
     selectFilesTitle: '选择要处理的文件',
@@ -167,14 +186,23 @@ const translations = {
     toolVersion: '工具版本',
     loadingVersion: '正在获取版本信息...',
     cmtoolsVersion: 'CMTools 版本',
+    clearConsole: '清除结果',
+    copyLog: '复制日志',
+    waitingForTask: '等待新的任务...',
+    successProcessed: '成功处理文件',
+    failedProcessed: '处理文件失败',
+
+    clearSuccess: '已清除所有结果',
+    copySuccess: '日志已复制到剪贴板',
+    copyFailed: '复制失败',
   },
   en: {
     subtitle: 'Result files are generated in the same directory as input files',
     selectTool: 'Select Processing Tool',
-    fileProcessing: 'File Processor',
+    fileProcessing: 'File Processing',
     selectFiles: 'Select Files',
-    selectFilesBtn: '📁 Select Files',
-    clearBtn: '🗑️ Clear',
+    selectFilesBtn: 'Select Files',
+    clearBtn: 'Clear',
     selectedFiles: 'Selected Files',
     processOptions: 'Processing Options',
     useAreaData: 'Use peak area data for calculation',
@@ -185,10 +213,10 @@ const translations = {
     windowsOptimizationDesc: 'Optimize encoding for Windows systems, recommended to keep checked in Windows environment',
     verboseLog: 'Output detailed runtime log file',
     verboseLogDesc: 'Check this option to output detailed runtime log file when calling UPDFiler_v2',
-    processing: '⏳ Processing...',
-    startProcess: '🚀 Start Processing',
+    processing: 'Processing...',
+    startProcess: 'Start Processing',
     processResults: 'Processing Results',
-    processError: '❌ Processing Error',
+    processError: 'Processing Error',
     confirm: 'OK',
     selectFilesFirst: 'Please select files first',
     selectFilesTitle: 'Select files to process',
@@ -211,27 +239,21 @@ const translations = {
     toolVersion: 'Tool Version',
     loadingVersion: 'Loading version info...',
     cmtoolsVersion: 'CMTools Version',
+    clearConsole: 'Clear Console',
+    copyLog: 'Copy Log',
+    waitingForTask: 'Waiting for next task...',
+    successProcessed: 'Successfully processed file',
+    failedProcessed: 'Failed to process file',
+
+    clearSuccess: 'All results cleared',
+    copySuccess: 'Log copied to clipboard',
+    copyFailed: 'Copy failed',
   },
 };
-
-// 打字机动画状态
-const typewriterTexts = ref<Record<string, string>>({});
-const typingStates = ref<Record<string, boolean>>({});
-
 
 // 获取翻译文本
 function t(key: string): string {
   return translations[currentLanguage.value as keyof typeof translations]?.[key as keyof typeof translations.zh] || key;
-}
-
-// 获取打字机显示文本
-function getTypewriterText(key: string): string {
-  return typewriterTexts.value[key] || '';
-}
-
-// 检查是否正在打字
-function isTextTyping(key: string): boolean {
-  return typingStates.value[key] || false;
 }
 
 // 动态翻译结果消息
@@ -268,35 +290,11 @@ function getLocalizedResultMessage(result: ProcessResult): string {
   return result.message;
 }
 
-
-
-
-
-
-
-
-
-// 单独为特定文本执行打字机动画（保留以备将来使用）
-// async function animateSpecificText(key: string, delay: number = 0) {
-//   const targetText = t(key);
-//   await typewriterEffect(key, targetText, delay);
-// }
-
 // 语言切换
 function toggleLanguage() {
-  // 切换语言
   const newLanguage = currentLanguage.value === 'zh' ? 'en' : 'zh';
   currentLanguage.value = newLanguage;
   localStorage.setItem('language', newLanguage);
-  
-  // 立即更新所有文本内容，不使用动画
-  const newLang = translations[currentLanguage.value as keyof typeof translations];
-  Object.keys(newLang).forEach(key => {
-    typewriterTexts.value[key] = newLang[key as keyof typeof newLang];
-  });
-  
-  // 强制更新结果消息显示
-  // 由于使用了计算属性，Vue会自动重新渲染
 }
 
 // 选择文件
@@ -318,7 +316,6 @@ async function selectFiles() {
 // 处理文件
 async function processFiles() {
   if (selectedFiles.value.length === 0) {
-    alert(t('selectFilesFirst'));
     return;
   }
   
@@ -327,7 +324,7 @@ async function processFiles() {
   errorMessages.value = [];
   
   try {
-    const currentTool = getCurrentToolConfig();
+    const currentTool = getCurrentToolConfig.value;
     
     // 构建处理选项
     const options: ProcessOptions = {
@@ -402,7 +399,36 @@ async function processFiles() {
 // 清除选择的文件
 function clearFiles() {
   selectedFiles.value = [];
+  // results.value = []; // 清除文件不一定要清除结果，保持灵活性
+}
+
+// 移除单个文件
+function removeFile(index: number) {
+  selectedFiles.value.splice(index, 1);
+}
+
+// 清除结果控制台
+function clearConsole() {
+  if (results.value.length === 0) return;
   results.value = [];
+  displayToast(t('clearSuccess'));
+}
+
+// 复制日志 (这里简单实现为复制所有结果文本)
+async function copyLog() {
+  if (results.value.length === 0) return;
+  
+  const logText = results.value.map(r => {
+    return `[${r.success ? 'SUCCESS' : 'ERROR'}] ${getLocalizedResultMessage(r)} ${r.error ? `(${r.error})` : ''} - ${r.file_path || ''}`;
+  }).join('\n');
+  
+  try {
+    await navigator.clipboard.writeText(logText);
+    displayToast(t('copySuccess'));
+  } catch (err) {
+    console.error('Failed to copy log', err);
+    displayToast(t('copyFailed'));
+  }
 }
 
 // 关闭错误对话框
@@ -457,12 +483,13 @@ function toggleTheme() {
   updateThemeClass();
 }
 
-// 更新主题类名
+// 更新主题类名 - 适配 Tailwind CSS dark mode
 function updateThemeClass() {
+  const html = document.documentElement;
   if (isDarkMode.value) {
-    document.documentElement.classList.add('dark-theme');
+    html.classList.add('dark');
   } else {
-    document.documentElement.classList.remove('dark-theme');
+    html.classList.remove('dark');
   }
 }
 
@@ -473,1719 +500,374 @@ async function openHelpCenter() {
     await openUrl('https://docs.dingtalk.com/i/nodes/mExel2BLV5xvg52YSErl4LvbWgk9rpMq');
   } catch (error) {
     console.error(t('openHelpError'), error);
-    // 如果Tauri API不可用，使用浏览器默认方式
     window.open('https://docs.dingtalk.com/i/nodes/mExel2BLV5xvg52YSErl4LvbWgk9rpMq', '_blank');
   }
 }
 
 // 初始化主题和语言
 onMounted(() => {
-  // 初始化主题，默认暗色模式
+  // 初始化主题
   const savedTheme = localStorage.getItem('theme');
-  isDarkMode.value = savedTheme ? savedTheme === 'dark' : true;
+  // 如果没有保存的主题，检查系统偏好
+  if (!savedTheme) {
+    isDarkMode.value = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  } else {
+    isDarkMode.value = savedTheme === 'dark';
+  }
   updateThemeClass();
   
-  // 初始化语言，默认中文
+  // 初始化语言
   const savedLanguage = localStorage.getItem('language');
   currentLanguage.value = savedLanguage || 'zh';
-  
-  // 初始化所有打字机文本
-  const initialLang = translations[currentLanguage.value as keyof typeof translations];
-  Object.keys(initialLang).forEach(key => {
-    typewriterTexts.value[key] = initialLang[key as keyof typeof initialLang];
-  });
 });
 </script>
 
 <template>
-  <main class="container">
-    <header class="header">
-      <div class="header-controls">
-        <div class="control-group-left">
-          <button @click="openHelpCenter" class="control-button" :title="t('helpCenter')">
-            <span>{{ getTypewriterText('helpBtn') || t('helpBtn') }}</span>
-          </button>
-          <button @click="showVersionUpdateDialog" class="control-button" :title="t('versionUpdateTitle')">
-            <span>v{{ appVersion }}</span>
-          </button>
-        </div>
-        <div class="control-group-right">
-          <button @click="toggleLanguage" class="control-button" :title="t('languageSwitch')">
-            <span>{{ getTypewriterText('languageBtn') || t('languageBtn') }}</span>
-          </button>
-          <button @click="toggleTheme" class="control-button" :title="isDarkMode ? t('switchToLight') : t('switchToDark')">
-            <span>{{ getTypewriterText(isDarkMode ? 'themeBtnDark' : 'themeBtnLight') || t(isDarkMode ? 'themeBtnDark' : 'themeBtnLight') }}</span>
-          </button>
-        </div>
+  <div class="bg-background-light dark:bg-background-dark text-slate-800 dark:text-slate-200 min-h-screen flex flex-col transition-colors duration-300">
+    <header class="w-full px-8 py-6 flex items-center justify-between z-10 animate-fadeInUp">
+      <div class="flex items-center gap-3">
+        <button 
+          @click="openHelpCenter"
+          class="p-2 rounded-lg bg-surface-light dark:bg-surface-dark shadow-sm border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors flex items-center justify-center w-10 h-10"
+          :title="t('helpBtn')"
+        >
+          <span class="material-icons-round text-xl">help_outline</span>
+        </button>
+        <button 
+          @click="showVersionUpdateDialog"
+          class="px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold border border-primary/20 hover:bg-primary/20 transition-colors cursor-pointer ml-1"
+        >
+          v{{ appVersion }}
+        </button>
       </div>
-      <h1><span>CMTools</span></h1>
-      <p class="subtitle" :class="{ 'typewriter-text': isTextTyping('subtitle'), 'typing-complete': !isTextTyping('subtitle') && getTypewriterText('subtitle') }"><span>{{ getTypewriterText('subtitle') || t('subtitle') }}</span></p>
+      <div class="flex flex-col items-center">
+        <h1 class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-blue-600 dark:from-sky-400 dark:to-blue-400">
+          CMTools
+        </h1>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+          {{ t('subtitle') }}
+        </p>
+      </div>
+      <div class="flex items-center gap-3">
+        <button 
+          @click="toggleLanguage"
+          class="p-2 rounded-lg bg-surface-light dark:bg-surface-dark shadow-sm border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors flex items-center justify-center w-10 h-10"
+          :title="t('languageSwitch')"
+        >
+          <span class="material-icons-round text-xl">translate</span>
+        </button>
+        <button 
+          @click="toggleTheme"
+          class="p-2 rounded-lg bg-surface-light dark:bg-surface-dark shadow-sm border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors flex items-center justify-center w-10 h-10" 
+          :title="isDarkMode ? t('switchToLight') : t('switchToDark')"
+        >
+          <span class="material-icons-round text-xl">{{ isDarkMode ? 'light_mode' : 'dark_mode' }}</span>
+        </button>
+      </div>
     </header>
 
-    <div class="main-content">
-      <!-- 左侧内容区域 -->
-      <div class="left-panel">
-        <!-- 工具选择 -->
-        <div class="tool-selection">
-          <h3 :class="{ 'typewriter-text': isTextTyping('selectTool'), 'typing-complete': !isTextTyping('selectTool') && getTypewriterText('selectTool') }"><span>{{ getTypewriterText('selectTool') || t('selectTool') }}</span></h3>
-          <div class="tool-buttons">
-            <button 
-              v-for="tool in tools" 
-              :key="tool.name"
-              :class="['tool-btn', { active: selectedTool === tool.name }]"
-              @click="selectedTool = tool.name"
-            >
-              <span>{{ tool.label }}</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- 文件选择 -->
-        <div class="file-selection">
-          <h3 :class="{ 'typewriter-text': isTextTyping('fileProcessing'), 'typing-complete': !isTextTyping('fileProcessing') && getTypewriterText('fileProcessing') }"><span>{{ getTypewriterText('fileProcessing') || t('fileProcessing') }}</span></h3>
-          <div class="file-actions">
-            <button @click="selectFiles" class="select-btn">
-              <span>{{ getTypewriterText('selectFilesBtn') || t('selectFilesBtn') }}</span>
-            </button>
-            <button @click="clearFiles" class="clear-btn" v-if="selectedFiles.length > 0">
-              <span>{{ getTypewriterText('clearBtn') || t('clearBtn') }}</span>
-            </button>
-          </div>
+    <main class="flex-grow flex items-center justify-center p-6 w-full max-w-[1600px] mx-auto animate-page-load">
+      <div class="w-full grid grid-cols-1 lg:grid-cols-12 gap-6 h-full min-h-[700px]">
+        
+        <!-- 左侧面板 -->
+        <div class="lg:col-span-5 flex flex-col gap-6">
           
-          <div v-if="selectedFiles.length > 0" class="selected-files">
-            <h4 :class="{ 'typewriter-text': isTextTyping('selectedFiles'), 'typing-complete': !isTextTyping('selectedFiles') && getTypewriterText('selectedFiles') }"><span>{{ getTypewriterText('selectedFiles') || t('selectedFiles') }} ({{ selectedFiles.length }})</span></h4>
-            <div class="file-list">
-              <div v-for="(file, index) in selectedFiles" :key="index" class="file-item">
-                📄 {{ file.split('\\').pop() || file.split('/').pop() }}
+          <!-- 工具选择 -->
+          <section class="bg-surface-light dark:bg-surface-dark rounded-2xl p-6 shadow-soft border border-slate-200 dark:border-slate-700/50 flex flex-col gap-4">
+            <h2 class="text-lg font-semibold flex items-center gap-2 text-slate-700 dark:text-slate-200">
+              <span class="material-icons-round text-primary">handyman</span>
+              {{ t('selectTool') }}
+            </h2>
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <button 
+                v-for="(tool, index) in tools" 
+                :key="tool.name"
+                @click="selectedTool = tool.name"
+                :class="[
+                  'px-4 py-3 rounded-xl border text-sm font-medium transition-all duration-200',
+                  selectedTool === tool.name 
+                    ? 'bg-primary text-white shadow-glow shadow-primary/40 border-primary transform scale-[1.02]' 
+                    : 'bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-600 hover:border-primary hover:text-primary dark:hover:border-primary dark:hover:text-primary',
+                  index === tools.length - 1 ? 'col-span-2 sm:col-span-1' : ''
+                ]"
+              >
+                {{ tool.label }}
+              </button>
+            </div>
+          </section>
+
+          <!-- 文件处理 -->
+          <section class="bg-surface-light dark:bg-surface-dark rounded-2xl p-6 shadow-soft border border-slate-200 dark:border-slate-700/50 flex flex-col gap-5 flex-grow">
+            <h2 class="text-lg font-semibold flex items-center gap-2 text-slate-700 dark:text-slate-200">
+              <span class="material-icons-round text-primary">folder_open</span>
+              {{ t('fileProcessing') }}
+            </h2>
+            
+            <div class="flex gap-3">
+              <button 
+                @click="selectFiles"
+                class="flex-1 py-3 px-4 bg-success/10 text-success hover:bg-success hover:text-white border border-success/20 rounded-xl flex items-center justify-center gap-2 font-medium transition-all group"
+              >
+                <span class="material-icons-round group-hover:text-white">add</span>
+                {{ t('selectFilesBtn') }}
+              </button>
+              <button 
+                @click="clearFiles"
+                class="flex-1 py-3 px-4 bg-danger/10 text-danger hover:bg-danger hover:text-white border border-danger/20 rounded-xl flex items-center justify-center gap-2 font-medium transition-all group"
+                :disabled="selectedFiles.length === 0"
+                :class="{ 'opacity-50 cursor-not-allowed': selectedFiles.length === 0 }"
+              >
+                <span class="material-icons-round group-hover:text-white">delete_outline</span>
+                {{ t('clearBtn') }}
+              </button>
+            </div>
+
+            <div class="bg-panel-light dark:bg-panel-dark rounded-xl p-4 border border-slate-200 dark:border-slate-600/50 flex flex-col gap-2 min-h-[120px] max-h-[300px] overflow-hidden flex-shrink-0">
+              <div class="flex justify-between items-center text-sm text-slate-500 dark:text-slate-400 mb-2">
+                <span>{{ t('selectedFiles') }} ({{ selectedFiles.length }})</span>
+              </div>
+              
+              <div v-if="selectedFiles.length === 0" class="flex flex-col items-center justify-center py-8 text-slate-400 dark:text-slate-500">
+                 <span class="material-icons-round text-4xl mb-2 opacity-50">description</span>
+                 <p class="text-xs">{{ t('selectFilesFirst') }}</p>
+              </div>
+
+              <div class="overflow-y-auto pr-1 space-y-2 flex-grow scrollbar-thin">
+                <div 
+                  v-for="(file, index) in selectedFiles" 
+                  :key="index"
+                  class="flex items-center gap-3 p-3 bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-100 dark:border-slate-700 group hover:border-primary/30 transition-colors"
+                >
+                  <span class="material-icons-round text-slate-400 text-xl group-hover:text-primary transition-colors">description</span>
+                  <span class="text-sm font-mono text-slate-700 dark:text-slate-300 truncate flex-1" :title="file">
+                    {{ file.split(/[\\/]/).pop() }}
+                  </span>
+                  <button @click="removeFile(index)" class="text-slate-400 hover:text-danger p-1 rounded transition-colors opacity-0 group-hover:opacity-100">
+                    <span class="material-icons-round text-sm">close</span>
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        </div>
 
-        <!-- 处理选项 -->
-        <div class="process-options" v-if="selectedFiles.length > 0">
-          <h3 :class="{ 'typewriter-text': isTextTyping('processOptions'), 'typing-complete': !isTextTyping('processOptions') && getTypewriterText('processOptions') }"><span>{{ getTypewriterText('processOptions') || t('processOptions') }}</span></h3>
-          <div class="option-item" v-if="getCurrentToolConfig().supportsAreaData">
-            <label class="checkbox-label">
-              <input 
-                type="checkbox" 
-                v-model="useAreaData" 
-                class="checkbox-input"
-              />
-              <span class="checkbox-custom"></span>
-              <span class="checkbox-text"><span>{{ getTypewriterText('useAreaData') || t('useAreaData') }}</span></span>
-            </label>
-            <p class="option-description"><span>{{ getTypewriterText('useAreaDataDesc') || t('useAreaDataDesc') }}</span></p>
-          </div>
-          
-          <!-- Windows系统优化选项 -->
-          <div class="option-item" v-if="getCurrentToolConfig().supportsWindowsOptimization">
-            <label class="checkbox-label">
-              <input 
-                type="checkbox" 
-                v-model="windowsOptimization" 
-                class="checkbox-input"
-              />
-              <span class="checkbox-custom"></span>
-              <span class="checkbox-text"><span>{{ getTypewriterText('windowsOptimization') || t('windowsOptimization') }}</span></span>
-            </label>
-            <p class="option-description"><span>{{ getTypewriterText('windowsOptimizationDesc') || t('windowsOptimizationDesc') }}</span></p>
-          </div>
-          
-          <!-- 输出详细运行日志文件选项 - 仅 UPDFiler_v2 支持 -->
-          <div class="option-item" v-if="selectedTool === ToolType.UPDFiler_v2">
-            <label class="checkbox-label">
-              <input 
-                type="checkbox" 
-                v-model="verboseLog" 
-                class="checkbox-input"
-              />
-              <span class="checkbox-custom"></span>
-              <span class="checkbox-text"><span>{{ getTypewriterText('verboseLog') || t('verboseLog') }}</span></span>
-            </label>
-            <p class="option-description"><span>{{ getTypewriterText('verboseLogDesc') || t('verboseLogDesc') }}</span></p>
-          </div>
-          
-          <!-- 标准品样本名称配置 -->
-          <div class="option-item" v-if="getCurrentToolConfig().supportsStdSample">
-            <label class="input-label">
-              <span class="input-text"><span>{{ getTypewriterText('stdSampleName') || t('stdSampleName') }}</span></span>
-              <input 
-                type="text" 
-                v-model="stdSampleName" 
-                class="text-input"
-                placeholder="STD"
-              />
-            </label>
-            <p class="option-description"><span>{{ getTypewriterText('stdSampleNameDesc') || t('stdSampleNameDesc') }}</span></p>
-          </div>
-        </div>
+            <!-- 处理选项 -->
+            <div class="bg-panel-light dark:bg-panel-dark rounded-xl p-4 border border-slate-200 dark:border-slate-600/50 space-y-4" v-if="selectedFiles.length > 0">
+              <h3 class="text-sm font-semibold text-slate-600 dark:text-slate-300">{{ t('processOptions') }}</h3>
+              
+              <!-- Windows 系统优化 -->
+              <div class="flex items-start gap-3 group cursor-pointer" v-if="getCurrentToolConfig.supportsWindowsOptimization">
+                <div class="relative flex items-center justify-center w-5 h-5">
+                  <input id="opt-win" type="checkbox" v-model="windowsOptimization" 
+                    class="peer h-5 w-5 cursor-pointer appearance-none rounded-md border border-slate-300 dark:border-slate-500 bg-white dark:bg-slate-800 checked:bg-primary checked:border-transparent focus:ring-2 focus:ring-primary/20 transition-all" />
+                  <span class="material-icons-round absolute text-white text-sm pointer-events-none opacity-0 peer-checked:opacity-100 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">check</span>
+                </div>
+                <label for="opt-win" class="flex flex-col cursor-pointer select-none">
+                  <span class="text-sm font-medium text-slate-700 dark:text-slate-200">{{ t('windowsOptimization') }}</span>
+                  <span class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed">{{ t('windowsOptimizationDesc') }}</span>
+                </label>
+              </div>
 
-        <!-- 处理按钮 -->
-        <div class="process-section">
-          <button 
-            @click="processFiles" 
-            :disabled="selectedFiles.length === 0 || processing"
-            class="process-btn"
-          >
-            <span v-if="processing">{{ getTypewriterText('processing') || t('processing') }}</span>
-            <span v-else>{{ getTypewriterText('startProcess') || t('startProcess') }}</span>
-           </button>
-         </div>
-      </div>
+               <!-- 峰面积数据 -->
+               <div class="flex items-start gap-3 group cursor-pointer" v-if="getCurrentToolConfig.supportsAreaData">
+                <div class="relative flex items-center justify-center w-5 h-5">
+                  <input id="opt-area" type="checkbox" v-model="useAreaData" 
+                    class="peer h-5 w-5 cursor-pointer appearance-none rounded-md border border-slate-300 dark:border-slate-500 bg-white dark:bg-slate-800 checked:bg-primary checked:border-transparent focus:ring-2 focus:ring-primary/20 transition-all" />
+                  <span class="material-icons-round absolute text-white text-sm pointer-events-none opacity-0 peer-checked:opacity-100 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">check</span>
+                </div>
+                <label for="opt-area" class="flex flex-col cursor-pointer select-none">
+                  <span class="text-sm font-medium text-slate-700 dark:text-slate-200">{{ t('useAreaData') }}</span>
+                  <span class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed">{{ t('useAreaDataDesc') }}</span>
+                </label>
+              </div>
+              
+              <!-- 详细日志 -->
+              <div class="flex items-start gap-3 group cursor-pointer" v-if="selectedTool === ToolType.UPDFiler_v2">
+                <div class="relative flex items-center justify-center w-5 h-5">
+                  <input id="opt-verbose" type="checkbox" v-model="verboseLog" 
+                    class="peer h-5 w-5 cursor-pointer appearance-none rounded-md border border-slate-300 dark:border-slate-500 bg-white dark:bg-slate-800 checked:bg-primary checked:border-transparent focus:ring-2 focus:ring-primary/20 transition-all" />
+                  <span class="material-icons-round absolute text-white text-sm pointer-events-none opacity-0 peer-checked:opacity-100 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">check</span>
+                </div>
+                <label for="opt-verbose" class="flex flex-col cursor-pointer select-none">
+                  <span class="text-sm font-medium text-slate-700 dark:text-slate-200">{{ t('verboseLog') }}</span>
+                  <span class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed">{{ t('verboseLogDesc') }}</span>
+                </label>
+              </div>
 
-      <!-- 右侧处理结果面板 -->
-      <div v-if="results.length > 0" class="results-panel">
-        <div class="results">
-          <h3 :class="{ 'typewriter-text': isTextTyping('processResults'), 'typing-complete': !isTextTyping('processResults') && getTypewriterText('processResults') }"><span>{{ getTypewriterText('processResults') || t('processResults') }}</span></h3>
-          <div class="result-list">
-            <div 
-              v-for="(result, index) in results" 
-              :key="index" 
-              :class="['result-item', result.success ? 'success' : 'error']"
-              @click="openFileDirectory(result.file_path)"
-              :title="result.file_path ? t('clickToOpenDirectory') : ''"
+              <!-- 标准品样本名称 -->
+              <div class="flex flex-col gap-2" v-if="getCurrentToolConfig.supportsStdSample">
+                 <label for="std-name" class="text-sm font-medium text-slate-700 dark:text-slate-200">
+                    {{ t('stdSampleName') }}
+                 </label>
+                 <input 
+                   id="std-name"
+                   type="text" 
+                   v-model="stdSampleName"
+                   class="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm"
+                   placeholder="STD"
+                 />
+                 <span class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">{{ t('stdSampleNameDesc') }}</span>
+              </div>
+            </div>
+
+            <button 
+              @click="processFiles"
+              :disabled="selectedFiles.length === 0 || processing"
+              class="w-full mt-auto py-4 rounded-xl bg-gradient-to-r from-primary to-blue-600 hover:from-primary-dark hover:to-blue-700 text-white font-semibold shadow-lg shadow-primary/30 flex items-center justify-center gap-2 transform transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
             >
-              <span class="result-icon" :data-icon="result.success ? '✓' : '✕'"></span>
-              <span class="result-message">{{ getLocalizedResultMessage(result) }}</span>
-              <span v-if="result.file_path" class="open-folder-icon">📁</span>
-            </div>
-          </div>
+              <span class="material-icons-round" :class="{ 'animate-spin': processing, 'animate-pulse': !processing }">
+                {{ processing ? 'sync' : 'rocket_launch' }}
+              </span>
+              {{ processing ? t('processing') : t('startProcess') }}
+            </button>
+          </section>
         </div>
-      </div>
-    </div>
 
-    <!-- 错误对话框 -->
-    <div v-if="showErrorDialog" class="error-dialog-overlay" @click="closeErrorDialog">
-      <div class="error-dialog" @click.stop>
-        <div class="error-header">
-          <h3><span>{{ getTypewriterText('processError') || t('processError') }}</span></h3>
-          <button @click="closeErrorDialog" class="close-btn"><span>×</span></button>
-        </div>
-        <div class="error-content">
-          <div v-for="(error, index) in errorMessages" :key="index" class="error-item">
-            <span>{{ error }}</span>
-          </div>
-        </div>
-        <div class="error-footer">
-          <button @click="closeErrorDialog" class="ok-btn"><span>{{ getTypewriterText('confirm') || t('confirm') }}</span></button>
-        </div>
-      </div>
-    </div>
+        <!-- 右侧处理结果 -->
+        <div class="lg:col-span-7 h-full flex flex-col">
+          <section class="h-full bg-surface-light dark:bg-surface-dark rounded-2xl p-6 shadow-soft border border-slate-200 dark:border-slate-700/50 flex flex-col relative overflow-hidden">
+            <div class="flex items-center justify-between mb-6 z-10">
+              <h2 class="text-lg font-semibold flex items-center gap-2 text-slate-700 dark:text-slate-200">
+                <span class="material-icons-round text-primary">terminal</span>
+                {{ t('processResults') }}
+              </h2>
+              <div class="flex gap-2">
+                <button 
+                  @click="clearConsole"
+                  class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 transition-colors" 
+                  :title="t('clearConsole')"
+                >
+                  <span class="material-icons-round text-sm">cleaning_services</span>
+                </button>
+                <button 
+                  @click="copyLog"
+                  class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 transition-colors" 
+                  :title="t('copyLog')"
+                >
+                  <span class="material-icons-round text-sm">content_copy</span>
+                </button>
+              </div>
+            </div>
+            
+            <div class="flex-grow bg-panel-light dark:bg-panel-dark rounded-xl border border-slate-200 dark:border-slate-600/50 p-4 font-mono text-sm overflow-auto relative z-10 scrollbar-thin">
+              
+              <div v-if="results.length === 0" class="text-slate-400 dark:text-slate-500 italic text-xs mt-4 pl-2 border-l-2 border-slate-300 dark:border-slate-600">
+                <p>{{ t('waitingForTask') }}</p>
+              </div>
 
-    <!-- 版本更新对话框 -->
-    <div v-if="showVersionDialog" class="error-dialog-overlay" @click="closeVersionDialog">
-      <div class="error-dialog" @click.stop>
-        <div class="error-header">
-          <h3><span>{{ getTypewriterText('versionUpdateTitle') || t('versionUpdateTitle') }}</span></h3>
-          <button @click="closeVersionDialog" class="close-btn"><span>×</span></button>
+              <div 
+                v-for="(result, index) in results" 
+                :key="index"
+                class="rounded-lg p-4 flex items-center justify-between group transition-colors cursor-pointer mb-3 animate-slideInRight"
+                :class="[
+                  result.success 
+                    ? 'bg-success/5 border border-success/20 hover:bg-success/10' 
+                    : 'bg-danger/5 border border-danger/20 hover:bg-danger/10'
+                ]"
+                @click="openFileDirectory(result.file_path)"
+              >
+                <div class="flex items-center gap-3 overflow-hidden">
+                  <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+                    :class="result.success ? 'bg-success/20 text-success' : 'bg-danger/20 text-danger'"
+                  >
+                    <span class="material-icons-round text-lg">{{ result.success ? 'check_circle' : 'error' }}</span>
+                  </div>
+                  <div class="flex-grow min-w-0">
+                    <p class="font-semibold text-slate-700 dark:text-slate-200 truncate" :title="getLocalizedResultMessage(result)">
+                      {{ getLocalizedResultMessage(result) }}
+                    </p>
+                    <p v-if="result.error" class="text-xs text-danger mt-0.5 truncate" :title="result.error">
+                      {{ result.error }}
+                    </p>
+                  </div>
+                </div>
+                <button class="p-2 rounded-lg bg-white dark:bg-slate-800 text-primary shadow-sm opacity-0 group-hover:opacity-100 transition-opacity border border-slate-100 dark:border-slate-700 hidden sm:block">
+                  <span class="material-icons-round">folder_open</span>
+                </button>
+              </div>
+            </div>
+            
+            <div class="absolute bottom-0 right-0 w-64 h-64 bg-gradient-to-tl from-primary/5 to-transparent rounded-tl-full pointer-events-none"></div>
+          </section>
         </div>
-        <div class="version-content">
-          <div class="version-info-container">
-            <div class="version-item">
-              <strong><span>{{ getTypewriterText('cmtoolsVersion') || t('cmtoolsVersion') }}:</span></strong>
-              <span class="version-value">v{{ appVersion }}</span>
-            </div>
-            <div class="version-divider"></div>
-            <div class="version-item">
-              <strong><span>{{ getTypewriterText('currentTool') || t('currentTool') }}:</span></strong>
-              <span class="version-value">{{ getCurrentToolConfig().label }}</span>
-            </div>
-            <div class="version-item">
-              <strong><span>{{ getTypewriterText('toolVersion') || t('toolVersion') }}:</span></strong>
-              <span v-if="loadingToolVersion" class="version-loading">{{ getTypewriterText('loadingVersion') || t('loadingVersion') }}</span>
-              <span v-else class="version-value">{{ toolVersion || (currentLanguage === 'zh' ? '未知' : 'Unknown') }}</span>
+
+      </div>
+
+      <!-- 错误对话框 -->
+      <div v-if="showErrorDialog" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-overlayFadeIn" @click="closeErrorDialog">
+        <div class="bg-surface-light dark:bg-surface-dark rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden animate-dialogSlideIn" @click.stop>
+          <div class="bg-danger text-white px-6 py-4 flex justify-between items-center">
+            <h3 class="font-semibold text-lg flex items-center gap-2">
+              <span class="material-icons-round">warning</span>
+              {{ t('processError') }}
+            </h3>
+            <button @click="closeErrorDialog" class="text-white hover:bg-white/20 rounded-lg p-1 transition-colors">
+              <span class="material-icons-round">close</span>
+            </button>
+          </div>
+          <div class="p-6 max-h-[60vh] overflow-y-auto">
+            <div v-for="(error, index) in errorMessages" :key="index" class="p-3 mb-2 bg-danger/5 text-danger border border-danger/20 rounded-lg text-sm font-mono break-all">
+              {{ error }}
             </div>
           </div>
-          <div class="version-notice">
-            <span>{{ getTypewriterText('versionUpdateMessage') || t('versionUpdateMessage') }}</span>
+          <div class="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 flex justify-end">
+            <button @click="closeErrorDialog" class="px-6 py-2 bg-primary hover:bg-primary-dark text-white rounded-lg font-medium transition-colors shadow-lg shadow-primary/30">
+              {{ t('confirm') }}
+            </button>
           </div>
-        </div>
-        <div class="error-footer">
-          <button @click="closeVersionDialog" class="ok-btn"><span>{{ getTypewriterText('confirm') || t('confirm') }}</span></button>
         </div>
       </div>
-    </div>
-  </main>
+
+       <!-- 版本信息对话框 -->
+       <div v-if="showVersionDialog" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-overlayFadeIn" @click="closeVersionDialog">
+        <div class="bg-surface-light dark:bg-surface-dark rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-dialogSlideIn" @click.stop>
+          <div class="bg-primary text-white px-6 py-4 flex justify-between items-center">
+            <h3 class="font-semibold text-lg flex items-center gap-2">
+              <span class="material-icons-round">info</span>
+              {{ t('versionUpdateTitle') }}
+            </h3>
+            <button @click="closeVersionDialog" class="text-white hover:bg-white/20 rounded-lg p-1 transition-colors">
+              <span class="material-icons-round">close</span>
+            </button>
+          </div>
+          <div class="p-6">
+            <div class="bg-panel-light dark:bg-panel-dark rounded-xl p-4 border border-slate-200 dark:border-slate-700 mb-4 space-y-3">
+              <div class="flex justify-between items-center">
+                <span class="text-slate-600 dark:text-slate-400 font-medium">{{ t('cmtoolsVersion') }}</span>
+                <span class="font-mono bg-white dark:bg-slate-800 px-2 py-1 rounded border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300">v{{ appVersion }}</span>
+              </div>
+              <div class="h-px bg-slate-200 dark:bg-slate-700"></div>
+              <div class="flex justify-between items-center">
+                <span class="text-slate-600 dark:text-slate-400 font-medium">{{ t('currentTool') }}</span>
+                <span class="text-slate-700 dark:text-slate-300 font-medium">{{ getCurrentToolConfig.label }}</span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span class="text-slate-600 dark:text-slate-400 font-medium">{{ t('toolVersion') }}</span>
+                <span v-if="loadingToolVersion" class="text-slate-500 italic flex items-center gap-1">
+                   <span class="inline-block w-3 h-3 border-2 border-slate-400 border-t-transparent rounded-full animate-spin"></span>
+                   {{ t('loadingVersion') }}
+                </span>
+                <span v-else class="font-mono bg-white dark:bg-slate-800 px-2 py-1 rounded border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300">{{ toolVersion || (currentLanguage === 'zh' ? '未知' : 'Unknown') }}</span>
+              </div>
+            </div>
+            <div class="text-sm text-slate-500 dark:text-slate-400 border-l-4 border-primary pl-3">
+              {{ t('versionUpdateMessage') }}
+            </div>
+          </div>
+          <div class="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 flex justify-end">
+            <button @click="closeVersionDialog" class="px-6 py-2 bg-primary hover:bg-primary-dark text-white rounded-lg font-medium transition-colors shadow-lg shadow-primary/30">
+              {{ t('confirm') }}
+            </button>
+          </div>
+        </div>
+      </div>
+
+       <!-- Toast 提示 -->
+       <div 
+         v-if="showToast"
+         class="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-[60] bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-800 px-6 py-3 rounded-full shadow-lg flex items-center gap-2 animate-fadeInUp"
+       >
+         <span class="material-icons-round text-sm">check_circle</span>
+         <span class="text-sm font-medium">{{ toastMessage }}</span>
+       </div>
+    </main>
+  </div>
 </template>
-
-<style>
-/* 全局样式重置 */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-html, body {
-  margin: 0;
-  padding: 0;
-  width: 100%;
-  height: 100%;
-  overflow-x: hidden;
-  scroll-behavior: smooth;
-}
-
-#app {
-  margin: 0;
-  padding: 0;
-  width: 100%;
-  height: 100%;
-}
-
-/* 全局动画优化 */
-* {
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-/* 简化页面加载动画 */
-@keyframes pageLoad {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.container {
-  animation: pageLoad 0.4s var(--ease-out-cubic);
-}
-
-/* 打字机效果样式 */
-@keyframes typewriterCursor {
-  0%, 50% {
-    opacity: 1;
-  }
-  51%, 100% {
-    opacity: 0;
-  }
-}
-
-.typewriter-text {
-  position: relative;
-  display: inline-block;
-}
-
-.typewriter-text::after {
-  content: '|';
-  color: var(--primary-500);
-  animation: typewriterCursor 1s infinite;
-  margin-left: 2px;
-}
-
-.typewriter-text.typing-complete::after {
-  display: none;
-}
-
-/* 打字机文本过渡效果 */
-.typewriter-transition {
-  transition: all 0.3s ease;
-  min-height: 1.2em;
-  display: inline-block;
-}
-
-/* 悬浮粒子效果 */
-@keyframes float {
-  0%, 100% {
-    transform: translateY(0px) rotate(0deg);
-  }
-  33% {
-    transform: translateY(-10px) rotate(1deg);
-  }
-  66% {
-    transform: translateY(5px) rotate(-1deg);
-  }
-}
-
-/* 渐入动画 */
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* Material You 动画效果 */
-.tool-selection,
-.file-selection,
-.process-options,
-.process-section,
-.results-panel {
-  animation: fadeInUp 0.3s cubic-bezier(0.2, 0, 0, 1) both;
-}
-
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(16px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes slideInRight {
-  from {
-    opacity: 0;
-    transform: translateX(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-.result-item {
-  animation: slideInRight 0.3s cubic-bezier(0.2, 0, 0, 1) both;
-}
-
-.result-item:nth-child(1) { animation-delay: 0.05s; }
-.result-item:nth-child(2) { animation-delay: 0.1s; }
-.result-item:nth-child(3) { animation-delay: 0.15s; }
-.result-item:nth-child(4) { animation-delay: 0.2s; }
-.result-item:nth-child(5) { animation-delay: 0.25s; }
-.result-item:nth-child(6) { animation-delay: 0.3s; }
-.result-item:nth-child(7) { animation-delay: 0.35s; }
-.result-item:nth-child(8) { animation-delay: 0.4s; }
-
-/* Material You 设计系统 - 亮色主题 */
-:root {
-  /* 主色调 - Material You 蓝色系 */
-  --md-sys-color-primary: #0061a4;
-  --md-sys-color-on-primary: #ffffff;
-  --md-sys-color-primary-container: #d1e4ff;
-  --md-sys-color-on-primary-container: #001d36;
-  
-  /* 次要色调 */
-  --md-sys-color-secondary: #535e70;
-  --md-sys-color-on-secondary: #ffffff;
-  --md-sys-color-secondary-container: #d7e3f8;
-  --md-sys-color-on-secondary-container: #101c2b;
-  
-  /* 第三色调 */
-  --md-sys-color-tertiary: #6b5778;
-  --md-sys-color-on-tertiary: #ffffff;
-  --md-sys-color-tertiary-container: #f2daff;
-  --md-sys-color-on-tertiary-container: #251432;
-  
-  /* 表面色彩 */
-  --md-sys-color-surface: #fdfbff;
-  --md-sys-color-on-surface: #1a1b1e;
-  --md-sys-color-surface-variant: #dfe2eb;
-  --md-sys-color-on-surface-variant: #43474e;
-  --md-sys-color-surface-tint: #0061a4;
-  --md-sys-color-surface-bright: #fdfbff;
-  
-  /* 背景色彩 */
-  --md-sys-color-background: #fdfbff;
-  --md-sys-color-on-background: #1a1b1e;
-  
-  /* 轮廓线 */
-  --md-sys-color-outline: #73777f;
-  --md-sys-color-outline-variant: #c3c7cf;
-  
-  /* 语义色彩 */
-  --md-sys-color-error: #ba1a1a;
-  --md-sys-color-on-error: #ffffff;
-  --md-sys-color-error-container: #ffdad6;
-  --md-sys-color-on-error-container: #410002;
-  
-  /* 成功和警告色 */
-  --md-sys-color-success: #146c2e;
-  --md-sys-color-on-success: #ffffff;
-  --md-sys-color-warning: #724c00;
-  --md-sys-color-on-warning: #ffffff;
-  
-  /* 阴影系统 - Material You Elevation */
-  --md-sys-elevation-level0: 0px 0px 0px 0px rgba(0, 0, 0, 0.12), 0px 0px 0px 0px rgba(0, 0, 0, 0.16), 0px 0px 0px 0px rgba(0, 0, 0, 0.2);
-  --md-sys-elevation-level1: 0px 1px 2px 0px rgba(0, 0, 0, 0.12), 0px 1px 3px 1px rgba(0, 0, 0, 0.16), 0px 2px 1px -1px rgba(0, 0, 0, 0.2);
-  --md-sys-elevation-level2: 0px 1px 2px 0px rgba(0, 0, 0, 0.12), 0px 2px 4px 1px rgba(0, 0, 0, 0.16), 0px 1px 6px 2px rgba(0, 0, 0, 0.2);
-  --md-sys-elevation-level3: 0px 1px 3px 0px rgba(0, 0, 0, 0.12), 0px 4px 8px 3px rgba(0, 0, 0, 0.16), 0px 1px 14px 4px rgba(0, 0, 0, 0.2);
-  --md-sys-elevation-level4: 0px 2px 3px 0px rgba(0, 0, 0, 0.12), 0px 6px 10px 4px rgba(0, 0, 0, 0.16), 0px 2px 20px 6px rgba(0, 0, 0, 0.2);
-  --md-sys-elevation-level5: 0px 1px 8px 0px rgba(0, 0, 0, 0.12), 0px 16px 24px 2px rgba(0, 0, 0, 0.16), 0px 3px 8px 0px rgba(0, 0, 0, 0.2);
-  
-  /* 状态层 */
-  --md-sys-state-hover: 0.08;
-  --md-sys-state-focus: 0.12;
-  --md-sys-state-pressed: 0.12;
-  --md-sys-state-dragged: 0.16;
-  
-  /* 形状 - 圆角 */
-  --md-sys-shape-corner-none: 0px;
-  --md-sys-shape-corner-extra-small: 4px;
-  --md-sys-shape-corner-small: 8px;
-  --md-sys-shape-corner-medium: 12px;
-  --md-sys-shape-corner-large: 16px;
-  --md-sys-shape-corner-extra-large: 28px;
-  
-  /* 排版 - Material You Type Scale */
-  --md-sys-typescale-headline-large-font-family: "Roboto", sans-serif;
-  --md-sys-typescale-headline-large-font-weight: 400;
-  --md-sys-typescale-headline-large-font-size: 32px;
-  --md-sys-typescale-headline-large-line-height: 40px;
-  --md-sys-typescale-headline-large-letter-spacing: 0px;
-  
-  --md-sys-typescale-headline-medium-font-family: "Roboto", sans-serif;
-  --md-sys-typescale-headline-medium-font-weight: 400;
-  --md-sys-typescale-headline-medium-font-size: 28px;
-  --md-sys-typescale-headline-medium-line-height: 36px;
-  --md-sys-typescale-headline-medium-letter-spacing: 0px;
-  
-  --md-sys-typescale-headline-small-font-family: "Roboto", sans-serif;
-  --md-sys-typescale-headline-small-font-weight: 400;
-  --md-sys-typescale-headline-small-font-size: 24px;
-  --md-sys-typescale-headline-small-line-height: 32px;
-  --md-sys-typescale-headline-small-letter-spacing: 0px;
-  
-  --md-sys-typescale-title-large-font-family: "Roboto", sans-serif;
-  --md-sys-typescale-title-large-font-weight: 500;
-  --md-sys-typescale-title-large-font-size: 22px;
-  --md-sys-typescale-title-large-line-height: 28px;
-  --md-sys-typescale-title-large-letter-spacing: 0px;
-  
-  --md-sys-typescale-title-medium-font-family: "Roboto", sans-serif;
-  --md-sys-typescale-title-medium-font-weight: 500;
-  --md-sys-typescale-title-medium-font-size: 16px;
-  --md-sys-typescale-title-medium-line-height: 24px;
-  --md-sys-typescale-title-medium-letter-spacing: 0.15px;
-  
-  --md-sys-typescale-body-large-font-family: "Roboto", sans-serif;
-  --md-sys-typescale-body-large-font-weight: 400;
-  --md-sys-typescale-body-large-font-size: 16px;
-  --md-sys-typescale-body-large-line-height: 24px;
-  --md-sys-typescale-body-large-letter-spacing: 0.5px;
-  
-  --md-sys-typescale-body-medium-font-family: "Roboto", sans-serif;
-  --md-sys-typescale-body-medium-font-weight: 400;
-  --md-sys-typescale-body-medium-font-size: 14px;
-  --md-sys-typescale-body-medium-line-height: 20px;
-  --md-sys-typescale-body-medium-letter-spacing: 0.25px;
-  
-  --md-sys-typescale-label-large-font-family: "Roboto", sans-serif;
-  --md-sys-typescale-label-large-font-weight: 500;
-  --md-sys-typescale-label-large-font-size: 14px;
-  --md-sys-typescale-label-large-line-height: 20px;
-  --md-sys-typescale-label-large-letter-spacing: 0.1px;
-}
-
-/* Material You 设计系统 - 暗色主题 */
-.dark-theme {
-  /* 主色调 - 暗色版本 */
-  --md-sys-color-primary: #90caff;
-  --md-sys-color-on-primary: #003258;
-  --md-sys-color-primary-container: #00497d;
-  --md-sys-color-on-primary-container: #d1e4ff;
-  
-  /* 次要色调 - 暗色版本 */
-  --md-sys-color-secondary: #b0c7e9;
-  --md-sys-color-on-secondary: #253140;
-  --md-sys-color-secondary-container: #3c4858;
-  --md-sys-color-on-secondary-container: #d7e3f8;
-  
-  /* 第三色调 - 暗色版本 */
-  --md-sys-color-tertiary: #d6bee4;
-  --md-sys-color-on-tertiary: #3b2948;
-  --md-sys-color-tertiary-container: #523f5f;
-  --md-sys-color-on-tertiary-container: #f2daff;
-  
-  /* 表面色彩 - 暗色版本 */
-  --md-sys-color-surface: #10131b;
-  --md-sys-color-on-surface: #e2e2e9;
-  --md-sys-color-surface-variant: #43474e;
-  --md-sys-color-on-surface-variant: #c3c7cf;
-  --md-sys-color-surface-tint: #90caff;
-  --md-sys-color-surface-bright: #36393f;
-  
-  /* 背景色彩 - 暗色版本 */
-  --md-sys-color-background: #10131b;
-  --md-sys-color-on-background: #e2e2e9;
-  
-  /* 轮廓线 - 暗色版本 */
-  --md-sys-color-outline: #8d9199;
-  --md-sys-color-outline-variant: #43474e;
-  
-  /* 语义色彩 - 暗色版本 */
-  --md-sys-color-error: #ffb4ab;
-  --md-sys-color-on-error: #690005;
-  --md-sys-color-error-container: #93000a;
-  --md-sys-color-on-error-container: #ffdad6;
-  
-  /* 成功和警告色 - 暗色版本 */
-  --md-sys-color-success: #4cd664;
-  --md-sys-color-on-success: #00390f;
-  --md-sys-color-warning: #ffb951;
-  --md-sys-color-on-warning: #402600;
-  
-  /* 阴影系统 - 暗色版本 */
-  --md-sys-elevation-level0: 0px 0px 0px 0px rgba(0, 0, 0, 0.24), 0px 0px 0px 0px rgba(0, 0, 0, 0.32), 0px 0px 0px 0px rgba(0, 0, 0, 0.4);
-  --md-sys-elevation-level1: 0px 1px 2px 0px rgba(0, 0, 0, 0.24), 0px 1px 3px 1px rgba(0, 0, 0, 0.32), 0px 2px 1px -1px rgba(0, 0, 0, 0.4);
-  --md-sys-elevation-level2: 0px 1px 2px 0px rgba(0, 0, 0, 0.24), 0px 2px 4px 1px rgba(0, 0, 0, 0.32), 0px 1px 6px 2px rgba(0, 0, 0, 0.4);
-  --md-sys-elevation-level3: 0px 1px 3px 0px rgba(0, 0, 0, 0.24), 0px 4px 8px 3px rgba(0, 0, 0, 0.32), 0px 1px 14px 4px rgba(0, 0, 0, 0.4);
-  --md-sys-elevation-level4: 0px 2px 3px 0px rgba(0, 0, 0, 0.24), 0px 6px 10px 4px rgba(0, 0, 0, 0.32), 0px 2px 20px 6px rgba(0, 0, 0, 0.4);
-  --md-sys-elevation-level5: 0px 1px 8px 0px rgba(0, 0, 0, 0.24), 0px 16px 24px 2px rgba(0, 0, 0, 0.32), 0px 3px 8px 0px rgba(0, 0, 0, 0.4);
-}
-</style>
-
-<style scoped>
-.container {
-  min-height: 100vh;
-  background: var(--md-sys-color-background);
-  padding: 0 0 32px 0;
-  font-family: var(--md-sys-typescale-body-large-font-family);
-  color: var(--md-sys-color-on-background);
-  transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
-  position: relative;
-  overflow-x: hidden;
-}
-
-.header {
-  text-align: center;
-  margin-bottom: 32px;
-  padding: 24px 0;
-  color: var(--md-sys-color-on-background);
-  position: relative;
-  z-index: 10;
-}
-
-.header h1 {
-  margin: 0 0 8px 0;
-  font-family: var(--md-sys-typescale-headline-large-font-family);
-  font-size: var(--md-sys-typescale-headline-large-font-size);
-  font-weight: var(--md-sys-typescale-headline-large-font-weight);
-  line-height: var(--md-sys-typescale-headline-large-line-height);
-  letter-spacing: var(--md-sys-typescale-headline-large-letter-spacing);
-  color: var(--md-sys-color-primary);
-}
-
-.subtitle {
-  margin: 0;
-  font-family: var(--md-sys-typescale-body-medium-font-family);
-  font-size: var(--md-sys-typescale-body-medium-font-size);
-  font-weight: var(--md-sys-typescale-body-medium-font-weight);
-  line-height: var(--md-sys-typescale-body-medium-line-height);
-  letter-spacing: var(--md-sys-typescale-body-medium-letter-spacing);
-  color: var(--md-sys-color-on-surface-variant);
-}
-
-/* 顶部控制栏 */
-.header-controls {
-  position: absolute;
-  top: 16px;
-  left: 16px;
-  right: 16px;
-  z-index: 10;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.control-group-left {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.control-group-right {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.control-button {
-  padding: 8px 16px;
-  border: 1px solid var(--md-sys-color-outline);
-  border-radius: var(--md-sys-shape-corner-large);
-  background: var(--md-sys-color-surface);
-  color: var(--md-sys-color-primary);
-  font-family: var(--md-sys-typescale-label-large-font-family);
-  font-size: var(--md-sys-typescale-label-large-font-size);
-  font-weight: var(--md-sys-typescale-label-large-font-weight);
-  line-height: var(--md-sys-typescale-label-large-line-height);
-  letter-spacing: var(--md-sys-typescale-label-large-letter-spacing);
-  cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 60px;
-  box-shadow: var(--md-sys-elevation-level1);
-  position: relative;
-  overflow: hidden;
-}
-
-.control-button::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: var(--md-sys-color-primary);
-  opacity: 0;
-  transition: opacity 0.2s cubic-bezier(0.2, 0, 0, 1);
-}
-
-.control-button:hover {
-  box-shadow: var(--md-sys-elevation-level2);
-}
-
-.control-button:hover::before {
-  opacity: var(--md-sys-state-hover);
-}
-
-.control-button:active {
-  box-shadow: var(--md-sys-elevation-level0);
-  transform: scale(0.98);
-}
-
-.control-button span {
-  position: relative;
-  z-index: 1;
-}
-
-
-
-.header h1 {
-  margin: 0 0 2px 0;
-  font-size: 1.875rem;
-  font-weight: 500;
-  letter-spacing: -0.025em;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.subtitle {
-  margin: 0;
-  font-size: 1rem;
-  opacity: 0.9;
-  font-weight: 400;
-}
-
-.main-content {
-  max-width: 1200px;
-  margin: 0 auto 48px auto;
-  background: var(--md-sys-color-surface);
-  border-radius: var(--md-sys-shape-corner-large);
-  padding: 24px;
-  box-shadow: var(--md-sys-elevation-level2);
-  transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
-  display: flex;
-  gap: 24px;
-  align-items: stretch;
-  position: relative;
-}
-
-/* 左侧面板 */
-.left-panel {
-  flex: 1;
-  min-width: 0;
-}
-
-/* 右侧结果面板 */
-.results-panel {
-  flex: 1;
-  min-width: 0;
-  background: var(--md-sys-color-surface-variant);
-  border-radius: var(--md-sys-shape-corner-medium);
-  padding: 16px;
-  border: 1px solid var(--md-sys-color-outline);
-  transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  box-shadow: var(--md-sys-elevation-level1);
-}
-
-.results-panel:hover {
-  box-shadow: var(--md-sys-elevation-level2);
-}
-
-/* Material You 暗色主题无需额外样式，所有颜色都通过CSS变量自动处理 */
-
-.tool-selection,
-.file-selection,
-.process-section,
-.results {
-  margin-bottom: 16px;
-}
-
-/* 响应式布局 - 窄屏时垂直排列 */
-@media (max-width: 1024px) {
-  .main-content {
-    flex-direction: column;
-    max-width: 800px;
-    gap: 16px;
-  }
-
-  .left-panel,
-  .results-panel {
-    width: 100%;
-  }
-}
-
-/* 移动端优化 */
-@media (max-width: 768px) {
-  .main-content {
-    margin: 0 16px 32px 16px;
-    padding: 16px;
-    gap: 12px;
-  }
-  
-  .results-panel {
-    padding: 12px;
-  }
-}
-
-h3 {
-  color: var(--md-sys-color-on-surface);
-  margin-bottom: 16px;
-  font-family: var(--md-sys-typescale-title-medium-font-family);
-  font-size: var(--md-sys-typescale-title-medium-font-size);
-  font-weight: var(--md-sys-typescale-title-medium-font-weight);
-  line-height: var(--md-sys-typescale-title-medium-line-height);
-  letter-spacing: var(--md-sys-typescale-title-medium-letter-spacing);
-}
-
-.tool-buttons {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.tool-btn {
-  padding: 10px 24px;
-  border: 1px solid var(--md-sys-color-outline);
-  background: var(--md-sys-color-surface);
-  border-radius: var(--md-sys-shape-corner-large);
-  cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
-  font-family: var(--md-sys-typescale-label-large-font-family);
-  font-size: var(--md-sys-typescale-label-large-font-size);
-  font-weight: var(--md-sys-typescale-label-large-font-weight);
-  line-height: var(--md-sys-typescale-label-large-line-height);
-  letter-spacing: var(--md-sys-typescale-label-large-letter-spacing);
-  color: var(--md-sys-color-primary);
-  position: relative;
-  overflow: hidden;
-}
-
-.tool-btn::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: var(--md-sys-color-primary);
-  opacity: 0;
-  transition: opacity 0.2s cubic-bezier(0.2, 0, 0, 1);
-}
-
-.tool-btn:hover {
-  border-color: var(--md-sys-color-outline);
-  box-shadow: var(--md-sys-elevation-level1);
-}
-
-.tool-btn:hover::before {
-  opacity: var(--md-sys-state-hover);
-}
-
-.tool-btn.active {
-  background: var(--md-sys-color-primary);
-  color: var(--md-sys-color-on-primary);
-  border-color: var(--md-sys-color-primary);
-  box-shadow: var(--md-sys-elevation-level1);
-}
-
-.tool-btn.active::before {
-  opacity: 0;
-}
-
-.tool-btn:active {
-  box-shadow: var(--md-sys-elevation-level0);
-  transform: scale(0.98);
-}
-
-.tool-btn span {
-  position: relative;
-  z-index: 1;
-}
-
-.file-actions {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 12px;
-}
-
-.select-btn,
-.clear-btn {
-  padding: 10px 24px;
-  border: none;
-  border-radius: var(--md-sys-shape-corner-large);
-  cursor: pointer;
-  font-family: var(--md-sys-typescale-label-large-font-family);
-  font-size: var(--md-sys-typescale-label-large-font-size);
-  font-weight: var(--md-sys-typescale-label-large-font-weight);
-  line-height: var(--md-sys-typescale-label-large-line-height);
-  letter-spacing: var(--md-sys-typescale-label-large-letter-spacing);
-  transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  position: relative;
-  overflow: hidden;
-  min-width: 100px;
-  justify-content: center;
-}
-
-.select-btn::before,
-.clear-btn::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  opacity: 0;
-  transition: opacity 0.2s cubic-bezier(0.2, 0, 0, 1);
-}
-
-.select-btn {
-  background: var(--md-sys-color-success);
-  color: var(--md-sys-color-on-success);
-  box-shadow: var(--md-sys-elevation-level1);
-}
-
-.select-btn::before {
-  background: var(--md-sys-color-on-success);
-}
-
-.select-btn:hover {
-  box-shadow: var(--md-sys-elevation-level2);
-}
-
-.select-btn:hover::before {
-  opacity: var(--md-sys-state-hover);
-}
-
-.clear-btn {
-  background: var(--md-sys-color-error);
-  color: var(--md-sys-color-on-error);
-  box-shadow: var(--md-sys-elevation-level1);
-}
-
-.clear-btn::before {
-  background: var(--md-sys-color-on-error);
-}
-
-.clear-btn:hover {
-  box-shadow: var(--md-sys-elevation-level2);
-}
-
-.clear-btn:hover::before {
-  opacity: var(--md-sys-state-hover);
-}
-
-.select-btn:active,
-.clear-btn:active {
-  box-shadow: var(--md-sys-elevation-level0);
-  transform: scale(0.98);
-}
-
-.select-btn span,
-.clear-btn span {
-  position: relative;
-  z-index: 1;
-}
-
-.selected-files {
-  background: var(--md-sys-color-surface-variant);
-  border-radius: var(--md-sys-shape-corner-medium);
-  padding: 16px;
-  border: 1px solid var(--md-sys-color-outline);
-  transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
-  box-shadow: var(--md-sys-elevation-level1);
-}
-
-.selected-files:hover {
-  box-shadow: var(--md-sys-elevation-level2);
-}
-
-.selected-files h4 {
-  margin: 0 0 8px 0;
-  color: var(--text-primary);
-  font-size: 0.9375rem;
-  font-weight: 500;
-}
-
-.file-list {
-  max-height: 100px; /* 增加最大高度 */
-  overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: var(--gray-400) transparent;
-}
-
-
-.file-item {
-  padding: 8px 0;
-  border-bottom: 1px solid var(--md-sys-color-outline-variant);
-  color: var(--md-sys-color-on-surface-variant);
-  font-family: var(--md-sys-typescale-body-medium-font-family);
-  font-size: var(--md-sys-typescale-body-medium-font-size);
-  font-weight: var(--md-sys-typescale-body-medium-font-weight);
-  line-height: var(--md-sys-typescale-body-medium-line-height);
-  letter-spacing: var(--md-sys-typescale-body-medium-letter-spacing);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.file-item:last-child {
-  border-bottom: none;
-}
-
-.process-section {
-  text-align: center;
-  margin-top: 20px;
-}
-
-.process-btn {
-  padding: 12px 32px;
-  border: none;
-  border-radius: var(--md-sys-shape-corner-large);
-  background: var(--md-sys-color-primary);
-  color: var(--md-sys-color-on-primary);
-  font-family: var(--md-sys-typescale-label-large-font-family);
-  font-size: var(--md-sys-typescale-label-large-font-size);
-  font-weight: var(--md-sys-typescale-label-large-font-weight);
-  line-height: var(--md-sys-typescale-label-large-line-height);
-  letter-spacing: var(--md-sys-typescale-label-large-letter-spacing);
-  cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
-  box-shadow: var(--md-sys-elevation-level1);
-  min-width: 140px;
-  position: relative;
-  overflow: hidden;
-}
-
-.process-btn::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: var(--md-sys-color-on-primary);
-  opacity: 0;
-  transition: opacity 0.2s cubic-bezier(0.2, 0, 0, 1);
-}
-
-.process-btn:hover:not(:disabled) {
-  box-shadow: var(--md-sys-elevation-level2);
-}
-
-.process-btn:hover:not(:disabled)::before {
-  opacity: var(--md-sys-state-hover);
-}
-
-.process-btn:active:not(:disabled) {
-  box-shadow: var(--md-sys-elevation-level0);
-  transform: scale(0.98);
-}
-
-.process-btn:disabled {
-  opacity: 0.38;
-  cursor: not-allowed;
-  box-shadow: var(--md-sys-elevation-level0);
-}
-
-.process-btn span {
-  position: relative;
-  z-index: 1;
-}
-
-.results {
-  background: transparent;
-  border-radius: 0;
-  padding: 0;
-  border: none;
-  display: flex;
-  flex-direction: column;
-  flex-grow: 1;
-  min-height: 0;
-}
-
-.result-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  overflow-y: auto;
-  flex-grow: 1;
-  max-height: 600px;
-  scrollbar-width: thin;
-  scrollbar-color: var(--md-sys-color-outline) transparent;
-  padding: 4px;
-}
-
-/* Material You 滚动条样式 */
-.file-list::-webkit-scrollbar,
-.result-list::-webkit-scrollbar,
-.error-content::-webkit-scrollbar {
-  width: 8px;
-}
-
-.file-list::-webkit-scrollbar-track,
-.result-list::-webkit-scrollbar-track,
-.error-content::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.file-list::-webkit-scrollbar-thumb,
-.result-list::-webkit-scrollbar-thumb,
-.error-content::-webkit-scrollbar-thumb {
-  background: var(--md-sys-color-on-surface-variant);
-  border-radius: 4px;
-  border: 2px solid transparent;
-  background-clip: content-box;
-}
-
-.file-list::-webkit-scrollbar-thumb:hover,
-.result-list::-webkit-scrollbar-thumb:hover,
-.error-content::-webkit-scrollbar-thumb:hover {
-  background: var(--md-sys-color-on-surface);
-  background-clip: content-box;
-}
-
-.result-item {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 16px 20px;
-  border-radius: var(--md-sys-shape-corner-medium);
-  transition: all 0.3s cubic-bezier(0.2, 0, 0, 1);
-  font-family: var(--md-sys-typescale-body-large-font-family);
-  font-size: var(--md-sys-typescale-body-large-font-size);
-  font-weight: var(--md-sys-typescale-body-large-font-weight);
-  line-height: var(--md-sys-typescale-body-large-line-height);
-  letter-spacing: var(--md-sys-typescale-body-large-letter-spacing);
-  box-shadow: var(--md-sys-elevation-level1);
-  cursor: pointer;
-  position: relative;
-  overflow: hidden;
-}
-
-.result-item::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: currentColor;
-  opacity: 0;
-  transition: opacity 0.2s cubic-bezier(0.2, 0, 0, 1);
-}
-
-.result-item:hover {
-  transform: translateY(-1px);
-}
-
-.result-item:hover::before {
-  opacity: 0.04; /* 更微妙的状态层效果 */
-}
-
-.result-item:active {
-  transform: translateY(0px) scale(0.98);
-}
-
-.result-item.success {
-  background: var(--md-sys-color-success-container);
-  border: 1px solid var(--md-sys-color-success);
-  color: var(--md-sys-color-on-success-container);
-}
-
-.result-item.error {
-  background: var(--md-sys-color-error-container);
-  border: 1px solid var(--md-sys-color-error);
-  color: var(--md-sys-color-on-error-container);
-}
-
-.result-icon {
-  font-size: 20px;
-  flex-shrink: 0;
-  width: 24px;
-  height: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  background: currentColor;
-  position: relative;
-  z-index: 1;
-}
-
-.result-icon::after {
-  content: attr(data-icon);
-  color: inherit;
-  background: inherit;
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  font-weight: bold;
-}
-
-.result-message {
-  flex: 1;
-  color: inherit;
-  position: relative;
-  z-index: 1;
-  font-weight: 500;
-}
-
-.open-folder-icon {
-  font-size: 20px;
-  opacity: 0.7;
-  transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
-  margin-left: 8px;
-  width: 24px;
-  height: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--md-sys-shape-corner-small);
-  background: rgba(255, 255, 255, 0.08);
-  position: relative;
-  z-index: 1;
-}
-
-.result-item:hover .open-folder-icon {
-  opacity: 1;
-  transform: scale(1.05);
-  background: rgba(255, 255, 255, 0.12);
-}
-
-.result-item.success .result-icon {
-  color: var(--md-sys-color-success);
-}
-
-.result-item.error .result-icon {
-  color: var(--md-sys-color-error);
-}
-
-/* 错误对话框样式 */
-.error-dialog-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  backdrop-filter: blur(20px);
-  animation: overlayFadeIn 0.4s var(--ease-out-cubic);
-}
-
-@keyframes overlayFadeIn {
-  from {
-    opacity: 0;
-    backdrop-filter: blur(0px);
-  }
-  to {
-    opacity: 1;
-    backdrop-filter: blur(20px);
-  }
-}
-
-.error-dialog {
-  background: var(--md-sys-color-surface);
-  border-radius: var(--md-sys-shape-corner-extra-large);
-  max-width: 500px;
-  width: 90%;
-  max-height: 80vh;
-  overflow: hidden;
-  box-shadow: var(--md-sys-elevation-level3);
-  animation: dialogSlideIn 0.3s cubic-bezier(0.2, 0, 0, 1);
-  position: relative;
-}
-
-.error-dialog::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
-  pointer-events: none;
-  border-radius: 24px;
-}
-
-@keyframes dialogSlideIn {
-  from {
-    opacity: 0;
-    transform: translateY(-30px) scale(0.9) rotateX(10deg);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1) rotateX(0deg);
-  }
-}
-
-.error-header {
-  background: var(--md-sys-color-error);
-  color: var(--md-sys-color-on-error);
-  padding: 24px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.error-header h3 {
-  margin: 0;
-  color: var(--md-sys-color-on-error);
-  font-family: var(--md-sys-typescale-headline-small-font-family);
-  font-size: var(--md-sys-typescale-headline-small-font-size);
-  font-weight: var(--md-sys-typescale-headline-small-font-weight);
-  line-height: var(--md-sys-typescale-headline-small-line-height);
-  letter-spacing: var(--md-sys-typescale-headline-small-letter-spacing);
-}
-
-.close-btn {
-  background: none;
-  border: none;
-  color: var(--md-sys-color-on-error);
-  font-size: 24px;
-  cursor: pointer;
-  padding: 0;
-  width: 40px;
-  height: 40px;
-  border-radius: var(--md-sys-shape-corner-medium);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
-}
-
-.close-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  transform: scale(1.05);
-}
-
-.error-content {
-  padding: 24px;
-  max-height: 300px;
-  overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: var(--gray-400) transparent;
-}
-
-.version-content {
-  padding: 24px;
-}
-
-.error-item {
-  padding: 16px;
-  margin-bottom: 16px;
-  background: var(--md-sys-color-error-container);
-  border-radius: var(--md-sys-shape-corner-small);
-  border-left: 4px solid var(--md-sys-color-error);
-  font-family: 'Consolas', 'Monaco', monospace;
-  font-size: 13px;
-  color: var(--md-sys-color-on-error-container);
-  line-height: 1.5;
-  border: 1px solid var(--md-sys-color-outline);
-}
-
-/* 版本信息容器样式 */
-.version-info-container {
-  background: var(--md-sys-color-surface-variant);
-  border-radius: var(--md-sys-shape-corner-medium);
-  padding: 20px;
-  margin-bottom: 16px;
-  border: 1px solid var(--md-sys-color-outline-variant);
-}
-
-.version-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px 0;
-  font-family: var(--md-sys-typescale-body-large-font-family);
-  font-size: var(--md-sys-typescale-body-large-font-size);
-  color: var(--md-sys-color-on-surface);
-}
-
-.version-item strong {
-  color: var(--md-sys-color-primary);
-  font-weight: 500;
-}
-
-.version-value {
-  font-family: 'Consolas', 'Monaco', monospace;
-  color: var(--md-sys-color-on-surface-variant);
-  background: var(--md-sys-color-surface);
-  padding: 4px 12px;
-  border-radius: var(--md-sys-shape-corner-small);
-  border: 1px solid var(--md-sys-color-outline-variant);
-}
-
-.version-loading {
-  font-style: italic;
-  color: var(--md-sys-color-on-surface-variant);
-  opacity: 0.7;
-  animation: pulse 1.5s ease-in-out infinite;
-}
-
-@keyframes pulse {
-  0%, 100% {
-    opacity: 0.7;
-  }
-  50% {
-    opacity: 1;
-  }
-}
-
-.version-divider {
-  height: 1px;
-  background: var(--md-sys-color-outline-variant);
-  margin: 8px 0;
-  opacity: 0.5;
-}
-
-.version-notice {
-  padding: 12px;
-  background: var(--md-sys-color-surface);
-  border-radius: var(--md-sys-shape-corner-small);
-  border-left: 3px solid var(--md-sys-color-primary);
-  font-size: 14px;
-  color: var(--md-sys-color-on-surface-variant);
-  line-height: 1.6;
-}
-
-/* 处理选项样式 */
-.process-options {
-  background: var(--md-sys-color-surface-variant);
-  border-radius: var(--md-sys-shape-corner-medium);
-  padding: 16px;
-  border: 1px solid var(--md-sys-color-outline);
-  transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
-  box-shadow: var(--md-sys-elevation-level1);
-}
-
-.process-options:hover {
-  box-shadow: var(--md-sys-elevation-level2);
-}
-
-.option-item {
-  margin-bottom: 10px;
-}
-
-.checkbox-label {
-  display: flex;
-  align-items: center;
-  cursor: pointer;
-  font-family: var(--md-sys-typescale-body-large-font-family);
-  font-size: var(--md-sys-typescale-body-large-font-size);
-  font-weight: var(--md-sys-typescale-body-large-font-weight);
-  line-height: var(--md-sys-typescale-body-large-line-height);
-  letter-spacing: var(--md-sys-typescale-body-large-letter-spacing);
-  color: var(--md-sys-color-on-surface);
-  transition: color 0.2s cubic-bezier(0.2, 0, 0, 1);
-}
-
-.checkbox-label:hover {
-  color: var(--md-sys-color-primary);
-}
-
-.checkbox-input {
-  display: none;
-}
-
-.checkbox-custom {
-  width: 20px;
-  height: 20px;
-  border: 2px solid var(--md-sys-color-outline);
-  border-radius: var(--md-sys-shape-corner-extra-small);
-  margin-right: 12px;
-  position: relative;
-  transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
-  background: var(--md-sys-color-surface);
-  flex-shrink: 0;
-}
-
-.checkbox-input:checked + .checkbox-custom {
-  background: var(--md-sys-color-primary);
-  border-color: var(--md-sys-color-primary);
-}
-
-.checkbox-input:checked + .checkbox-custom::after {
-  content: '✓';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  color: var(--md-sys-color-on-primary);
-  font-size: 14px;
-  font-weight: 500;
-}
-
-.checkbox-custom:hover {
-  border-color: var(--md-sys-color-on-surface);
-}
-
-.checkbox-text {
-  font-family: var(--md-sys-typescale-body-large-font-family);
-  font-size: var(--md-sys-typescale-body-large-font-size);
-  font-weight: var(--md-sys-typescale-body-large-font-weight);
-  line-height: var(--md-sys-typescale-body-large-line-height);
-  letter-spacing: var(--md-sys-typescale-body-large-letter-spacing);
-  color: var(--md-sys-color-on-surface);
-}
-
-.option-description {
-  margin: 8px 0 0 32px;
-  font-family: var(--md-sys-typescale-body-medium-font-family);
-  font-size: var(--md-sys-typescale-body-medium-font-size);
-  font-weight: var(--md-sys-typescale-body-medium-font-weight);
-  line-height: var(--md-sys-typescale-body-medium-line-height);
-  letter-spacing: var(--md-sys-typescale-body-medium-letter-spacing);
-  color: var(--md-sys-color-on-surface-variant);
-}
-
-/* 文本输入框样式 */
-.input-label {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  font-family: var(--md-sys-typescale-label-large-font-family);
-  font-size: var(--md-sys-typescale-label-large-font-size);
-  font-weight: var(--md-sys-typescale-label-large-font-weight);
-  line-height: var(--md-sys-typescale-label-large-line-height);
-  letter-spacing: var(--md-sys-typescale-label-large-letter-spacing);
-  color: var(--md-sys-color-on-surface);
-}
-
-.input-text {
-  font-family: var(--md-sys-typescale-label-large-font-family);
-  font-size: var(--md-sys-typescale-label-large-font-size);
-  font-weight: var(--md-sys-typescale-label-large-font-weight);
-  line-height: var(--md-sys-typescale-label-large-line-height);
-  letter-spacing: var(--md-sys-typescale-label-large-letter-spacing);
-  color: var(--md-sys-color-on-surface);
-}
-
-.text-input {
-  padding: 16px;
-  border: 1px solid var(--md-sys-color-outline);
-  border-radius: var(--md-sys-shape-corner-small);
-  background: var(--md-sys-color-surface);
-  color: var(--md-sys-color-on-surface);
-  font-family: var(--md-sys-typescale-body-large-font-family);
-  font-size: var(--md-sys-typescale-body-large-font-size);
-  font-weight: var(--md-sys-typescale-body-large-font-weight);
-  line-height: var(--md-sys-typescale-body-large-line-height);
-  letter-spacing: var(--md-sys-typescale-body-large-letter-spacing);
-  transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
-  outline: none;
-}
-
-.text-input:focus {
-  border-color: var(--md-sys-color-primary);
-  box-shadow: 0 0 0 1px var(--md-sys-color-primary);
-}
-
-.text-input:hover:not(:focus) {
-  border-color: var(--md-sys-color-on-surface);
-}
-
-.text-input::placeholder {
-  color: var(--md-sys-color-on-surface-variant);
-}
-
-.error-footer {
-  padding: 24px;
-  text-align: center;
-  border-top: 1px solid var(--md-sys-color-outline-variant);
-  background: var(--md-sys-color-surface-variant);
-}
-
-.ok-btn {
-  padding: 12px 32px;
-  background: var(--md-sys-color-primary);
-  color: var(--md-sys-color-on-primary);
-  border: none;
-  border-radius: var(--md-sys-shape-corner-large);
-  cursor: pointer;
-  font-family: var(--md-sys-typescale-label-large-font-family);
-  font-size: var(--md-sys-typescale-label-large-font-size);
-  font-weight: var(--md-sys-typescale-label-large-font-weight);
-  line-height: var(--md-sys-typescale-label-large-line-height);
-  letter-spacing: var(--md-sys-typescale-label-large-letter-spacing);
-  transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
-  box-shadow: var(--md-sys-elevation-level1);
-  min-width: 120px;
-  position: relative;
-  overflow: hidden;
-}
-
-.ok-btn::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: var(--md-sys-color-on-primary);
-  opacity: 0;
-  transition: opacity 0.2s cubic-bezier(0.2, 0, 0, 1);
-}
-
-.ok-btn:hover {
-  box-shadow: var(--md-sys-elevation-level2);
-}
-
-.ok-btn:hover::before {
-  opacity: var(--md-sys-state-hover);
-}
-
-.ok-btn:active {
-  box-shadow: var(--md-sys-elevation-level0);
-  transform: scale(0.98);
-}
-
-.ok-btn span {
-  position: relative;
-  z-index: 1;
-}
-
-/* 淡出淡入动画效果 */
-.fade-transition {
-  transition: opacity 1s ease-in-out;
-}
-
-.fade-out {
-  opacity: 0;
-}
-
-.fade-in {
-  opacity: 1;
-}
-
-/* 为所有需要动画的文本元素添加过渡效果 */
-.header h1 span,
-.subtitle span,
-.tool-selection h3 span,
-.file-selection h3 span,
-.process-options h3 span,
-.results h3 span,
-.selected-files h4 span,
-.option-description span,
-.tool-btn span,
-.file-actions button span,
-.process-btn span,
-.checkbox-text span,
-.input-text span,
-.close-btn span,
-.ok-btn span,
-.error-item span,
-.error-header h3 span,
-.help-btn span,
-.language-btn span,
-.theme-btn span,
-.version-text span {
-  transition: opacity 1s ease-in-out;
-}
-
-/* 响应式设计 */
-@media (max-width: 768px) {
-  .container {
-    padding: 0;
-  }
-  
-  .header {
-    padding: 16px 0 0 0;
-    margin-bottom: 16px;
-  }
-  
-  .header-controls {
-    top: 12px;
-    left: 12px;
-    right: 12px;
-    gap: 8px;
-  }
-  
-  .control-group-left,
-  .control-group-right {
-    gap: 8px;
-  }
-  
-  .control-button {
-    padding: 6px 12px;
-    min-width: 48px;
-    font-size: 12px;
-  }
-  
-  .main-content {
-    margin: 0 12px 24px 12px;
-    padding: 16px;
-    border-radius: var(--md-sys-shape-corner-medium);
-  }
-  
-  .tool-buttons {
-    flex-direction: column;
-    gap: 8px;
-  }
-  
-  .file-actions {
-    flex-direction: column;
-    gap: 8px;
-  }
-  
-  .header h1 {
-    font-size: var(--md-sys-typescale-headline-medium-font-size);
-    margin: 8px 0 4px 0;
-  }
-  
-  .subtitle {
-    font-size: var(--md-sys-typescale-body-medium-font-size);
-  }
-  
-  .process-btn {
-    padding: 12px 24px;
-    font-size: var(--md-sys-typescale-label-large-font-size);
-    min-width: 120px;
-  }
-  
-  .error-dialog {
-    margin: 12px;
-    width: calc(100% - 24px);
-  }
-  
-  h3 {
-    font-size: var(--md-sys-typescale-title-medium-font-size);
-    margin-bottom: 12px;
-  }
-  
-  .tool-selection,
-  .file-selection,
-  .process-section,
-  .results {
-    margin-bottom: 16px;
-  }
-  
-  .process-section {
-    margin-top: 20px;
-  }
-}
-</style>

@@ -5,7 +5,7 @@
   <h3>现代化的色谱数据处理工具集</h3>
   <p>基于 Tauri 2.0 + Vue 3 + TypeScript 构建的跨平台、高性能桌面应用</p>
   
-  [![Version](https://img.shields.io/badge/version-2.6.8-blue.svg)](https://github.com/Cubicise/CMTools)
+  [![Version](https://img.shields.io/badge/version-2.6.9-blue.svg)](https://github.com/Cubicise/CMTools)
   [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
   [![Tauri](https://img.shields.io/badge/Tauri-2.9-orange.svg)](https://tauri.app/)
   [![Vue](https://img.shields.io/badge/Vue-3.5-green.svg)](https://vuejs.org/)
@@ -34,7 +34,7 @@ CMTools 采用前后端分离的现代桌面应用架构，利用 Tauri 将基�
 
 ### 技术栈概览
 
-- **前端**：Vue 3.5 + TypeScript 5.6 + Vite 6.0
+- **前端**：Vue 3.5 + TypeScript 5.6 + Vite 6.0 + Tailwind CSS 4.1
 - **后端**：Rust (Edition 2024) + Tauri 2.9 + Tokio 1.0
 - **核心依赖**：serde, tauri-plugin-dialog, tauri-plugin-opener
 
