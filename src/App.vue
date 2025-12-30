@@ -184,7 +184,7 @@ const translations = {
     windowsOptimization: 'Windows System Optimization',
     windowsOptimizationDesc: 'Optimize encoding for Windows systems, recommended to keep checked in Windows environment',
     verboseLog: 'Output detailed runtime log file',
-    verboseLogDesc: 'Check this option to pass -verbose parameter when calling UPDFiler_v2, for outputting detailed runtime log file',
+    verboseLogDesc: 'Check this option to pass -dev parameter when calling UPDFiler_v2, for outputting detailed runtime log file',
     processing: '⏳ Processing...',
     startProcess: '🚀 Start Processing',
     processResults: 'Processing Results',

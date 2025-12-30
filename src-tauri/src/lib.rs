@@ -476,10 +476,10 @@ async fn process_files_internal(_app: tauri::AppHandle, tool_name: String, file_
                 }
             }
             
-            // 为 UPDFiler_v2 添加 -verbose 参数
+            // 为 UPDFiler_v2 添加 -dev 参数
             if let Tool::UpdfilerV2 = tool {
                 if verbose_log.unwrap_or(false) {
-                    cmd.arg("-verbose");
+                    cmd.arg("-dev");
                 }
             }
             
