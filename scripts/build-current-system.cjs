@@ -8,6 +8,31 @@
 const { execSync } = require('child_process');
 const os = require('os');
 const fs = require('fs');
+const path = require('path');
+
+// 递归复制目录
+function copyDirSync(src, dest) {
+    if (!fs.existsSync(src)) {
+        return;
+    }
+    
+    if (!fs.existsSync(dest)) {
+        fs.mkdirSync(dest, { recursive: true });
+    }
+    
+    const entries = fs.readdirSync(src, { withFileTypes: true });
+    
+    for (const entry of entries) {
+        const srcPath = path.join(src, entry.name);
+        const destPath = path.join(dest, entry.name);
+        
+        if (entry.isDirectory()) {
+            copyDirSync(srcPath, destPath);
+        } else {
+            fs.copyFileSync(srcPath, destPath);
+        }
+    }
+}
 
 console.log('🚀 开始构建当前系统环境软件包...\n');
 
@@ -19,54 +44,101 @@ function detectSystemArchitecture() {
     console.log(`   平台: ${platform}`);
     console.log(`   架构: ${arch}`);
     
-    if (platform !== 'win32') {
-        console.log('⚠️  当前平台非Windows，将构建默认目标平台版本');
-        return {
-            target: null,
-            output: 'cmtools',
-            description: '默认平台版本'
-        };
+    // macOS 平台
+    if (platform === 'darwin') {
+        if (arch === 'arm64' || arch === 'aarch64') {
+            return {
+                target: 'aarch64-apple-darwin',
+                output: 'CMTools.dmg',
+                bundleOutput: 'cmtools_2.6.9_aarch64.dmg',
+                description: 'Apple Silicon (M系列) macOS 版本'
+            };
+        } else {
+            return {
+                target: 'x86_64-apple-darwin',
+                output: 'CMTools.dmg',
+                bundleOutput: 'cmtools_2.6.9_x64.dmg',
+                description: 'Intel macOS 版本'
+            };
+        }
     }
     
     // Windows平台架构检测
-    switch (arch) {
-        case 'x64':
-        case 'x86_64':
-            return {
-                target: 'x86_64-pc-windows-msvc',
-                output: 'CMTools.x64.exe',
-                description: '64位Windows版本'
-            };
-        case 'ia32':
-        case 'x86':
-            return {
-                target: 'i686-pc-windows-msvc',
-                output: 'CMTools.x86.exe',
-                description: '32位Windows版本'
-            };
-        case 'arm64':
-            console.log('⚠️  ARM64架构暂不支持，将构建64位x86版本');
-            return {
-                target: 'x86_64-pc-windows-msvc',
-                output: 'CMTools.x64.exe',
-                description: '64位Windows版本 (ARM64系统兼容)'
-            };
-        default:
-            console.log(`⚠️  未知架构 ${arch}，将构建64位版本`);
-            return {
-                target: 'x86_64-pc-windows-msvc',
-                output: 'CMTools.x64.exe',
-                description: '64位Windows版本 (默认)'
-            };
+    if (platform === 'win32') {
+        switch (arch) {
+            case 'x64':
+            case 'x86_64':
+                return {
+                    target: 'x86_64-pc-windows-msvc',
+                    output: 'CMTools.exe',
+                    description: '64位Windows版本'
+                };
+            case 'ia32':
+            case 'x86':
+                return {
+                    target: 'i686-pc-windows-msvc',
+                    output: 'CMTools.exe',
+                    description: '32位Windows版本'
+                };
+            case 'arm64':
+                console.log('⚠️  ARM64架构暂不支持，将构建64位x86版本');
+                return {
+                    target: 'x86_64-pc-windows-msvc',
+                    output: 'CMTools.exe',
+                    description: '64位Windows版本 (ARM64系统兼容)'
+                };
+            default:
+                console.log(`⚠️  未知架构 ${arch}，将构建64位版本`);
+                return {
+                    target: 'x86_64-pc-windows-msvc',
+                    output: 'CMTools.exe',
+                    description: '64位Windows版本 (默认)'
+                };
+        };
     }
+    
+    // Linux 平台
+    if (platform === 'linux') {
+        if (arch === 'arm64' || arch === 'aarch64') {
+            return {
+                target: 'aarch64-unknown-linux-gnu',
+                output: 'CMTools.AppImage',
+                description: 'ARM64 Linux 版本'
+            };
+        } else {
+            return {
+                target: 'x86_64-unknown-linux-gnu',
+                output: 'CMTools.AppImage',
+                description: '64位 Linux 版本'
+            };
+        }
+    }
+    
+    // 其他平台
+    console.log('⚠️  当前平台非Windows/macOS/Linux，将构建默认目标平台版本');
+    return {
+        target: null,
+        output: 'CMTools',
+        description: '默认平台版本'
+    };
 }
 
 async function checkAndInstallTarget(target) {
-    if (!target) return; // 非Windows平台跳过
+    if (!target) return; // 非目标平台跳过
     
     console.log(`\n📋 检查Rust目标: ${target}`);
     try {
-        execSync(`rustup target list --installed | findstr ${target}`, { 
+        // 检测系统类型使用不同的命令
+        const platform = os.platform();
+        let checkCommand;
+        
+        if (platform === 'win32') {
+            checkCommand = `rustup target list --installed | findstr ${target}`;
+        } else {
+            checkCommand = `rustup target list --installed | grep ${target}`;
+        }
+        
+        execSync(checkCommand, { 
             stdio: 'pipe',
             shell: true 
         });
@@ -95,7 +167,7 @@ function buildFrontend() {
 }
 
 async function buildTarget(buildConfig) {
-    const { target, output, description } = buildConfig;
+    const { target, output, bundleOutput, description } = buildConfig;
     
     console.log(`\n🔨 构建 ${description}...`);
     if (target) {
@@ -106,22 +178,97 @@ async function buildTarget(buildConfig) {
     const startTime = Date.now();
     
     try {
+        // 检查是否需要使用 --target 参数
+        // 如果目标平台与当前系统匹配，则不使用 --target 参数以避免路径问题
+        const currentPlatform = os.platform();
+        const currentArch = os.arch();
+        let useTargetArg = true;
+        
+        if (target) {
+            // macOS: 如果当前是 arm64 且目标是 aarch64-apple-darwin，或当前是 x64 且目标是 x86_64-apple-darwin
+            if (currentPlatform === 'darwin') {
+                if ((currentArch === 'arm64' || currentArch === 'aarch64') && target === 'aarch64-apple-darwin') {
+                    useTargetArg = false;
+                } else if (currentArch === 'x64' && target === 'x86_64-apple-darwin') {
+                    useTargetArg = false;
+                }
+            }
+            // Linux: 类似处理
+            else if (currentPlatform === 'linux') {
+                if ((currentArch === 'arm64' || currentArch === 'aarch64') && target === 'aarch64-unknown-linux-gnu') {
+                    useTargetArg = false;
+                } else if (currentArch === 'x64' && target === 'x86_64-unknown-linux-gnu') {
+                    useTargetArg = false;
+                }
+            }
+        }
+        
         // 构建命令
-        const buildCmd = target 
+        const buildCmd = target && useTargetArg
             ? `npm run tauri -- build -- --target ${target}`
             : 'npm run tauri -- build';
             
         execSync(buildCmd, { stdio: 'inherit' });
         
+        // macOS 处理
+        if (target && target.includes('darwin')) {
+            // macOS 产物在 src-tauri/target/release/bundle/dmg/（不包含 target 路径）
+            const bundleDir = `src-tauri/target/release/bundle/dmg/`;
+            const resourcesDir = `src-tauri/target/release/bundle/macos/cmtools.app/Contents/Resources/`;
+            
+            // 复制前端资源到 app bundle
+            console.log('📦 复制前端资源到 app bundle...');
+            try {
+                // 确保 Resources 目录存在
+                if (!fs.existsSync(resourcesDir)) {
+                    fs.mkdirSync(resourcesDir, { recursive: true });
+                }
+                // 复制 dist 目录内容到 Resources
+                copyDirSync('dist', resourcesDir);
+                console.log('✅ 前端资源复制完成');
+            } catch (copyError) {
+                console.warn('⚠️  前端资源复制失败:', copyError.message);
+            }
+            
+            // 优先使用 bundleOutput，如果没有则自动检测
+            let sourceFile = bundleOutput ? `${bundleDir}${bundleOutput}` : null;
+            
+            // 自动检测实际生成的 DMG 文件
+            if (!sourceFile || !fs.existsSync(sourceFile)) {
+                const files = fs.readdirSync(bundleDir).filter(f => f.endsWith('.dmg'));
+                if (files.length > 0) {
+                    sourceFile = `${bundleDir}${files[0]}`;
+                }
+            }
+            
+            if (sourceFile && fs.existsSync(sourceFile)) {
+                // 复制到项目根目录
+                const projectRootOutput = output;
+                if (fs.existsSync(projectRootOutput)) {
+                    fs.unlinkSync(projectRootOutput);
+                }
+                fs.copyFileSync(sourceFile, projectRootOutput);
+                
+                const stats = fs.statSync(projectRootOutput);
+                const sizeMB = (stats.size / 1024 / 1024).toFixed(2);
+                const buildTime = ((Date.now() - startTime) / 1000).toFixed(1);
+                
+                console.log(`✅ ${description} 构建成功`);
+                console.log(`   文件大小: ${sizeMB} MB`);
+                console.log(`   构建时间: ${buildTime}s`);
+                console.log(`   文件位置: ${projectRootOutput}`);
+            } else {
+                console.log(`✅ ${description} 构建成功 (app bundle 已生成)`);
+            }
+        } 
         // Windows平台处理输出文件
-        if (target && target.includes('windows')) {
+        else if (target && target.includes('windows')) {
             const sourcePath = `src-tauri/target/${target}/release/cmtools.exe`;
             if (fs.existsSync(sourcePath)) {
-                // 删除旧文件
+                // 复制到项目根目录
                 if (fs.existsSync(output)) {
                     fs.unlinkSync(output);
                 }
-                // 复制并重命名
                 fs.copyFileSync(sourcePath, output);
                 
                 const stats = fs.statSync(output);
@@ -170,6 +317,9 @@ async function main() {
         if (buildConfig.target && buildConfig.target.includes('windows')) {
             console.log('\n📋 其他构建选项:');
             console.log('   npm run tauri:build:win  # 构建所有Windows版本');
+            console.log('   npm run tauri:build:all  # 构建所有支持的版本');
+        } else if (buildConfig.target && buildConfig.target.includes('darwin')) {
+            console.log('\n📋 其他构建选项:');
             console.log('   npm run tauri:build:all  # 构建所有支持的版本');
         }
         

@@ -98,3 +98,17 @@ Thumbs.db
 
 # Local configuration
 config.local.*
+
+src/assets/AneuFiler
+src/assets/Aneu23
+src/assets/SMNFiler_v1
+src/assets/SMNFiler_v2
+src/assets/SHCarrier
+src/assets/UPDFiler_v1
+src/assets/UPDFiler_v2
+
+*.app
+*.dmg
+
+/src-tauri/gen/
+.vite/

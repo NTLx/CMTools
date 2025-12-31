@@ -63,29 +63,68 @@ impl Tool {
         }
     }
     
-    // 获取可执行文件名
-    fn exe_name(&self) -> &'static str {
-        match self {
-            Tool::AneuFiler => "AneuFiler.exe",
-            Tool::Aneu23 => "Aneu23.exe",
-            Tool::SMNFilerV1 => "SMNFiler_v1.exe",
-            Tool::SMNFilerV2 => "SMNFiler_v2.exe",
-            Tool::SHCarrier => "SHCarrier.exe",
-            Tool::UpdfilerV1 => "UPDFiler_v1.exe",
-            Tool::UpdfilerV2 => "UPDFiler_v2.exe",
+    // 获取可执行文件名（根据平台返回不同文件名）
+    fn exe_name(&self) -> String {
+        let base_name = match self {
+            Tool::AneuFiler => "AneuFiler",
+            Tool::Aneu23 => "Aneu23",
+            Tool::SMNFilerV1 => "SMNFiler_v1",
+            Tool::SMNFilerV2 => "SMNFiler_v2",
+            Tool::SHCarrier => "SHCarrier",
+            Tool::UpdfilerV1 => "UPDFiler_v1",
+            Tool::UpdfilerV2 => "UPDFiler_v2",
+        };
+        
+        #[cfg(target_os = "windows")]
+        {
+            format!("{}.exe", base_name)
+        }
+        
+        #[cfg(not(target_os = "windows"))]
+        {
+            base_name.to_string()
         }
     }
     
-    // 获取嵌入的可执行文件数据
+    // 获取嵌入的可执行文件数据（根据平台选择不同文件）
     fn exe_data(&self) -> &'static [u8] {
-        match self {
-            Tool::AneuFiler => include_bytes!("../../src/assets/AneuFiler.exe"),
-            Tool::Aneu23 => include_bytes!("../../src/assets/Aneu23.exe"),
-            Tool::SMNFilerV1 => include_bytes!("../../src/assets/SMNFiler_v1.exe"),
-            Tool::SMNFilerV2 => include_bytes!("../../src/assets/SMNFiler_v2.exe"),
-            Tool::SHCarrier => include_bytes!("../../src/assets/SHCarrier.exe"),
-            Tool::UpdfilerV1 => include_bytes!("../../src/assets/UPDFiler_v1.exe"),
-            Tool::UpdfilerV2 => include_bytes!("../../src/assets/UPDFiler_v2.exe"),
+        #[cfg(target_os = "windows")]
+        {
+            match self {
+                Tool::AneuFiler => include_bytes!("../../src/assets/AneuFiler.exe"),
+                Tool::Aneu23 => include_bytes!("../../src/assets/Aneu23.exe"),
+                Tool::SMNFilerV1 => include_bytes!("../../src/assets/SMNFiler_v1.exe"),
+                Tool::SMNFilerV2 => include_bytes!("../../src/assets/SMNFiler_v2.exe"),
+                Tool::SHCarrier => include_bytes!("../../src/assets/SHCarrier.exe"),
+                Tool::UpdfilerV1 => include_bytes!("../../src/assets/UPDFiler_v1.exe"),
+                Tool::UpdfilerV2 => include_bytes!("../../src/assets/UPDFiler_v2.exe"),
+            }
+        }
+        
+        #[cfg(target_os = "macos")]
+        {
+            match self {
+                Tool::AneuFiler => include_bytes!("../../src/assets/AneuFiler"),
+                Tool::Aneu23 => include_bytes!("../../src/assets/Aneu23"),
+                Tool::SMNFilerV1 => include_bytes!("../../src/assets/SMNFiler_v1"),
+                Tool::SMNFilerV2 => include_bytes!("../../src/assets/SMNFiler_v2"),
+                Tool::SHCarrier => include_bytes!("../../src/assets/SHCarrier"),
+                Tool::UpdfilerV1 => include_bytes!("../../src/assets/UPDFiler_v1"),
+                Tool::UpdfilerV2 => include_bytes!("../../src/assets/UPDFiler_v2"),
+            }
+        }
+        
+        #[cfg(target_os = "linux")]
+        {
+            match self {
+                Tool::AneuFiler => include_bytes!("../../src/assets/AneuFiler"),
+                Tool::Aneu23 => include_bytes!("../../src/assets/Aneu23"),
+                Tool::SMNFilerV1 => include_bytes!("../../src/assets/SMNFiler_v1"),
+                Tool::SMNFilerV2 => include_bytes!("../../src/assets/SMNFiler_v2"),
+                Tool::SHCarrier => include_bytes!("../../src/assets/SHCarrier"),
+                Tool::UpdfilerV1 => include_bytes!("../../src/assets/UPDFiler_v1"),
+                Tool::UpdfilerV2 => include_bytes!("../../src/assets/UPDFiler_v2"),
+            }
         }
     }
     

@@ -9,7 +9,10 @@
     "tauri": "tauri",
     "tauri:build": "node scripts/build-current-system.cjs",
     "tauri:build:win": "node scripts/build-windows-all.cjs",
-    "tauri:build:all": "node scripts/build-all-platforms.cjs"
+    "tauri:build:all": "node scripts/build-all-platforms.cjs",
+    "clean:cache": "node scripts/clean-build-cache.cjs",
+    "clean:cache:cargo": "node scripts/clean-build-cache.cjs cargo",
+    "clean:cache:frontend": "node scripts/clean-build-cache.cjs frontend"
   },
   "dependencies": {
     "@tauri-apps/api": "2.9.0",

@@ -13,6 +13,9 @@ const version = packageJson.version;
 export default defineConfig(async () => ({
   plugins: [vue()],
 
+  // 使用相对路径，确保在 Tauri 应用中能正确加载资源
+  base: './',
+
   // 定义全局常量
   define: {
     __APP_VERSION__: JSON.stringify(version),
