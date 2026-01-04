@@ -82,17 +82,25 @@ function buildFrontend() {
 
 function cleanPreviousBuilds() {
     console.log('🧹 清理之前的构建...');
-    
-    // 清理构建目录
-    try {
-        execSync('cargo clean', { 
-            cwd: 'src-tauri', 
-            stdio: 'pipe' 
-        });
-    } catch (error) {
-        // 忽略清理错误
-    }
-    
+
+    // 只清理特定target的构建产物
+    const targetsToClean = ['i686-pc-windows-msvc', 'x86_64-pc-windows-msvc'];
+
+    targetsToClean.forEach(target => {
+        const targetDir = `src-tauri/target/${target}`;
+        if (fs.existsSync(targetDir)) {
+            try {
+                const releaseDir = path.join(targetDir, 'release');
+                if (fs.existsSync(releaseDir)) {
+                    execSync(`rm -rf "${releaseDir}"`, { stdio: 'pipe' });
+                    console.log(`🗑️  清理: ${target}/release`);
+                }
+            } catch (error) {
+                // 忽略清理错误
+            }
+        }
+    });
+
     // 清理之前的输出文件
     builds.forEach(build => {
         if (fs.existsSync(build.output)) {
@@ -125,54 +133,20 @@ async function buildVersion(buildConfig) {
             TAURI_PRIVATE_KEY: '',
             TAURI_KEY_PASSWORD: ''
         };
-        
-        // Windows 7特殊处理
-        if (win7) {
-            // 直接使用兼容性构建参数而不是调用已删除的脚本
-            execSync(`npm run tauri -- build -- --target ${target}`, { 
-                stdio: 'inherit',
-                env: buildEnv
-            });
-            
-            // 检查源文件
-            const sourcePath = `src-tauri/target/${target}/release/cmtools.exe`;
-            if (!fs.existsSync(sourcePath)) {
-                throw new Error(`构建输出文件不存在: ${sourcePath}`);
-            }
-            
-            // 复制并重命名文件
-            fs.copyFileSync(sourcePath, output);
-        } else if (output === 'CMTools.Win7.x86.exe') {
-            // 使用Windows 7兼容性构建参数
-            execSync(`npm run tauri -- build -- --target ${target}`, { 
-                stdio: 'inherit',
-                env: buildEnv
-            });
-            
-            // 检查源文件
-            const sourcePath = `src-tauri/target/${target}/release/cmtools.exe`;
-            if (!fs.existsSync(sourcePath)) {
-                throw new Error(`构建输出文件不存在: ${sourcePath}`);
-            }
-            
-            // 复制并重命名文件
-            fs.copyFileSync(sourcePath, output);
-        } else {
-            // 标准构建
-            execSync(`npm run tauri -- build -- --target ${target}`, { 
-                stdio: 'inherit',
-                env: buildEnv
-            });
-            
-            // 检查源文件
-            const sourcePath = `src-tauri/target/${target}/release/cmtools.exe`;
-            if (!fs.existsSync(sourcePath)) {
-                throw new Error(`构建输出文件不存在: ${sourcePath}`);
-            }
-            
-            // 复制并重命名文件
-            fs.copyFileSync(sourcePath, output);
+
+        // 使用 tauri build（会包含前端资源）
+        console.log(`   📦 构建 ${target}...`);
+        execSync(`npm run tauri -- build -- --target ${target}`, {
+            stdio: 'inherit',
+            env: buildEnv
+        });
+
+        // 复制便携版exe
+        const targetExePath = `src-tauri/target/${target}/release/cmtools.exe`;
+        if (!fs.existsSync(targetExePath)) {
+            throw new Error(`构建输出文件不存在: ${targetExePath}`);
         }
+        fs.copyFileSync(targetExePath, output);
         
         // 获取文件信息
         const stats = fs.statSync(output);
@@ -244,9 +218,9 @@ function printBuildSummary() {
     }
     
     console.log('\n💡 使用说明:');
-    console.log('   - CMTools.x64.exe: 适用于64位Windows 10+系统');
-    console.log('   - CMTools.x86.exe: 适用于32位Windows 10+系统');
-    console.log('   - CMTools.Win7.x86.exe: 适用于Windows 7 SP1+系统');
+    console.log('   - CMTools.x64.exe: 64位Windows便携版');
+    console.log('   - CMTools.x86.exe: 32位Windows便携版');
+    console.log('   - CMTools.Win7.x86.exe: Windows 7兼容便携版');
     
     console.log('\n📚 相关文档:');
     console.log('   - VERSION_SELECTION_GUIDE.md: 版本选择指南');
@@ -261,8 +235,8 @@ async function main() {
         
         // 构建前端
         buildFrontend();
-        
-        // 清理之前的构建
+
+        // 清理之前的构建（保留默认target的bundler文件）
         cleanPreviousBuilds();
         
         // 构建所有版本

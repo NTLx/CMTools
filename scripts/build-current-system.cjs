@@ -168,54 +168,54 @@ function buildFrontend() {
 
 async function buildTarget(buildConfig) {
     const { target, output, bundleOutput, description } = buildConfig;
-    
+
     console.log(`\n🔨 构建 ${description}...`);
     if (target) {
         console.log(`   目标: ${target}`);
     }
     console.log(`   输出: ${output}`);
-    
+
     const startTime = Date.now();
-    
+
     try {
         // 检查是否需要使用 --target 参数
         // 如果目标平台与当前系统匹配，则不使用 --target 参数以避免路径问题
         const currentPlatform = os.platform();
         const currentArch = os.arch();
-        let useTargetArg = true;
-        
+        let useTargetArgForBuild = true;
+        let buildCmd;
+
         if (target) {
             // macOS: 如果当前是 arm64 且目标是 aarch64-apple-darwin，或当前是 x64 且目标是 x86_64-apple-darwin
             if (currentPlatform === 'darwin') {
                 if ((currentArch === 'arm64' || currentArch === 'aarch64') && target === 'aarch64-apple-darwin') {
-                    useTargetArg = false;
+                    useTargetArgForBuild = false;
                 } else if (currentArch === 'x64' && target === 'x86_64-apple-darwin') {
-                    useTargetArg = false;
+                    useTargetArgForBuild = false;
                 }
             }
             // Linux: 类似处理
             else if (currentPlatform === 'linux') {
                 if ((currentArch === 'arm64' || currentArch === 'aarch64') && target === 'aarch64-unknown-linux-gnu') {
-                    useTargetArg = false;
+                    useTargetArgForBuild = false;
                 } else if (currentArch === 'x64' && target === 'x86_64-unknown-linux-gnu') {
-                    useTargetArg = false;
+                    useTargetArgForBuild = false;
                 }
             }
         }
-        
-        // 构建命令
-        const buildCmd = target && useTargetArg
-            ? `npm run tauri -- build -- --target ${target}`
-            : 'npm run tauri -- build';
-            
-        execSync(buildCmd, { stdio: 'inherit' });
-        
+
         // macOS 处理
         if (target && target.includes('darwin')) {
+            // macOS 不需要特殊处理，使用默认路径
+            buildCmd = target && useTargetArgForBuild
+                ? `npm run tauri -- build -- --target ${target}`
+                : 'npm run tauri -- build';
+            execSync(buildCmd, { stdio: 'inherit' });
+
             // macOS 产物在 src-tauri/target/release/bundle/dmg/（不包含 target 路径）
             const bundleDir = `src-tauri/target/release/bundle/dmg/`;
             const resourcesDir = `src-tauri/target/release/bundle/macos/cmtools.app/Contents/Resources/`;
-            
+
             // 复制前端资源到 app bundle
             console.log('📦 复制前端资源到 app bundle...');
             try {
@@ -229,10 +229,10 @@ async function buildTarget(buildConfig) {
             } catch (copyError) {
                 console.warn('⚠️  前端资源复制失败:', copyError.message);
             }
-            
+
             // 优先使用 bundleOutput，如果没有则自动检测
             let sourceFile = bundleOutput ? `${bundleDir}${bundleOutput}` : null;
-            
+
             // 自动检测实际生成的 DMG 文件
             if (!sourceFile || !fs.existsSync(sourceFile)) {
                 const files = fs.readdirSync(bundleDir).filter(f => f.endsWith('.dmg'));
@@ -240,7 +240,7 @@ async function buildTarget(buildConfig) {
                     sourceFile = `${bundleDir}${files[0]}`;
                 }
             }
-            
+
             if (sourceFile && fs.existsSync(sourceFile)) {
                 // 复制到项目根目录
                 const projectRootOutput = output;
@@ -248,11 +248,11 @@ async function buildTarget(buildConfig) {
                     fs.unlinkSync(projectRootOutput);
                 }
                 fs.copyFileSync(sourceFile, projectRootOutput);
-                
+
                 const stats = fs.statSync(projectRootOutput);
                 const sizeMB = (stats.size / 1024 / 1024).toFixed(2);
                 const buildTime = ((Date.now() - startTime) / 1000).toFixed(1);
-                
+
                 console.log(`✅ ${description} 构建成功`);
                 console.log(`   文件大小: ${sizeMB} MB`);
                 console.log(`   构建时间: ${buildTime}s`);
@@ -260,40 +260,93 @@ async function buildTarget(buildConfig) {
             } else {
                 console.log(`✅ ${description} 构建成功 (app bundle 已生成)`);
             }
-        } 
+        }
         // Windows平台处理输出文件
         else if (target && target.includes('windows')) {
-            const sourcePath = `src-tauri/target/${target}/release/cmtools.exe`;
-            if (fs.existsSync(sourcePath)) {
-                // 复制到项目根目录
-                if (fs.existsSync(output)) {
-                    fs.unlinkSync(output);
+            // Windows 便携版构建 - 使用 tauri build（包含前端资源）
+            if (!useTargetArgForBuild) {
+                // 不需要 --target，直接 tauri build
+                console.log('   📦 构建中...');
+                execSync('npm run tauri -- build', { stdio: 'inherit' });
+                // 复制便携版exe
+                const sourceExe = 'src-tauri/target/release/cmtools.exe';
+                if (fs.existsSync(sourceExe)) {
+                    if (fs.existsSync(output)) fs.unlinkSync(output);
+                    fs.copyFileSync(sourceExe, output);
                 }
-                fs.copyFileSync(sourcePath, output);
-                
+            } else {
+                // 需要 --target，使用 tauri build
+                console.log('   📦 构建中...');
+                execSync(`npm run tauri -- build -- --target ${target}`, {
+                    stdio: 'inherit'
+                });
+                // 复制便携版exe
+                const targetExePath = `src-tauri/target/${target}/release/cmtools.exe`;
+                if (fs.existsSync(targetExePath)) {
+                    if (fs.existsSync(output)) fs.unlinkSync(output);
+                    fs.copyFileSync(targetExePath, output);
+                }
+            }
+
+            const stats = fs.statSync(output);
+            const sizeMB = (stats.size / 1024 / 1024).toFixed(2);
+            const buildTime = ((Date.now() - startTime) / 1000).toFixed(1);
+
+            console.log(`✅ ${description} 构建成功`);
+            console.log(`   文件大小: ${sizeMB} MB`);
+            console.log(`   构建时间: ${buildTime}s`);
+            console.log(`   文件位置: ${output}`);
+        }
+        // Linux平台处理
+        else if (target && target.includes('linux')) {
+            // Linux 构建
+            if (!useTargetArgForBuild) {
+                execSync('npm run tauri -- build', { stdio: 'inherit' });
+            } else {
+                execSync(`npm run tauri -- build -- --target ${target}`, {
+                    stdio: 'inherit'
+                });
+            }
+
+            // 查找 AppImage 文件
+            const bundlePath = target && useTargetArgForBuild
+                ? `src-tauri/target/${target}/release/bundle/appimage/`
+                : `src-tauri/target/release/bundle/appimage/`;
+
+            let sourceFile = null;
+            if (fs.existsSync(bundlePath)) {
+                const files = fs.readdirSync(bundlePath).filter(f => f.endsWith('.AppImage'));
+                if (files.length > 0) {
+                    sourceFile = path.join(bundlePath, files[0]);
+                }
+            }
+
+            if (sourceFile && fs.existsSync(sourceFile)) {
+                if (fs.existsSync(output)) fs.unlinkSync(output);
+                fs.copyFileSync(sourceFile, output);
+
                 const stats = fs.statSync(output);
                 const sizeMB = (stats.size / 1024 / 1024).toFixed(2);
                 const buildTime = ((Date.now() - startTime) / 1000).toFixed(1);
-                
+
                 console.log(`✅ ${description} 构建成功`);
                 console.log(`   文件大小: ${sizeMB} MB`);
                 console.log(`   构建时间: ${buildTime}s`);
                 console.log(`   文件位置: ${output}`);
             } else {
-                throw new Error(`构建输出文件不存在: ${sourcePath}`);
+                console.log(`✅ ${description} 构建成功 (AppImage 可能已生成)`);
             }
         } else {
             const buildTime = ((Date.now() - startTime) / 1000).toFixed(1);
             console.log(`✅ ${description} 构建成功`);
             console.log(`   构建时间: ${buildTime}s`);
         }
-        
+
     } catch (error) {
         console.error(`❌ ${description} 构建失败:`, error.message);
         throw error;
     }
 }
-
 async function main() {
     try {
         // 检测系统环境
