@@ -5,6 +5,7 @@ use std::io::Write;
 use std::collections::HashMap;
 use std::sync::LazyLock;
 use serde::{Deserialize, Serialize};
+use tauri::Manager;
 // use thiserror::Error; // 不再需要，已改为手动实现 Display trait
 use tokio::task;
 
@@ -294,21 +295,15 @@ async fn get_tool_version(tool_name: String, language: Option<String>) -> Result
     // 获取临时目录
     let temp_dir = std::env::temp_dir();
     let exe_path = temp_dir.join(format!("cmtools_{}", exe_name));
-    
-    // 如果临时文件不存在或大小不匹配，则重新写入
-    let should_write = !exe_path.exists() || {
-        fs::metadata(&exe_path)
-            .map(|m| m.len() != exe_data.len() as u64)
-            .unwrap_or(true)
-    };
-    
-    if should_write {
+
+    // 每次启动时强制重新写入临时文件（不检查大小匹配）
+    {
         // 将嵌入的可执行文件写入临时目录
         let mut file = fs::File::create(&exe_path)
             .map_err(|e| format!("{}: {}", get_message("unable_create_temp_file", lang, None), e))?;
         file.write_all(exe_data)
             .map_err(|e| format!("{}: {}", get_message("unable_write_file_data", lang, None), e))?;
-        
+
         // 在Unix系统上设置可执行权限
         #[cfg(unix)]
         {
@@ -387,20 +382,14 @@ async fn process_files_internal(_app: tauri::AppHandle, tool_name: String, file_
     // 获取临时目录
     let temp_dir = std::env::temp_dir();
     let exe_path = temp_dir.join(format!("cmtools_{}", exe_name));
-    
-    // 如果临时文件不存在或大小不匹配，则重新写入
-    let should_write = !exe_path.exists() || {
-        fs::metadata(&exe_path)
-            .map(|m| m.len() != exe_data.len() as u64)
-            .unwrap_or(true)
-    };
-    
-    if should_write {
+
+    // 每次启动时强制重新写入临时文件（不检查大小匹配）
+    {
         // 将嵌入的可执行文件写入临时目录
         let mut file = fs::File::create(&exe_path)?;
         file.write_all(exe_data)?;
-        
-        // 在Windows上设置可执行权限（虽然通常不需要）
+
+        // 在Unix系统上设置可执行权限
         #[cfg(unix)]
         {
             use std::os::unix::fs::PermissionsExt;
@@ -612,12 +601,45 @@ async fn process_files(app: tauri::AppHandle, tool_name: String, file_paths: Vec
         .map_err(|e| process_error_to_localized_string(&e, lang))
 }
 
+// 清理所有临时文件
+fn cleanup_temp_files() {
+    let temp_dir = std::env::temp_dir();
+
+    // 清理所有 cmtools_ 开头的临时文件
+    if let Ok(entries) = fs::read_dir(&temp_dir) {
+        for entry in entries.flatten() {
+            if let Some(file_name) = entry.file_name().to_str() {
+                if file_name.starts_with("cmtools_") {
+                    let _ = fs::remove_file(entry.path());
+                }
+            }
+        }
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .invoke_handler(tauri::generate_handler![process_files, open_file_directory, get_tool_version])
+        .setup(|app| {
+            let window = app.get_webview_window("main").unwrap();
+            let window_clone = window.clone();
+            let cleanup = std::sync::Arc::new(std::sync::Mutex::new(false));
+            let cleanup_clone = cleanup.clone();
+
+            window.on_window_event(move |event| {
+                if let tauri::WindowEvent::CloseRequested { api: _, .. } = event {
+                    if !*cleanup_clone.lock().unwrap() {
+                        *cleanup_clone.lock().unwrap() = true;
+                        cleanup_temp_files();
+                        let _ = window_clone.close();
+                    }
+                }
+            });
+            Ok(())
+        })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

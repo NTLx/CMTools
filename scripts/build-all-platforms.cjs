@@ -130,17 +130,46 @@ function buildFrontend() {
 
 function cleanPreviousBuilds() {
     console.log('🧹 清理之前的构建...');
-    
+
+    // 清理所有历史构建产物
+    const projectRoot = process.cwd();
+    const artifactPatterns = [
+        '*.exe',
+        '*.dmg',
+        '*.app',
+        '*.AppImage',
+        'CMTools.*',
+    ];
+
+    artifactPatterns.forEach(pattern => {
+        try {
+            const files = require('glob').sync(pattern, { cwd: projectRoot });
+            files.forEach(file => {
+                const filePath = path.join(projectRoot, file);
+                // 跳过 node_modules 和 target 目录
+                if (!filePath.includes('node_modules') && !filePath.includes('src-tauri/target')) {
+                    if (fs.existsSync(filePath)) {
+                        fs.unlinkSync(filePath);
+                        console.log(`   🗑️  删除: ${file}`);
+                    }
+                }
+            });
+        } catch (error) {
+            // glob 可能不可用，忽略
+        }
+    });
+
     // 清理构建目录
     try {
-        execSync('cargo clean', { 
-            cwd: 'src-tauri', 
-            stdio: 'pipe' 
+        execSync('cargo clean', {
+            cwd: 'src-tauri',
+            stdio: 'pipe'
         });
+        console.log('🗑️  清理 Cargo 构建目录');
     } catch (error) {
         // 忽略清理错误
     }
-    
+
     // 清理之前的输出文件
     builds.forEach(build => {
         if (fs.existsSync(build.output)) {
@@ -266,23 +295,31 @@ function printBuildSummary() {
 
 async function main() {
     try {
+        // 清理所有缓存
+        console.log('\n🧹 清理所有构建缓存...');
+        try {
+            execSync('node scripts/clean-build-cache.cjs all', { stdio: 'inherit' });
+        } catch (cleanError) {
+            console.warn('⚠️  清理缓存失败，继续构建:', cleanError.message);
+        }
+
         // 检查和安装目标
         await checkAndInstallTargets();
-        
+
         // 构建前端
         buildFrontend();
-        
+
         // 清理之前的构建
         cleanPreviousBuilds();
-        
+
         // 构建所有版本
         for (const buildConfig of builds) {
             await buildVersion(buildConfig);
         }
-        
+
         // 打印汇总报告
         printBuildSummary();
-        
+
         if (failCount === 0) {
             console.log('\n🎉 所有平台版本构建完成！');
             process.exit(0);
@@ -290,7 +327,7 @@ async function main() {
             console.log('\n⚠️  部分版本构建失败，请查看错误信息');
             process.exit(1);
         }
-        
+
     } catch (error) {
         console.error('\n❌ 构建过程中发生严重错误:', error.message);
         process.exit(1);

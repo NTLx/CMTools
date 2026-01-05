@@ -166,6 +166,39 @@ function buildFrontend() {
     }
 }
 
+function cleanAllBuildArtifacts() {
+    console.log('🗑️  清理所有历史构建产物...');
+
+    const projectRoot = process.cwd();
+
+    // 清理所有可能的构建产物
+    const artifactPatterns = [
+        '*.exe',
+        '*.dmg',
+        '*.app',
+        '*.AppImage',
+        'CMTools.*',
+    ];
+
+    artifactPatterns.forEach(pattern => {
+        try {
+            const files = require('glob').sync(pattern, { cwd: projectRoot });
+            files.forEach(file => {
+                const filePath = path.join(projectRoot, file);
+                // 跳过 node_modules
+                if (!filePath.includes('node_modules') && !filePath.includes('src-tauri/target')) {
+                    if (fs.existsSync(filePath)) {
+                        fs.unlinkSync(filePath);
+                        console.log(`   🗑️  删除: ${file}`);
+                    }
+                }
+            });
+        } catch (error) {
+            // glob 可能不可用，忽略
+        }
+    });
+}
+
 async function buildTarget(buildConfig) {
     const { target, output, bundleOutput, description } = buildConfig;
 
@@ -212,9 +245,13 @@ async function buildTarget(buildConfig) {
                 : 'npm run tauri -- build';
             execSync(buildCmd, { stdio: 'inherit' });
 
-            // macOS 产物在 src-tauri/target/release/bundle/dmg/（不包含 target 路径）
-            const bundleDir = `src-tauri/target/release/bundle/dmg/`;
-            const resourcesDir = `src-tauri/target/release/bundle/macos/cmtools.app/Contents/Resources/`;
+            // 根据 useTargetArgForBuild 决定产物路径
+            const bundleDir = useTargetArgForBuild
+                ? `src-tauri/target/${target}/release/bundle/dmg/`
+                : `src-tauri/target/release/bundle/dmg/`;
+            const resourcesDir = useTargetArgForBuild
+                ? `src-tauri/target/${target}/release/bundle/macos/cmtools.app/Contents/Resources/`
+                : `src-tauri/target/release/bundle/macos/cmtools.app/Contents/Resources/`;
 
             // 复制前端资源到 app bundle
             console.log('📦 复制前端资源到 app bundle...');
@@ -235,9 +272,13 @@ async function buildTarget(buildConfig) {
 
             // 自动检测实际生成的 DMG 文件
             if (!sourceFile || !fs.existsSync(sourceFile)) {
-                const files = fs.readdirSync(bundleDir).filter(f => f.endsWith('.dmg'));
-                if (files.length > 0) {
-                    sourceFile = `${bundleDir}${files[0]}`;
+                try {
+                    const files = fs.readdirSync(bundleDir).filter(f => f.endsWith('.dmg'));
+                    if (files.length > 0) {
+                        sourceFile = `${bundleDir}${files[0]}`;
+                    }
+                } catch (error) {
+                    console.warn(`⚠️  无法读取目录 ${bundleDir}:`, error.message);
                 }
             }
 
@@ -259,6 +300,7 @@ async function buildTarget(buildConfig) {
                 console.log(`   文件位置: ${projectRootOutput}`);
             } else {
                 console.log(`✅ ${description} 构建成功 (app bundle 已生成)`);
+                console.log(`   产物目录: ${bundleDir}`);
             }
         }
         // Windows平台处理输出文件
@@ -349,24 +391,35 @@ async function buildTarget(buildConfig) {
 }
 async function main() {
     try {
+        // 清理所有缓存
+        console.log('\n🧹 清理所有构建缓存...');
+        try {
+            execSync('node scripts/clean-build-cache.cjs all', { stdio: 'inherit' });
+        } catch (cleanError) {
+            console.warn('⚠️  清理缓存失败，继续构建:', cleanError.message);
+        }
+
+        // 清理所有历史构建产物
+        cleanAllBuildArtifacts();
+
         // 检测系统环境
         const buildConfig = detectSystemArchitecture();
-        
+
         // 安装必要的Rust目标
         await checkAndInstallTarget(buildConfig.target);
-        
+
         // 构建前端
         buildFrontend();
-        
+
         // 构建目标版本
         await buildTarget(buildConfig);
-        
+
         console.log('\n🎉 当前系统环境软件包构建完成！');
         console.log('\n💡 使用说明:');
         console.log(`   - 您的系统: ${os.platform()} (${os.arch()})`);
         console.log(`   - 构建版本: ${buildConfig.description}`);
         console.log(`   - 输出文件: ${buildConfig.output}`);
-        
+
         if (buildConfig.target && buildConfig.target.includes('windows')) {
             console.log('\n📋 其他构建选项:');
             console.log('   npm run tauri:build:win  # 构建所有Windows版本');
@@ -375,7 +428,7 @@ async function main() {
             console.log('\n📋 其他构建选项:');
             console.log('   npm run tauri:build:all  # 构建所有支持的版本');
         }
-        
+
     } catch (error) {
         console.error('\n❌ 构建过程中发生错误:', error.message);
         process.exit(1);

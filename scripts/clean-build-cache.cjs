@@ -41,14 +41,86 @@ function removeFileSync(file) {
 
 function cleanCargoCache() {
     console.log('\n📦 清理 Cargo 构建缓存...');
-    
-    // 清理 target 目录
+
+    // 清理 target 目录（包括所有子目录）
     const targetDir = path.join(process.cwd(), 'src-tauri', 'target');
     removeDirSync(targetDir);
-    
+
     // 清理 Cargo.lock（如果存在）
     const cargoLock = path.join(process.cwd(), 'src-tauri', 'Cargo.lock');
     removeFileSync(cargoLock);
+}
+
+function cleanAllBuildArtifacts() {
+    console.log('\n🗑️  清理所有历史构建产物...');
+
+    const projectRoot = process.cwd();
+
+    // 清理所有可能的构建产物
+    const artifactPatterns = [
+        // Windows 产物
+        '*.exe',
+        'CMTools.*.exe',
+
+        // macOS 产物
+        '*.dmg',
+        '*.app',
+        'CMTools.*.dmg',
+        'CMTools.*.app',
+
+        // Linux 产物
+        '*.AppImage',
+        'CMTools.*.AppImage',
+
+        // 其他可能的产物
+        '*.deb',
+        '*.rpm',
+        '*.msi',
+        '*.nsis',
+    ];
+
+    artifactPatterns.forEach(pattern => {
+        try {
+            const files = require('glob').sync(pattern, { cwd: projectRoot });
+            files.forEach(file => {
+                const filePath = path.join(projectRoot, file);
+                // 跳过 node_modules
+                if (!filePath.includes('node_modules')) {
+                    removeFileSync(filePath);
+                }
+            });
+        } catch (error) {
+            // glob 模块可能不可用，使用简单的文件检查
+        }
+    });
+
+    // 清理 src-tauri/target 下所有可能的构建产物（双重保险）
+    const targetDir = path.join(process.cwd(), 'src-tauri', 'target');
+    if (fs.existsSync(targetDir)) {
+        try {
+            const files = fs.readdirSync(targetDir, { recursive: true });
+            files.forEach(file => {
+                const filePath = path.join(targetDir, file);
+                const stat = fs.statSync(filePath);
+                if (stat.isDirectory()) {
+                    // 删除包含构建产物的目录
+                    const dirName = path.basename(filePath);
+                    if (dirName.includes('release') || dirName.includes('debug')) {
+                        removeDirSync(filePath);
+                    }
+                } else if (stat.isFile()) {
+                    // 删除构建产物文件
+                    const ext = path.extname(filePath).toLowerCase();
+                    if (['.exe', '.dmg', '.app', '.appimage', '.deb', '.rpm', '.msi'].includes(ext) ||
+                        path.basename(filePath).startsWith('cmtools')) {
+                        removeFileSync(filePath);
+                    }
+                }
+            });
+        } catch (error) {
+            // 忽略错误
+        }
+    }
 }
 
 function cleanFrontendCache() {
@@ -109,16 +181,20 @@ function cleanViteCache() {
 
 function cleanAll() {
     console.log('\n🔥 执行完全清理...');
-    
+
     cleanCargoCache();
+    cleanAllBuildArtifacts();
     cleanFrontendCache();
     cleanViteCache();
     cleanTempFiles();
-    
-    // 清理 Cargo 注册表缓存
+
+    // 清理 Cargo 注册表缓存（在 src-tauri 目录执行）
     console.log('\n📋 清理 Cargo 注册表缓存...');
     try {
-        execSync('cargo clean', { stdio: 'inherit' });
+        execSync('cargo clean', {
+            cwd: 'src-tauri',
+            stdio: 'inherit'
+        });
         console.log('✅ Cargo 注册表缓存已清理');
     } catch (error) {
         console.warn('⚠️  Cargo clean 命令执行失败:', error.message);
