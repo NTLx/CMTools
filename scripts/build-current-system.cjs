@@ -49,14 +49,14 @@ function detectSystemArchitecture() {
         if (arch === 'arm64' || arch === 'aarch64') {
             return {
                 target: 'aarch64-apple-darwin',
-                output: 'CMTools.dmg',
+                output: 'CMTools.AppleSilicon.dmg',
                 bundleOutput: 'cmtools_2.6.9_aarch64.dmg',
                 description: 'Apple Silicon (M系列) macOS 版本'
             };
         } else {
             return {
                 target: 'x86_64-apple-darwin',
-                output: 'CMTools.dmg',
+                output: 'CMTools.Intel.dmg',
                 bundleOutput: 'cmtools_2.6.9_x64.dmg',
                 description: 'Intel macOS 版本'
             };
@@ -235,6 +235,14 @@ async function buildTarget(buildConfig) {
                     useTargetArgForBuild = false;
                 }
             }
+            // Windows: 如果当前是 x64 且目标是 x86_64-pc-windows-msvc，或当前是 x86 且目标是 i686-pc-windows-msvc
+            else if (currentPlatform === 'win32') {
+                if ((currentArch === 'x64' || currentArch === 'x86_64') && target === 'x86_64-pc-windows-msvc') {
+                    useTargetArgForBuild = false;
+                } else if ((currentArch === 'ia32' || currentArch === 'x86') && target === 'i686-pc-windows-msvc') {
+                    useTargetArgForBuild = false;
+                }
+            }
         }
 
         // macOS 处理
@@ -310,23 +318,23 @@ async function buildTarget(buildConfig) {
                 // 不需要 --target，直接 tauri build
                 console.log('   📦 构建中...');
                 execSync('npm run tauri -- build', { stdio: 'inherit' });
-                // 复制便携版exe
                 const sourceExe = 'src-tauri/target/release/cmtools.exe';
                 if (fs.existsSync(sourceExe)) {
                     if (fs.existsSync(output)) fs.unlinkSync(output);
                     fs.copyFileSync(sourceExe, output);
+                } else {
+                    throw new Error(`构建输出文件不存在: ${sourceExe}`);
                 }
             } else {
-                // 需要 --target，使用 tauri build
-                console.log('   📦 构建中...');
                 execSync(`npm run tauri -- build -- --target ${target}`, {
                     stdio: 'inherit'
                 });
-                // 复制便携版exe
                 const targetExePath = `src-tauri/target/${target}/release/cmtools.exe`;
                 if (fs.existsSync(targetExePath)) {
                     if (fs.existsSync(output)) fs.unlinkSync(output);
                     fs.copyFileSync(targetExePath, output);
+                } else {
+                    throw new Error(`构建输出文件不存在: ${targetExePath}`);
                 }
             }
 
@@ -338,6 +346,7 @@ async function buildTarget(buildConfig) {
             console.log(`   文件大小: ${sizeMB} MB`);
             console.log(`   构建时间: ${buildTime}s`);
             console.log(`   文件位置: ${output}`);
+            console.log(`   完整文件夹: ${target ? `src-tauri/target/${target}/release/bundle/app/CMTools/` : 'src-tauri/target/release/bundle/app/CMTools/'}`);
         }
         // Linux平台处理
         else if (target && target.includes('linux')) {

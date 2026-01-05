@@ -201,19 +201,91 @@ async function buildVersion(buildConfig) {
             TAURI_PRIVATE_KEY: '',
             TAURI_KEY_PASSWORD: ''
         };
-        
+
+        // 检测是否需要使用 --target 参数
+        const currentPlatform = os.platform();
+        const currentArch = os.arch();
+        let useTargetArgForBuild = true;
+
+        if (target) {
+            // macOS
+            if (currentPlatform === 'darwin') {
+                if ((currentArch === 'arm64' || currentArch === 'aarch64') && target === 'aarch64-apple-darwin') {
+                    useTargetArgForBuild = false;
+                } else if (currentArch === 'x64' && target === 'x86_64-apple-darwin') {
+                    useTargetArgForBuild = false;
+                }
+            }
+            // Linux
+            else if (currentPlatform === 'linux') {
+                if ((currentArch === 'arm64' || currentArch === 'aarch64') && target === 'aarch64-unknown-linux-gnu') {
+                    useTargetArgForBuild = false;
+                } else if (currentArch === 'x64' && target === 'x86_64-unknown-linux-gnu') {
+                    useTargetArgForBuild = false;
+                }
+            }
+            // Windows
+            else if (currentPlatform === 'win32') {
+                if ((currentArch === 'x64' || currentArch === 'x86_64') && target === 'x86_64-pc-windows-msvc') {
+                    useTargetArgForBuild = false;
+                } else if ((currentArch === 'ia32' || currentArch === 'x86') && target === 'i686-pc-windows-msvc') {
+                    useTargetArgForBuild = false;
+                }
+            }
+        }
+
         // 执行构建
-        execSync(`npm run tauri -- build -- --target ${target}`, { 
+        let bundleType = 'app';
+        if (target.includes('apple')) {
+            bundleType = 'dmg';
+        } else if (target.includes('linux')) {
+            bundleType = 'appimage';
+        }
+
+        const buildCmd = useTargetArgForBuild
+            ? `npm run tauri -- build -- --target ${target} --bundles ${bundleType}`
+            : `npm run tauri -- build -- --bundles ${bundleType}`;
+        execSync(buildCmd, {
             stdio: 'inherit',
             env: buildEnv
         });
-        
-        // 检查源文件
-        const sourcePath = `src-tauri/target/${target}/release/cmtools${target.includes('windows') ? '.exe' : target.includes('apple') ? '.app' : ''}`;
-        if (!fs.existsSync(sourcePath)) {
-            throw new Error(`构建输出文件不存在: ${sourcePath}`);
+
+        // 检查源文件 - 根据平台选择不同的路径
+        let sourcePath;
+        if (target.includes('windows')) {
+            // Windows 平台从 bundle/app 目录复制
+            const targetPath = useTargetArgForBuild
+                ? `src-tauri/target/${target}/release/bundle/app/CMTools/CMTools.exe`
+                : 'src-tauri/target/release/bundle/app/CMTools/CMTools.exe';
+            sourcePath = targetPath;
+        } else if (target.includes('apple')) {
+            // macOS 平台从 bundle/dmg 目录复制
+            const bundleDir = useTargetArgForBuild
+                ? `src-tauri/target/${target}/release/bundle/dmg/`
+                : 'src-tauri/target/release/bundle/dmg/';
+            if (fs.existsSync(bundleDir)) {
+                const files = fs.readdirSync(bundleDir).filter(f => f.endsWith('.dmg'));
+                if (files.length > 0) {
+                    sourcePath = path.join(bundleDir, files[0]);
+                }
+            }
+        } else {
+            // Linux 平台从 bundle/appimage 目录复制
+            const bundleDir = useTargetArgForBuild
+                ? `src-tauri/target/${target}/release/bundle/appimage/`
+                : 'src-tauri/target/release/bundle/appimage/';
+            if (fs.existsSync(bundleDir)) {
+                const files = fs.readdirSync(bundleDir).filter(f => f.endsWith('.AppImage'));
+                if (files.length > 0) {
+                    sourcePath = path.join(bundleDir, files[0]);
+                }
+            }
         }
-        
+
+        if (!sourcePath || !fs.existsSync(sourcePath)) {
+            throw new Error(`构建输出文件不存在: ${sourcePath || '未知路径'}`);
+        }
+
         // 复制并重命名文件
         fs.copyFileSync(sourcePath, output);
         

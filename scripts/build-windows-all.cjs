@@ -8,6 +8,7 @@
 const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
 
 console.log('🚀 开始构建所有Windows版本软件包...\n');
 
@@ -162,15 +163,32 @@ async function buildVersion(buildConfig) {
             TAURI_KEY_PASSWORD: ''
         };
 
+        // 检测是否需要使用 --target 参数
+        const currentArch = os.arch();
+        let useTargetArgForBuild = true;
+
+        if (target) {
+            // Windows 平台检测
+            if ((currentArch === 'x64' || currentArch === 'x86_64') && target === 'x86_64-pc-windows-msvc') {
+                useTargetArgForBuild = false;
+            } else if ((currentArch === 'ia32' || currentArch === 'x86') && target === 'i686-pc-windows-msvc') {
+                useTargetArgForBuild = false;
+            }
+        }
+
         // 使用 tauri build（会包含前端资源）
         console.log(`   📦 构建 ${target}...`);
-        execSync(`npm run tauri -- build -- --target ${target}`, {
+        const buildCmd = useTargetArgForBuild
+            ? `npm run tauri -- build -- --target ${target}`
+            : 'npm run tauri -- build';
+        execSync(buildCmd, {
             stdio: 'inherit',
             env: buildEnv
         });
 
-        // 复制便携版exe
-        const targetExePath = `src-tauri/target/${target}/release/cmtools.exe`;
+        const targetExePath = useTargetArgForBuild
+            ? `src-tauri/target/${target}/release/cmtools.exe`
+            : 'src-tauri/target/release/cmtools.exe';
         if (!fs.existsSync(targetExePath)) {
             throw new Error(`构建输出文件不存在: ${targetExePath}`);
         }

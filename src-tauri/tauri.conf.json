@@ -31,6 +31,8 @@
   },
   "bundle": {
     "active": true,
+    "createUpdaterArtifacts": false,
+    "targets": ["app"],
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
@@ -40,9 +42,8 @@
       "icons/icon.png"
     ],
     "windows": {
-      "nsis": {
-        "displayLanguageSelector": false
-      }
+      "nsis": null,
+      "wix": null
     },
     "macOS": {
       "entitlements": null,
