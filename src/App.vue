@@ -792,82 +792,88 @@ onMounted(() => {
       </div>
 
       <!-- 错误对话框 -->
-      <div v-if="showErrorDialog" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-overlayFadeIn" @click="closeErrorDialog">
-        <div class="bg-surface-light dark:bg-surface-dark rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden animate-dialogSlideIn" @click.stop>
-          <div class="bg-danger text-white px-6 py-4 flex justify-between items-center">
-            <h3 class="font-semibold text-lg flex items-center gap-2">
-              <span class="material-icons-round">warning</span>
-              {{ t('processError') }}
-            </h3>
-            <button @click="closeErrorDialog" class="text-white hover:bg-white/20 rounded-lg p-1 transition-colors">
-              <span class="material-icons-round">close</span>
-            </button>
-          </div>
-          <div class="p-6 max-h-[60vh] overflow-y-auto">
-            <div v-for="(error, index) in errorMessages" :key="index" class="p-3 mb-2 bg-danger/5 text-danger border border-danger/20 rounded-lg text-sm font-mono break-all">
-              {{ error }}
+      <Teleport to="body">
+        <div v-if="showErrorDialog" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-overlayFadeIn" @click="closeErrorDialog">
+          <div class="bg-surface-light dark:bg-surface-dark rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden animate-dialogSlideIn" @click.stop>
+            <div class="bg-danger text-white px-6 py-4 flex justify-between items-center">
+              <h3 class="font-semibold text-lg flex items-center gap-2">
+                <span class="material-icons-round">warning</span>
+                {{ t('processError') }}
+              </h3>
+              <button @click="closeErrorDialog" class="text-white hover:bg-white/20 rounded-lg p-1 transition-colors">
+                <span class="material-icons-round">close</span>
+              </button>
+            </div>
+            <div class="p-6 max-h-[60vh] overflow-y-auto">
+              <div v-for="(error, index) in errorMessages" :key="index" class="p-3 mb-2 bg-danger/5 text-danger border border-danger/20 rounded-lg text-sm font-mono break-all">
+                {{ error }}
+              </div>
+            </div>
+            <div class="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 flex justify-end">
+              <button @click="closeErrorDialog" class="px-6 py-2 bg-primary hover:bg-primary-dark text-white rounded-lg font-medium transition-colors shadow-lg shadow-primary/30">
+                {{ t('confirm') }}
+              </button>
             </div>
           </div>
-          <div class="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 flex justify-end">
-            <button @click="closeErrorDialog" class="px-6 py-2 bg-primary hover:bg-primary-dark text-white rounded-lg font-medium transition-colors shadow-lg shadow-primary/30">
-              {{ t('confirm') }}
-            </button>
-          </div>
         </div>
-      </div>
+      </Teleport>
 
        <!-- 版本信息对话框 -->
-       <div v-if="showVersionDialog" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-overlayFadeIn" @click="closeVersionDialog">
-        <div class="bg-surface-light dark:bg-surface-dark rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-dialogSlideIn" @click.stop>
-          <div class="bg-primary text-white px-6 py-4 flex justify-between items-center">
-            <h3 class="font-semibold text-lg flex items-center gap-2">
-              <span class="material-icons-round">info</span>
-              {{ t('versionUpdateTitle') }}
-            </h3>
-            <button @click="closeVersionDialog" class="text-white hover:bg-white/20 rounded-lg p-1 transition-colors">
-              <span class="material-icons-round">close</span>
-            </button>
-          </div>
-          <div class="p-6">
-            <div class="bg-panel-light dark:bg-panel-dark rounded-xl p-4 border border-slate-200 dark:border-slate-700 mb-4 space-y-3">
-              <div class="flex justify-between items-center">
-                <span class="text-slate-600 dark:text-slate-400 font-medium">{{ t('cmtoolsVersion') }}</span>
-                <span class="font-mono bg-white dark:bg-slate-800 px-2 py-1 rounded border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300">v{{ appVersion }}</span>
+       <Teleport to="body">
+        <div v-if="showVersionDialog" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-overlayFadeIn" @click="closeVersionDialog">
+          <div class="bg-surface-light dark:bg-surface-dark rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-dialogSlideIn" @click.stop>
+            <div class="bg-primary text-white px-6 py-4 flex justify-between items-center">
+              <h3 class="font-semibold text-lg flex items-center gap-2">
+                <span class="material-icons-round">info</span>
+                {{ t('versionUpdateTitle') }}
+              </h3>
+              <button @click="closeVersionDialog" class="text-white hover:bg-white/20 rounded-lg p-1 transition-colors">
+                <span class="material-icons-round">close</span>
+              </button>
+            </div>
+            <div class="p-6">
+              <div class="bg-panel-light dark:bg-panel-dark rounded-xl p-4 border border-slate-200 dark:border-slate-700 mb-4 space-y-3">
+                <div class="flex justify-between items-center">
+                  <span class="text-slate-600 dark:text-slate-400 font-medium">{{ t('cmtoolsVersion') }}</span>
+                  <span class="font-mono bg-white dark:bg-slate-800 px-2 py-1 rounded border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300">v{{ appVersion }}</span>
+                </div>
+                <div class="h-px bg-slate-200 dark:bg-slate-700"></div>
+                <div class="flex justify-between items-center">
+                  <span class="text-slate-600 dark:text-slate-400 font-medium">{{ t('currentTool') }}</span>
+                  <span class="text-slate-700 dark:text-slate-300 font-medium">{{ getCurrentToolConfig.label }}</span>
+                </div>
+                <div class="flex justify-between items-center">
+                  <span class="text-slate-600 dark:text-slate-400 font-medium">{{ t('toolVersion') }}</span>
+                  <span v-if="loadingToolVersion" class="text-slate-500 italic flex items-center gap-1">
+                    <span class="inline-block w-3 h-3 border-2 border-slate-400 border-t-transparent rounded-full animate-spin"></span>
+                    {{ t('loadingVersion') }}
+                  </span>
+                  <span v-else class="font-mono bg-white dark:bg-slate-800 px-2 py-1 rounded border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300">{{ toolVersion || (currentLanguage === 'zh' ? '未知' : 'Unknown') }}</span>
+                </div>
               </div>
-              <div class="h-px bg-slate-200 dark:bg-slate-700"></div>
-              <div class="flex justify-between items-center">
-                <span class="text-slate-600 dark:text-slate-400 font-medium">{{ t('currentTool') }}</span>
-                <span class="text-slate-700 dark:text-slate-300 font-medium">{{ getCurrentToolConfig.label }}</span>
-              </div>
-              <div class="flex justify-between items-center">
-                <span class="text-slate-600 dark:text-slate-400 font-medium">{{ t('toolVersion') }}</span>
-                <span v-if="loadingToolVersion" class="text-slate-500 italic flex items-center gap-1">
-                   <span class="inline-block w-3 h-3 border-2 border-slate-400 border-t-transparent rounded-full animate-spin"></span>
-                   {{ t('loadingVersion') }}
-                </span>
-                <span v-else class="font-mono bg-white dark:bg-slate-800 px-2 py-1 rounded border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300">{{ toolVersion || (currentLanguage === 'zh' ? '未知' : 'Unknown') }}</span>
+              <div class="text-sm text-slate-500 dark:text-slate-400 border-l-4 border-primary pl-3">
+                {{ t('versionUpdateMessage') }}
               </div>
             </div>
-            <div class="text-sm text-slate-500 dark:text-slate-400 border-l-4 border-primary pl-3">
-              {{ t('versionUpdateMessage') }}
+            <div class="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 flex justify-end">
+              <button @click="closeVersionDialog" class="px-6 py-2 bg-primary hover:bg-primary-dark text-white rounded-lg font-medium transition-colors shadow-lg shadow-primary/30">
+                {{ t('confirm') }}
+              </button>
             </div>
-          </div>
-          <div class="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 flex justify-end">
-            <button @click="closeVersionDialog" class="px-6 py-2 bg-primary hover:bg-primary-dark text-white rounded-lg font-medium transition-colors shadow-lg shadow-primary/30">
-              {{ t('confirm') }}
-            </button>
           </div>
         </div>
-      </div>
+       </Teleport>
 
        <!-- Toast 提示 -->
-       <div 
-         v-if="showToast"
-         class="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-[60] bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-800 px-6 py-3 rounded-full shadow-lg flex items-center gap-2 animate-fadeInUp"
-       >
-         <span class="material-icons-round text-sm">check_circle</span>
-         <span class="text-sm font-medium">{{ toastMessage }}</span>
-       </div>
+       <Teleport to="body">
+         <div 
+           v-if="showToast"
+           class="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-[60] bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-800 px-6 py-3 rounded-full shadow-lg flex items-center gap-2 animate-fadeInUp"
+         >
+           <span class="material-icons-round text-sm">check_circle</span>
+           <span class="text-sm font-medium">{{ toastMessage }}</span>
+         </div>
+       </Teleport>
     </main>
   </div>
 </template>

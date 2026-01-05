@@ -188,17 +188,8 @@ function cleanAll() {
     cleanViteCache();
     cleanTempFiles();
 
-    // 清理 Cargo 注册表缓存（在 src-tauri 目录执行）
-    console.log('\n📋 清理 Cargo 注册表缓存...');
-    try {
-        execSync('cargo clean', {
-            cwd: 'src-tauri',
-            stdio: 'inherit'
-        });
-        console.log('✅ Cargo 注册表缓存已清理');
-    } catch (error) {
-        console.warn('⚠️  Cargo clean 命令执行失败:', error.message);
-    }
+    // 跳过 Cargo 注册表清理以支持离线构建
+    console.log('\n📋 跳过 Cargo 注册表缓存清理 (支持离线构建)...');
 }
 
 function main() {
