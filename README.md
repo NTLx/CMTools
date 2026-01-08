@@ -18,7 +18,7 @@ CMTools 是一个基于 Tauri 2.0 + Vue 3 + TypeScript 构建的跨平台桌面�
 **架构特点：**
 - **前端**：Vue 3 (Composition API) + TypeScript + Vite，提供现代化的用户界面
 - **后端**：Rust + Tauri + Tokio，确保高性能和内存安全
-- **扩展性**：通过外部可执行文件（.exe）机制，支持灵活添加新的数据处理工具
+- **扩展性**：通过外部可执行文件机制（Windows下为.exe，Unix系无后缀），支持灵活添加新的数据处理工具
 
 **核心优势：**
 - 🚀 **高性能**：Rust 后端可快速处理大型数据集
@@ -45,28 +45,29 @@ CMTools 采用前后端分离的现代桌面应用架构，利用 Tauri 将基�
 ```
 CMTools/
 ├── src/                      # Vue 前端源码
-│   ├── App.vue              # 核心 UI 组件
-│   ├── main.ts              # Vue 应用入口
-│   └── assets/              # 资源文件（包含嵌入的外部工具）
-│       ├── AneuFiler.exe
-│       ├── Aneu23.exe
-│       ├── SMNFiler_v1.exe
-│       ├── SMNFiler_v2.exe
-│       ├── SHCarrier.exe
-│       ├── UPDFiler_v1.exe
-│       └── UPDFiler_v2.exe
-├── src-tauri/               # Tauri 后端源码 (Rust)
+│   ├── App.vue               # 核心 UI 组件
+│   ├── main.ts               # Vue 应用入口
+│   └── assets/               # 资源文件（包含嵌入的外部工具）
+│       ├── AneuFiler         # 数据处理核心工具 (Windows版需为.exe)
+│       ├── Aneu23
+│       ├── SMNFiler_v1
+│       ├── SMNFiler_v2
+│       ├── SHCarrier
+│       ├── UPDFiler_v1
+│       └── UPDFiler_v2
+├── src-tauri/                # Tauri 后端源码 (Rust)
 │   ├── src/
-│   │   ├── main.rs          # Rust 应用主入口
-│   │   └── lib.rs           # 核心业务逻辑
-│   ├── Cargo.toml           # Rust 依赖配置
-│   └── tauri.conf.json      # Tauri 应用配置
-├── scripts/                 # 构建脚本
-│   ├── build-current-system.cjs
-│   ├── build-windows-all.cjs
-│   └── build-all-platforms.cjs
-├── user_manual.md           # 用户手册
-└── package.json             # Node.js 配置
+│   │   ├── main.rs           # Rust 应用主入口
+│   │   └── lib.rs            # 核心业务逻辑 (命令处理、工具调用)
+│   ├── Cargo.toml            # Rust 依赖配置
+│   └── tauri.conf.json       # Tauri 应用配置
+├── scripts/                  # 构建与维护脚本
+│   ├── build-current-system.cjs # 构建当前系统版本
+│   ├── build-windows-all.cjs    # 构建 Windows 全架构版本
+│   ├── build-all-platforms.cjs  # 构建全平台版本
+│   └── clean-build-cache.cjs    # 清理构建缓存
+├── user_manual.md            # 用户手册
+└── package.json              # Node.js 配置
 ```
 
 ## 🚀 开发环境搭建
@@ -94,7 +95,9 @@ npm run tauri dev
 
 **首次构建前**: 如需构建32位版本，需安装Rust目标：`rustup target add i686-pc-windows-msvc`
 
-## 🔨 构建命令
+## 🔨 构建与维护命令
+
+### 构建命令
 
 | 命令 | 输出 | 说明 |
 |------|------|------|
@@ -102,7 +105,15 @@ npm run tauri dev
 | `npm run tauri:build:win` | 所有Windows版本（含Win7兼容版） | Windows平台发布 |
 | `npm run tauri:build:all` | 所有支持的平台 | 多平台发布 |
 
-**构建产物**：
+### 维护命令
+
+| 命令 | 说明 |
+|------|------|
+| `npm run clean:cache` | 清理所有构建缓存（Cargo + Frontend） |
+| `npm run clean:cache:cargo` | 仅清理 Rust/Cargo 构建缓存 |
+| `npm run clean:cache:frontend` | 仅清理前端构建缓存 |
+
+**构建产物**（Windows示例）：
 - 64位: `CMTools.x64.exe`
 - 32位: `CMTools.x86.exe`
 - Win7兼容: `CMTools.Win7.x86.exe`
@@ -119,61 +130,6 @@ npm run tauri dev
 | **CMTools.x86.exe** | Windows 10+ (32位) | x86 | 低配置现代系统 |
 | **CMTools.Win7.x86.exe** | Windows 7 SP1+ (32位) | x86 | 老旧系统用户 |
 
-#### 如何选择版本
-
-**1. 首选推荐：CMTools.x64.exe**
-- 适用于：Windows 10、Windows 11 (64位)
-- 最佳性能和兼容性
-- 支持大内存处理
-- 未来更新优先支持
-
-**2. 32位系统：CMTools.x86.exe**
-- 适用于：Windows 10、Windows 11 (32位)
-- 功能与64位版本完全相同
-- 适合低配置系统
-
-**3. 老旧系统：CMTools.Win7.x86.exe**
-- 适用于：Windows 7 SP1及以上版本
-- 解决了API兼容性问题
-- 专门优化的兼容版本
-- 需要额外安装Visual C++运行库
-
-#### 系统要求
-
-**Windows 10/11用户**
-- **推荐版本：** CMTools.x64.exe 或 CMTools.x86.exe
-- **操作系统：** Windows 10 版本1809 (17763) 或更高
-- **内存：** 至少4GB (推荐8GB+)
-- **存储：** 200MB可用空间
-- **依赖：** Microsoft Edge WebView2 (通常已预装)
-
-**Windows 7用户**
-- **必须使用：** CMTools.Win7.x86.exe
-- **操作系统：** Windows 7 SP1 (32位)
-- **内存：** 至少2GB
-- **存储：** 200MB可用空间
-- **必需依赖：**
-  - Visual C++ 2015-2022 Redistributable (x86)
-  - 所有重要的Windows更新
-
-#### 常见问题与解决方案
-
-**Windows 7错误：ProcessPrng could not be located**
-- **原因：** 使用了标准版本而非Windows 7兼容版本
-- **解决方案：** 下载并使用 `CMTools.Win7.x86.exe`
-
-**Windows 10+系统提示缺少WebView2**
-- **原因：** 系统缺少Microsoft Edge WebView2运行时
-- **解决方案：** 从[微软官网](https://developer.microsoft.com/zh-cn/microsoft-edge/webview2/)下载安装
-
-**防病毒软件拦截**
-- **原因：** 软件未进行数字签名
-- **解决方案：** 添加到防病毒软件白名单，或临时关闭实时防护
-
-**Visual C++运行库缺失**
-- **适用于：** Windows 7用户
-- **解决方案：** 安装[Microsoft Visual C++ Redistributable](https://docs.microsoft.com/zh-cn/cpp/windows/latest-supported-vc-redist)
-
 ## 🛠️ 开发指南
 
 ### 代码规范
@@ -182,389 +138,114 @@ npm run tauri dev
 - **后端**: Rust (cargo fmt + clippy)
 - **提交信息**: Conventional Commits
 
-### 核心架构
+### 核心架构：外部工具驱动设计
 
-**外部工具驱动设计**：
-- 工具文件（.exe）嵌入在 `src/assets/`
-- 运行时通过 `include_bytes!` 加载到内存
-- 临时释放到系统临时目录并执行
-- 前后端通过 Tauri `invoke` 机制通信
+CMTools 的核心功能是通过 Rust 后端调用 `src/assets/` 中嵌入的命令行工具来实现的。这种设计极大地提高了系统的灵活性和可扩展性。
+
+**工作原理：**
+
+1.  **编译期嵌入**：
+    - 根据目标操作系统 (`target_os`)，Rust 宏 `include_bytes!` 会将对应的二进制工具文件直接编译进最终的可执行文件中。
+    - **Windows**: 寻找 `.exe` 后缀的文件（如 `AneuFiler.exe`）。
+    - **macOS/Linux**: 寻找无后缀的文件（如 `AneuFiler`）。
+
+2.  **运行时释放**：
+    - 当用户请求执行某个工具时，后端会将嵌入的二进制数据释放到系统的临时目录（如 Windows 的 `%TEMP%`）。
+    - 临时文件命名格式：`cmtools_[ToolName][_Suffix]`。
+
+3.  **命令调用**：
+    - 通过 Rust 的 `std::process::Command` 执行临时文件。
+    - 后端负责构造命令行参数，捕获标准输出 (stdout) 和标准错误 (stderr)。
 
 **关键文件**：
-- `src-tauri/src/lib.rs` - 后端命令处理
-- `src/App.vue` - 前端界面和交互逻辑
-
-### 构建配置选项
-
-#### 当前配置
-
-项目已配置为只构建单个可执行文件（绿色软件），不生成安装包。
-
-**多架构构建支持**
-
-项目支持Windows平台32位和64位架构的自动构建，通过专门的构建脚本 `scripts/build-current-system.cjs` 实现。
-
-**支持的架构：**
-- **x64** (x86_64-pc-windows-msvc): 64位Windows版本
-- **x86** (i686-pc-windows-msvc): 32位Windows版本
-
-**软件命名规范：**
-- 64位版本：`CMTools.x64.exe`
-- 32位版本：`CMTools.x86.exe`
-
-#### 配置详情
-
-- `bundle.active`: `false` - 禁用打包功能
-- `bundle.targets`: `[]` - 不构建任何安装包格式
-- 输出文件：`src-tauri/target/release/cmtools.exe`
-
-#### 构建模式对比
-
-**1. 当前模式：仅可执行文件**
-```json
-{
-  "bundle": {
-    "active": false,
-    "targets": []
-  }
-}
-```
-
-**优点：**
-- 构建速度快
-- 文件体积小
-- 无需下载额外工具
-- 真正的绿色软件，无安装过程
-
-**输出：** `cmtools.exe` 单文件
-
-**2. NSIS 便携版模式（可选）**
-```json
-{
-  "bundle": {
-    "active": true,
-    "targets": ["nsis"],
-    "windows": {
-      "nsis": {
-        "installMode": "currentUser"
-      }
-    }
-  }
-}
-```
-
-**特点：**
-- 生成 `.exe` 安装包
-- 支持便携模式
-- 需要下载 NSIS 工具
-
-**3. 多格式打包模式（可选）**
-```json
-{
-  "bundle": {
-    "active": true,
-    "targets": ["nsis", "msi", "zip"]
-  }
-}
-```
-
-**特点：**
-- 同时生成多种格式
-- 构建时间较长
-- 适合发布分发
-
-#### 多架构构建脚本说明
-
-`npm run tauri:build` 命令使用 `scripts/build-current-system.cjs` 脚本，自动执行以下操作：
-
-1. **环境检查**：自动检查并安装所需的Rust构建目标
-2. **清理旧文件**：删除之前的构建产物
-3. **前端构建**：执行 `npm run build`
-4. **多架构构建**：并行构建32位和64位版本
-5. **文件重命名**：按规范重命名为 `CMTools.x64.exe` 和 `CMTools.x86.exe`
-6. **文件复制**：将重命名文件复制到项目根目录
-7. **结果显示**：显示构建结果和文件信息
-
-#### 输出文件位置
-
-**多架构构建输出（推荐）**
-
-**便于使用的文件：**
-- `CMTools.x64.exe` - 位于项目根目录
-- `CMTools.x86.exe` - 位于项目根目录
-
-**原始构建文件：**
-- **64位版本：** `src-tauri/target/x86_64-pc-windows-msvc/release/cmtools.exe`
-- **32位版本：** `src-tauri/target/i686-pc-windows-msvc/release/cmtools.exe`
-
-**单架构构建输出**
-- **主要文件：** `src-tauri/target/release/cmtools.exe`
-- **调试信息：** `src-tauri/target/release/` 目录下的其他文件
-
-**如果启用打包功能**
-- **NSIS 安装包：** `src-tauri/target/release/bundle/nsis/`
-- **MSI 安装包：** `src-tauri/target/release/bundle/msi/`
-- **ZIP 压缩包：** `src-tauri/target/release/bundle/zip/`
-
-#### 配置切换指南
-
-**切换到 NSIS 便携版**
-
-1. 修改 `tauri.conf.json`：
-   ```json
-   "bundle": {
-     "active": true,
-     "targets": ["nsis"]
-   }
-   ```
-2. 运行构建命令
-
-**切换回纯可执行文件**
-
-1. 修改 `tauri.conf.json`：
-   ```json
-   "bundle": {
-     "active": false,
-     "targets": []
-   }
-   ```
-2. 运行构建命令
-
-#### 性能对比
-
-| 配置模式 | 构建时间 | 文件大小 | 下载需求 | 适用场景 |
-|---------|---------|---------|---------|----------|
-| 多架构自动构建 | 中等 | 中等 | Rust目标 | **推荐** - 发布分发 |
-| 单架构(64位) | 快 | 小 | 无 | 开发测试 |
-| 单架构(32位) | 快 | 小 | Rust目标 | 特定需求 |
-| NSIS 便携版 | 中等 | 中等 | 需要 NSIS | 软件分发 |
-| 多格式打包 | 慢 | 大 | 需要多个工具 | 正式发布 |
-
-#### 注意事项
-
-1. **多架构构建优势：**
-   - 一次性生成32位和64位版本
-   - 自动按规范重命名文件
-   - 支持广泛的系统兼容性
-   - 便于软件分发和部署
-
-2. **使用建议：**
-   - **开发阶段：** 使用当前系统环境构建 (`npm run tauri:build`)
-   - **Windows发布阶段：** 使用Windows全版本构建 (`npm run tauri:build:win`)
-   - **多平台发布阶段：** 使用全平台构建 (`npm run tauri:build:all`)
-   - **特殊需求：** 根据目标用户群体选择对应架构
-
-3. **文件管理：**
-   - **优先使用：** 项目根目录的 `CMTools.x64.exe` 和 `CMTools.x86.exe`
-   - **原始文件：** `src-tauri/target/[架构]/release/cmtools.exe`
-   - **清理构建：** 可以安全删除 `target` 目录重新构建
-
-4. **构建脚本特性：**
-   - 自动检查并安装缺失的Rust构建目标
-   - 清理之前的构建产物避免冲突
-   - 提供详细的构建进度和结果信息
-   - 支持构建失败时的错误诊断
-
-### 代码规范
-
-- **通用**：遵循项目 `.editorconfig` 和 `.prettierrc` 配置。
-- **TypeScript/Vue**：使用 ESLint 保证代码质量，遵循 `Composition API` 和 `<script setup>` 语法。
-- **Rust**：使用 `cargo fmt` 格式化代码，遵循官方编码风格和 `clippy` 建议。
-- **提交信息**：遵循 [Conventional Commits](https://www.conventionalcommits.org/) 规范，便于生成清晰的变更日志。
-
-### 核心架构：外部工具驱动
-
-CMTools 的核心设计思想是通过 Rust 后端调用外部的命令行可执行文件（`.exe`）来完成核心数据处理任务。这种架构带来了极高的灵活性和可扩展性。
-
-- **工具嵌入**：外部工具（如 `AneuFiler.exe`）被放置在 `src-tauri` 目录下。在构建时，Rust 的 `include_bytes!` 宏会将这些文件的二进制内容直接嵌入到最终生成的可执行文件中。
-- **运行时释放**：当用户调用一个功能时，后端逻辑会从内存中读取相应工具的二进制数据，并将其写入操作系统的临时目录中，使其成为一个临时的可执行文件。
-- **命令调用**：后端随后使用 Rust 的 `std::process::Command` 模块，像调用普通命令行程序一样执行这个临时文件，并通过参数传递输入文件路径和处理选项。
-- **结果返回**：外部工具执行完毕后，后端捕获其输出，并将处理结果（成功或失败信息）返回给前端界面。
-
-这种设计将核心算法与UI框架解耦，使得替换或新增数据处理工具变得非常简单，无需重新编译整个前端应用。
-
-### 前后端交互
-
-前后端通信依赖 Tauri 的 `invoke` 机制。核心的交互点是 `lib.rs` 中定义的 `process_files` 和 `open_file_directory` 命令。
-
-**后端命令示例 (`src-tauri/src/lib.rs`)**
-```rust
-#[tauri::command]
-#[tauri::command]
-async fn open_file_directory(file_path: String) -> Result<(), String> {
-    // ... 业务逻辑
-}
-
-#[tauri::command]
-async fn process_files(
-    language: String, // 新增语言参数
-    tool_name: String,
-    // ... 其他参数
-) -> Result<Vec<ProcessResult>, String> {
-    // ... 业务逻辑
-}
-```
-
-**前端调用示例 (`src/App.vue`)**
-```typescript
-import { invoke } from '@tauri-apps/api/core';
-
-async function handleFileProcessing() {
-  try {
-    await invoke('open_file_directory', { filePath: path });
-
-// ...
-
-const results = await invoke('process_files', {
-      language: currentLanguage.value,
-      toolName: selectedTool.value,
-      // ... 其他参数
-    });
-    // ... 处理结果
-  } catch (error) {
-    // ... 错误处理
-  }
-}
-```
-
-### 国际化 (i18n)
-
-国际化文本存储在 `App.vue` 的 `translations` 对象中。后端消息通过 `get_message` 函数根据前端传递的 `language` 参数动态获取。
-
-- **前端**：`t('key')` 函数用于翻译界面文本。
-- **后端**：`get_message(&language, "message_key")` 用于获取本地化消息。
+- `src-tauri/src/lib.rs` - **核心逻辑**：定义了 `Tool` 枚举、参数处理逻辑 (`process_files_internal`) 以及错误处理 (`ProcessError`)。
+- `src/App.vue` - **前端交互**：负责 UI 展示、参数收集并通过 `invoke` 调用后端。
 
 ### 如何添加新工具
 
-以添加 `NewTool.exe` 为例：
+以添加名为 `NewTool` 的工具为例：
 
-**1. 放置工具文件**
+**1. 准备工具文件**
 ```bash
-# 将工具复制到资源目录
+# Windows
 cp NewTool.exe src/assets/
+
+# macOS/Linux
+cp NewTool src/assets/
 ```
 
 **2. 后端注册（src-tauri/src/lib.rs）**
-```rust
-// 在 Tool 枚举中添加新工具
-"NewTool" => ("NewTool.exe", include_bytes!("../../src/assets/NewTool.exe")),
 
-// 在参数处理 match 中添加
-"NewTool" => {
-    cmd.arg("-i").arg(&file_path);
-    // 添加工具特定参数
+在 `Tool` 枚举中添加新成员，并在 `exe_name` 和 `exe_data` 方法中添加对应的 `match` 分支：
+
+```rust
+// 1. 添加枚举成员
+enum Tool {
+    // ...
+    NewTool,
+}
+
+// 2. 配置可执行文件名 (exe_name) 和 嵌入逻辑 (exe_data)
+// 注意处理 cfg(target_os) 宏以支持跨平台
+```
+
+在 `process_files_internal` 函数中配置参数构建逻辑：
+
+```rust
+match tool {
+    Tool::NewTool => {
+        cmd.arg("-i").arg(&file_path);
+        // 添加其他特定参数
+    }
+    // ...
 }
 ```
 
 **3. 前端注册（src/App.vue）**
+
+在 `tools` 数组中添加配置：
 ```typescript
-// 在 tools 数组中添加
 { 
   name: ToolType.NewTool, 
   label: "NewTool", 
-  supportsStdSample: false, 
-  supportsWindowsOptimization: true, 
-  supportsAreaData: true 
+  supportsStdSample: false, // 是否支持标准品参数 (-STD / -c)
+  supportsWindowsOptimization: true, // 是否支持 Windows 编码优化 (-GBK)
+  supportsAreaData: true // 是否支持峰面积参数 (-Area / -a)
 }
 ```
 
-**4. 添加 UI 选项（如需）**：在 App.vue 中添加新的 ref 和 HTML 元素
-
 ### 调试技巧
 
-- **查看后端日志**：在开发模式下 (`npm run tauri dev`)，后端 Rust 代码中的 `println!` 宏输出会直接显示在启动应用的控制台中。`lib.rs` 中已包含用于打印执行命令、工作目录和参数的调试代码 (`#[cfg(debug_assertions)]`)，这对于调试参数是否正确传递非常有用。
-- **检查临时文件**：您可以前往系统的临时目录（Windows 上通常是 `%TEMP%`）查找名为 `cmtools_*.exe` 的文件，以确认可执行文件是否被正确释放。
-- **多架构构建调试**：使用 `scripts/build-all-platforms.cjs` 脚本时，可以查看控制台输出了解构建进度和可能的错误信息。脚本会自动检查Rust目标安装情况并显示构建结果。
-
-## 🧪 测试
-
-高质量的测试是项目维护的关键。我们鼓励为新功能和错误修复编写测试。
-
-- **Rust 单元测试**：针对 `lib.rs` 中的辅助函数和逻辑。
-  ```bash
-  cd src-tauri
-  cargo test
-  ```
-- **前端单元测试**：使用 Vitest 测试 Vue 组件和工具函数。
-  ```bash
-  npm run test
-  ```
-- **端到端 (E2E) 测试**：使用 Tauri 的 WebDriver 支持进行自动化UI测试 (待完善)。
+- **查看后端日志**：在开发模式下 (`npm run tauri dev`)，后端 `println!` 输出会显示在终端中，包含完整的命令行调用参数、工作目录和调试信息。
+- **检查临时文件**：前往系统临时目录查看释放的 `cmtools_*` 文件，验证工具是否正确释放。
+- **构建脚本调试**：运行 `npm run tauri:build` 时，脚本会输出详细的 Rust 目标检测和构建进度信息。
 
 ## 📦 部署
 
 ### 自动化构建
 
-项目已配置 GitHub Actions (`.github/workflows/build.yml`)，可在推送 `v*` 标签时自动为 Windows, macOS, 和 Linux 构建、打包和创建 Release。
+项目配置了 GitHub Actions，可在推送 Tag 时自动构建发布版本。
 
-### 多架构构建部署
+### 手动构建发布
 
-对于Windows平台，推荐使用多架构构建脚本进行部署：
-
-```bash
-# 一键构建32位和64位版本
-npm run tauri:build
-```
-
-构建完成后，您将获得：
-- `CMTools.x64.exe` - 64位Windows版本
-- `CMTools.x86.exe` - 32位Windows版本
-
-**分发建议：**
-- 64位版本适用于大多数现代Windows系统
-- 32位版本适用于老旧系统或特殊环境需求
-- 两个版本功能完全一致，用户可根据系统架构选择
+建议使用 `scripts/build-all-platforms.cjs` 脚本进行全平台构建，或使用 `npm run tauri:build:win` 专门构建 Windows 版本。构建产物将自动复制到项目根目录，方便提取和分发。
 
 ## 🤝 贡献指南
 
-我们热烈欢迎各种形式的贡献，无论是代码、文档还是问题反馈！
+1.  **Fork** 本项目
+2.  **创建功能分支** (`git checkout -b feature/AmazingFeature`)
+3.  **提交更改** (`git commit -m 'feat: Add some AmazingFeature'`)
+4.  **推送到分支** (`git push origin feature/AmazingFeature`)
+5.  **提交 Pull Request**
 
-### 行为准则
-
-请在贡献前阅读我们的 [行为准则](CODE_OF_CONDUCT.md) (待创建)，我们致力于营造一个友好、互相尊重的社区环境。
-
-### 贡献流程
-
-1.  **Fork** 本项目。
-2.  **创建新分支**：`git checkout -b feature/your-amazing-feature`
-3.  **提交您的更改**：`git commit -m 'feat: Add some amazing feature'`
-4.  **推送到您的分支**：`git push origin feature/your-amazing-feature`
-5.  **创建 Pull Request**，并详细描述您的更改。
-
-我们尤其欢迎以下类型的贡献：
-- **添加新的数据处理工具** (请遵循上文的开发指南)。
-- 改进现有工具的参数和逻辑。
-- 完善国际化翻译。
-- 修复 Bug 或优化性能。
-
-> 在提交 PR 前，请确保您的代码通过了 `cargo test` 和 `npm run test`。
-
-## 🐛 问题报告
-
-如果您发现了 Bug 或有功能建议，请前往 [Issues](https://github.com/Cubicise/CMTools/issues) 页面：
-
-1.  搜索现有 Issue，避免重复提交。
-2.  若无相关问题，请创建一个新的 Issue。
-3.  请提供详细的问题描述、复现步骤、截图或日志，以及您的操作系统和应用版本信息。
-
-## 📚 相关资源
-
-- **用户手册**：[user_manual.md](user_manual.md)
-- **Tauri 官方文档**：[tauri.app](https://tauri.app/)
-- **Vue 3 官方文档**：[vuejs.org](https://vuejs.org/)
-- **Rust 官方文档**：[doc.rust-lang.org](https://doc.rust-lang.org/)
+> 在提交 PR 前，请确保通过所有测试 (`cargo test` 和 `npm run test`)。
 
 ## 📄 许可证
 
 本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情。
 
-## 🙏 致谢
-
-感谢所有为这个项目做出贡献的开发者和提供反馈的用户！
-
 ---
 
 <div align="center">
-  <p>如果这个项目对您有帮助，请给我们一个 ⭐️</p>
   <p>Made with ❤️ by the CMTools Team</p>
 </div>
