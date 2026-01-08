@@ -56,7 +56,7 @@ CMTools 的主界面采用现代化设计，所有功能模块布局清晰，便
 ### 顶部工具栏
 
 - **Logo 和标题**：显示 CMTools 品牌标识和应用名称
-- **版本信息**：显示当前软件版本号（如 v2.6.9）
+- **版本信息**：显示当前软件版本号（如 v2.7.0）
 - **图标工具栏**：
   - **帮助**：点击问号图标 <span class="material-icons-round">help_outline</span> 可打开在线帮助文档
   - **语言**：点击翻译图标 <span class="material-icons-round">translate</span> 可在中文/英文界面间切换
