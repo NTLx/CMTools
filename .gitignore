@@ -112,3 +112,5 @@ src/assets/UPDFiler_v2
 
 /src-tauri/gen/
 .vite/
+
+package-lock.json
