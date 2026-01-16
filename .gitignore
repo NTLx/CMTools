@@ -29,6 +29,7 @@ dist/
 dist-ssr/
 build/
 out/
+target/
 
 # TypeScript cache
 *.tsbuildinfo
