@@ -47,6 +47,7 @@ enum Tool {
     SHCarrier,
     UpdfilerV1,
     UpdfilerV2,
+    StrMatcher,
 }
 
 impl Tool {
@@ -60,6 +61,7 @@ impl Tool {
             "SHCarrier" => Ok(Tool::SHCarrier),
             "UPDFiler_v1" => Ok(Tool::UpdfilerV1),
             "UPDFiler_v2" => Ok(Tool::UpdfilerV2),
+            "STR-Matcher" => Ok(Tool::StrMatcher),
             _ => Err(ProcessError::UnknownTool { tool: s.to_string() }),
         }
     }
@@ -74,6 +76,7 @@ impl Tool {
             Tool::SHCarrier => "SHCarrier",
             Tool::UpdfilerV1 => "UPDFiler_v1",
             Tool::UpdfilerV2 => "UPDFiler_v2",
+            Tool::StrMatcher => "STR-Matcher",
         };
         
         #[cfg(target_os = "windows")]
@@ -99,9 +102,10 @@ impl Tool {
                 Tool::SHCarrier => include_bytes!("../../src/assets/SHCarrier.exe"),
                 Tool::UpdfilerV1 => include_bytes!("../../src/assets/UPDFiler_v1.exe"),
                 Tool::UpdfilerV2 => include_bytes!("../../src/assets/UPDFiler_v2.exe"),
+                Tool::StrMatcher => include_bytes!("../../src/assets/STR-Matcher.exe"),
             }
         }
-        
+
         #[cfg(target_os = "macos")]
         {
             match self {
@@ -112,9 +116,10 @@ impl Tool {
                 Tool::SHCarrier => include_bytes!("../../src/assets/SHCarrier"),
                 Tool::UpdfilerV1 => include_bytes!("../../src/assets/UPDFiler_v1"),
                 Tool::UpdfilerV2 => include_bytes!("../../src/assets/UPDFiler_v2"),
+                Tool::StrMatcher => include_bytes!("../../src/assets/STR-Matcher"),
             }
         }
-        
+
         #[cfg(target_os = "linux")]
         {
             match self {
@@ -125,6 +130,7 @@ impl Tool {
                 Tool::SHCarrier => include_bytes!("../../src/assets/SHCarrier"),
                 Tool::UpdfilerV1 => include_bytes!("../../src/assets/UPDFiler_v1"),
                 Tool::UpdfilerV2 => include_bytes!("../../src/assets/UPDFiler_v2"),
+                Tool::StrMatcher => include_bytes!("../../src/assets/STR-Matcher"),
             }
         }
     }
@@ -368,7 +374,7 @@ async fn get_tool_version(tool_name: String, language: Option<String>) -> Result
 }
 
 // 内部处理函数，使用 ProcessError
-async fn process_files_internal(_app: tauri::AppHandle, tool_name: String, file_paths: Vec<String>, use_area_data: bool, std_sample_name: Option<String>, windows_optimization: Option<bool>, verbose_log: Option<bool>, language: Option<String>) -> Result<Vec<ProcessResult>, ProcessError> {
+async fn process_files_internal(_app: tauri::AppHandle, tool_name: String, file_paths: Vec<String>, use_area_data: bool, std_sample_name: Option<String>, windows_optimization: Option<bool>, verbose_log: Option<bool>, language: Option<String>, tolerance: Option<f64>) -> Result<Vec<ProcessResult>, ProcessError> {
     let lang = language.as_deref().unwrap_or("en");
     let mut results = Vec::new();
     
@@ -438,7 +444,16 @@ async fn process_files_internal(_app: tauri::AppHandle, tool_name: String, file_
             
             // 添加输入文件参数
             cmd.arg("-i").arg(&file_path);
-            
+
+            // STR-Matcher 的 Tolerance 参数（仅当值大于 0 时添加）
+            if let Tool::StrMatcher = tool {
+                if let Some(tol_value) = tolerance {
+                    if tol_value > 0.0 {
+                        cmd.arg("-t").arg(tol_value.to_string());
+                    }
+                }
+            }
+
             // 为 AneuFiler、Aneu23 和 SHCarrier 添加默认的 -dev 参数
             if let Tool::AneuFiler | Tool::Aneu23 | Tool::SHCarrier = tool {
                 cmd.arg("-dev");
@@ -594,9 +609,9 @@ async fn process_files_internal(_app: tauri::AppHandle, tool_name: String, file_
 
 // 处理文件的命令
 #[tauri::command]
-async fn process_files(app: tauri::AppHandle, tool_name: String, file_paths: Vec<String>, use_area_data: bool, std_sample_name: Option<String>, windows_optimization: Option<bool>, verbose_log: Option<bool>, language: Option<String>) -> Result<Vec<ProcessResult>, String> {
+async fn process_files(app: tauri::AppHandle, tool_name: String, file_paths: Vec<String>, use_area_data: bool, std_sample_name: Option<String>, windows_optimization: Option<bool>, verbose_log: Option<bool>, language: Option<String>, tolerance: Option<f64>) -> Result<Vec<ProcessResult>, String> {
     let lang = language.as_deref().unwrap_or("en");
-    process_files_internal(app, tool_name, file_paths, use_area_data, std_sample_name, windows_optimization, verbose_log, language.clone())
+    process_files_internal(app, tool_name, file_paths, use_area_data, std_sample_name, windows_optimization, verbose_log, language.clone(), tolerance)
         .await
         .map_err(|e| process_error_to_localized_string(&e, lang))
 }

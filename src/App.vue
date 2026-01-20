@@ -12,6 +12,7 @@ enum ToolType {
   SHCarrier = 'SHCarrier',
   UPDFiler_v1 = 'UPDFiler_v1',
   UPDFiler_v2 = 'UPDFiler_v2',
+  STRMatcher = 'STR-Matcher',
 }
 
 // 工具配置接口
@@ -21,6 +22,7 @@ interface ToolConfig {
   supportsStdSample: boolean;
   supportsWindowsOptimization: boolean;
   supportsAreaData: boolean; // 新增：是否支持峰面积数据选项
+  supportsTolerance: boolean; // 新增：是否支持 Tolerance 参数
 }
 
 // 处理选项接口
@@ -32,6 +34,7 @@ interface ProcessOptions {
   windowsOptimization?: boolean;
   verboseLog?: boolean;
   language: string;
+  tolerance?: number; // 新增：Tolerance 参数
   [key: string]: unknown;
 }
 
@@ -46,7 +49,7 @@ interface ProcessResult {
 }
 
 // 获取应用版本号
-const appVersion = (globalThis as any).__APP_VERSION__ || '2.7.3';
+const appVersion = (globalThis as any).__APP_VERSION__ || '2.8.0';
 
 const selectedFiles = ref<string[]>([]);
 const selectedTool = ref<ToolType>(ToolType.AneuFiler);
@@ -54,6 +57,7 @@ const useAreaData = ref<boolean>(false);
 const stdSampleName = ref<string>("STD");
 const windowsOptimization = ref<boolean>(true); // Windows系统优化，默认选中
 const verboseLog = ref<boolean>(false); // 输出详细运行日志文件，默认不选中
+const tolerance = ref<number | undefined>(undefined); // Tolerance 参数，默认未定义
 const processing = ref<boolean>(false);
 const results = ref<ProcessResult[]>([]);
 const showErrorDialog = ref<boolean>(false);
@@ -91,6 +95,7 @@ const tools: ToolConfig[] = [
     supportsStdSample: false,
     supportsWindowsOptimization: false,
     supportsAreaData: true,
+    supportsTolerance: false,
   },
   {
     name: ToolType.Aneu23,
@@ -98,6 +103,7 @@ const tools: ToolConfig[] = [
     supportsStdSample: true,
     supportsWindowsOptimization: false,
     supportsAreaData: true,
+    supportsTolerance: false,
   },
   {
     name: ToolType.SMNFiler_v1,
@@ -105,6 +111,7 @@ const tools: ToolConfig[] = [
     supportsStdSample: true,
     supportsWindowsOptimization: true,
     supportsAreaData: true, // SMNFiler_v1 支持峰面积数据选项
+    supportsTolerance: false,
   },
   {
     name: ToolType.SMNFiler_v2,
@@ -112,6 +119,7 @@ const tools: ToolConfig[] = [
     supportsStdSample: true,
     supportsWindowsOptimization: true,
     supportsAreaData: false, // SMNFiler_v2 不支持峰面积数据选项
+    supportsTolerance: false,
   },
   {
     name: ToolType.SHCarrier,
@@ -119,6 +127,7 @@ const tools: ToolConfig[] = [
     supportsStdSample: true,
     supportsWindowsOptimization: true,
     supportsAreaData: true,
+    supportsTolerance: false,
   },
   {
     name: ToolType.UPDFiler_v1,
@@ -126,6 +135,7 @@ const tools: ToolConfig[] = [
     supportsStdSample: false,
     supportsWindowsOptimization: true,
     supportsAreaData: false, // UPDFiler_v1 不支持峰面积数据选项
+    supportsTolerance: false,
   },
   {
     name: ToolType.UPDFiler_v2,
@@ -133,6 +143,15 @@ const tools: ToolConfig[] = [
     supportsStdSample: false,
     supportsWindowsOptimization: true,
     supportsAreaData: false, // UPDFiler_v2 不支持峰面积数据选项
+    supportsTolerance: false,
+  },
+  {
+    name: ToolType.STRMatcher,
+    label: 'STR-Matcher',
+    supportsStdSample: false,
+    supportsWindowsOptimization: false,
+    supportsAreaData: false,
+    supportsTolerance: true,
   },
 ];
 
@@ -334,7 +353,8 @@ async function processFiles() {
       stdSampleName: currentTool.supportsStdSample ? stdSampleName.value : undefined,
       windowsOptimization: currentTool.supportsWindowsOptimization ? windowsOptimization.value : undefined,
       verboseLog: selectedTool.value === ToolType.UPDFiler_v2 ? verboseLog.value : undefined,
-      language: currentLanguage.value
+      language: currentLanguage.value,
+      tolerance: currentTool.supportsTolerance ? tolerance.value : undefined,
     };
     
     const processResults = await invoke<ProcessResult[]>('process_files', options);
@@ -697,14 +717,33 @@ onMounted(() => {
                  <label for="std-name" class="text-sm font-medium text-slate-700 dark:text-slate-200">
                     {{ t('stdSampleName') }}
                  </label>
-                 <input 
+                 <input
                    id="std-name"
-                   type="text" 
+                   type="text"
                    v-model="stdSampleName"
                    class="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm"
                    placeholder="STD"
                  />
                  <span class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">{{ t('stdSampleNameDesc') }}</span>
+              </div>
+
+              <!-- Tolerance 配置（仅 STR-Matcher 显示） -->
+              <div class="flex flex-col gap-2" v-if="getCurrentToolConfig.supportsTolerance">
+                <label for="tolerance-input" class="text-sm font-medium text-slate-700 dark:text-slate-200">
+                  Tolerance
+                </label>
+                <input
+                  id="tolerance-input"
+                  v-model.number="tolerance"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  class="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm"
+                  :placeholder="currentLanguage === 'zh' ? '可选，留空则不传递此参数' : 'Optional, leave blank to skip this parameter'"
+                />
+                <span class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                  {{ currentLanguage === 'zh' ? '设置 Tolerance 数值（需大于 0）' : 'Set Tolerance value (must be greater than 0)' }}
+                </span>
               </div>
             </div>
 
