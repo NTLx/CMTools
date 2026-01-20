@@ -47,12 +47,14 @@ CMTools/
 ├── src/                      # Vue 前端源码
 │   ├── App.vue               # 核心 UI 组件
 │   ├── main.ts               # Vue 应用入口
-│   └── assets/               # 资源文件（包含嵌入的外部工具）
+│   └── assets/               # 资源文件（工具二进制文件和图片资源）
+│       ├── Cubicise.Logo.png # 项目 Logo
 │       ├── AneuFiler         # 数据处理核心工具 (Windows版需为.exe)
 │       ├── Aneu23
 │       ├── SMNFiler_v1
 │       ├── SMNFiler_v2
 │       ├── SHCarrier
+│       ├── STR-Matcher
 │       ├── UPDFiler_v1
 │       └── UPDFiler_v2
 ├── src-tauri/                # Tauri 后端源码 (Rust)

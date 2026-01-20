@@ -82,7 +82,7 @@ CMTools 的核心功能通过调用嵌入的外部命令行工具实现，这是
 ### 关键文件
 
 - **`src-tauri/src/lib.rs`**：核心业务逻辑
-  - `Tool` 枚举：定义所有可用工具（AneuFiler、Aneu23、SMNFiler_v1/v2、SHCarrier、UPDFiler_v1/v2）
+  - `Tool` 枚举：定义所有可用工具（AneuFiler、Aneu23、SMNFiler_v1/v2、SHCarrier、STR-Matcher、UPDFiler_v1/v2）
   - `process_files_internal`：处理文件的核心函数，负责工具释放、参数构造、命令执行
   - `ProcessError`：自定义错误类型，用于错误传播
 
@@ -90,9 +90,11 @@ CMTools 的核心功能通过调用嵌入的外部命令行工具实现，这是
   - `tools` 数组：配置所有工具的 UI 展示和功能特性（是否支持标准品、峰面积、编码优化等）
   - `processFiles` 函数：调用后端的入口点
 
-- **`src/assets/`**：存放所有外部工具的可执行文件
-  - macOS/Linux：无后缀（如 `AneuFiler`）
-  - Windows：需要 `.exe` 后缀（如 `AneuFiler.exe`）
+- **`src/assets/`**：存放所有项目资源文件
+  - 外部工具的可执行文件
+    - macOS/Linux：无后缀（如 `AneuFiler`）
+    - Windows：需要 `.exe` 后缀（如 `AneuFiler.exe`）
+  - 图片资源（如 `Cubicise.Logo.png`）
 
 ### 平台差异处理
 
