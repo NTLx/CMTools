@@ -107,6 +107,7 @@ src/assets/SMNFiler_v2
 src/assets/SHCarrier
 src/assets/UPDFiler_v1
 src/assets/UPDFiler_v2
+src/assets/STR-Matcher
 
 *.app
 *.dmg
