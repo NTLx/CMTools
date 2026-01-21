@@ -49,7 +49,7 @@ interface ProcessResult {
 }
 
 // 获取应用版本号
-const appVersion = (globalThis as any).__APP_VERSION__ || '2.8.0';
+const appVersion = (globalThis as any).__APP_VERSION__ || '2.8.1';
 
 const selectedFiles = ref<string[]>([]);
 const selectedTool = ref<ToolType>(ToolType.AneuFiler);
@@ -149,7 +149,7 @@ const tools: ToolConfig[] = [
     name: ToolType.STRMatcher,
     label: 'STR-Matcher',
     supportsStdSample: false,
-    supportsWindowsOptimization: false,
+    supportsWindowsOptimization: true,
     supportsAreaData: false,
     supportsTolerance: true,
   },

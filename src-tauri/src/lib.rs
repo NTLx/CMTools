@@ -143,7 +143,7 @@ impl Tool {
     
     // 检查工具是否支持 Windows 优化
     fn supports_windows_optimization(&self) -> bool {
-        matches!(self, Tool::SMNFilerV1 | Tool::SMNFilerV2 | Tool::SHCarrier | Tool::UpdfilerV1 | Tool::UpdfilerV2)
+        matches!(self, Tool::SMNFilerV1 | Tool::SMNFilerV2 | Tool::SHCarrier | Tool::UpdfilerV1 | Tool::UpdfilerV2 | Tool::StrMatcher)
         // UPDFiler_v1 和 UPDFiler_v2 都支持 Windows 优化配置
     }
 }
