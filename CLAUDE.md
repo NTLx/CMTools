@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 CMTools 是一个基于 Tauri 2.0 + Vue 3 + TypeScript 构建的色谱数据处理桌面应用。核心特点是采用**外部工具驱动架构**：通过 Rust 后端调用嵌入的命令行工具来实现数据处理功能。
 
 **技术栈**：
-- 前端：Vue 3.5 + TypeScript 5.6 + Vite 6.0 + Tailwind CSS 4.1
+- 前端：Vue 3.5 + TypeScript 5.9 + Vite 7.3 + Tailwind CSS 4.2
 - 后端：Rust (Edition 2024) + Tauri 2.9 + Tokio 1.0
 
 ## 常用开发命令
@@ -385,6 +385,7 @@ tauri::Builder::default()
 4. **首次构建 32 位版本前**需运行：`rustup target add i686-pc-windows-msvc`
 5. **文档中中英文之间、中文与数字之间应有空格**
 6. **技术术语使用行内代码标记**（如 `Tool` 枚举、`invoke` 方法）
+7. **Vite 7 的 `build.target`** 不能使用 `'modules'`，需显式指定浏览器版本数组（如 `['chrome87', 'edge88', 'firefox78', 'safari14']`）以保持 Windows 7 兼容性
 
 ## 相关文档
 

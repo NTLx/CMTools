@@ -21,6 +21,11 @@ export default defineConfig(async () => ({
     __APP_VERSION__: JSON.stringify(version),
   },
 
+  // 构建目标：保持 Chrome 87+ 兼容性（确保 Windows 7 支持）
+  build: {
+    target: ['chrome87', 'edge88', 'firefox78', 'safari14'],
+  },
+
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
   //
   // 1. prevent vite from obscuring rust errors
