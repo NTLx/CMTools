@@ -222,6 +222,41 @@ match tool {
 - **检查临时文件**：前往系统临时目录查看释放的 `cmtools_*` 文件，验证工具是否正确释放。
 - **构建脚本调试**：运行 `npm run tauri:build` 时，脚本会输出详细的 Rust 目标检测和构建进度信息。
 
+### 遥测与分析
+
+CMTools 集成了 PostHog 遥测功能，用于收集匿名使用数据以改进产品体验。
+
+#### 隐私保护机制
+
+我们采用多重隐私保护措施：
+
+1. **Cookieless Mode**：启用 `cookieless_mode: 'always'`，用户 ID 在服务端进行哈希计算，不在客户端存储任何 Cookie
+2. **无身份识别**：不调用 `identify` 方法，不收集个人身份信息
+3. **禁用自动捕获**：设置 `autocapture: false`，仅追踪手动指定的事件
+4. **数据脱敏**：不收集文件内容、文件路径中的敏感信息
+5. **用户授权**：首次启动时需用户明确同意，可随时在设置中更改授权状态
+
+#### 收集的事件
+
+| 事件名称 | 触发时机 | 收集数据 |
+|---------|---------|---------|
+| `app_started` | 应用启动 | 版本号、平台、语言 |
+| `tool_selected` | 切换工具 | 工具名称、上一个工具 |
+| `files_selected` | 选择文件 | 文件数量、工具名称 |
+| `processing_started` | 开始处理 | 工具名称、文件数量、选项状态 |
+| `processing_completed` | 处理完成 | 耗时、成功数量 |
+| `processing_failed` | 处理失败 | 错误类型、错误信息 |
+| `settings_changed` | 设置变更 | 设置名称、新值/旧值 |
+
+#### 配置方式
+
+遥测功能通过环境变量配置，在 `.env` 文件中设置：
+
+```bash
+VITE_POSTHOG_KEY=your_posthog_api_key
+VITE_POSTHOG_HOST=https://app.posthog.com
+```
+
 ## 📦 部署
 
 ### 自动化构建

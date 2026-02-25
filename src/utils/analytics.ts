@@ -317,6 +317,101 @@ export function trackSettingsChanged(
 }
 
 /**
+ * 追踪批次处理摘要事件
+ * @param toolName - 工具名称
+ * @param totalFiles - 总文件数
+ * @param successCount - 成功数量
+ * @param failureCount - 失败数量
+ * @param totalDurationMs - 总耗时（毫秒）
+ */
+export function trackBatchProcessingSummary(
+  toolName: string,
+  totalFiles: number,
+  successCount: number,
+  failureCount: number,
+  totalDurationMs: number,
+): void {
+  trackEvent('batch_processing_summary', {
+    tool_name: toolName,
+    total_files: totalFiles,
+    success_count: successCount,
+    failure_count: failureCount,
+    total_duration_ms: totalDurationMs,
+    avg_time_per_file_ms: totalFiles > 0 ? Math.round(totalDurationMs / totalFiles) : 0,
+    success_rate: totalFiles > 0 ? (successCount / totalFiles) : 0,
+  });
+}
+
+/**
+ * 追踪工具错误事件（标准化错误分类）
+ * @param toolName - 工具名称
+ * @param errorCategory - 错误分类
+ * @param errorCode - 错误代码
+ * @param fileExtension - 文件扩展名（可选）
+ * @param isRetry - 是否重试
+ */
+export function trackToolError(
+  toolName: string,
+  errorCategory: string,
+  errorCode: string,
+  fileExtension?: string,
+  isRetry: boolean = false,
+): void {
+  trackEvent('tool_error', {
+    tool_name: toolName,
+    error_category: errorCategory,
+    error_code: errorCode,
+    file_extension: fileExtension,
+    is_retry: isRetry,
+  });
+}
+
+/**
+ * 追踪语言切换事件
+ * @param from - 原语言
+ * @param to - 新语言
+ */
+export function trackLanguageChanged(
+  from: 'zh' | 'en',
+  to: 'zh' | 'en',
+): void {
+  trackEvent('language_changed', {
+    from,
+    to,
+  });
+}
+
+/**
+ * 追踪主题切换事件
+ * @param from - 原主题
+ * @param to - 新主题
+ */
+export function trackThemeChanged(
+  from: 'light' | 'dark',
+  to: 'light' | 'dark',
+): void {
+  trackEvent('theme_changed', {
+    from,
+    to,
+  });
+}
+
+/**
+ * 追踪遥测设置变更事件
+ * @param enabled - 是否启用
+ * @param reason - 变更原因
+ */
+export function trackTelemetryChanged(
+  enabled: boolean,
+  reason?: 'user_action' | 'first_launch',
+): void {
+  trackEvent('telemetry_changed', {
+    enabled,
+    reason: reason || 'user_action',
+  });
+}
+
+/**
  * 检查并初始化分析服务
  * 应在应用启动后异步调用
  * @param onShowConsentModal - 显示授权弹窗的回调

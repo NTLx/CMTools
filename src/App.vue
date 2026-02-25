@@ -14,6 +14,11 @@ import {
   getConsentStatus,
   setConsentStatus,
   onConsentChange,
+  trackBatchProcessingSummary,
+  trackToolError,
+  trackLanguageChanged,
+  trackThemeChanged,
+  trackTelemetryChanged,
 } from './utils/analytics';
 
 // 工具类型枚举
@@ -107,7 +112,7 @@ function displayToast(message: string) {
     showToast.value = false;
   }, 2000); // 2秒后自动消失
 } 
-const currentLanguage = ref<string>('zh'); // 默认中文
+const currentLanguage = ref<'zh' | 'en'>('zh'); // 默认中文
 
 // 工具配置数组
 const tools: ToolConfig[] = [
@@ -335,16 +340,22 @@ function getLocalizedResultMessage(result: ProcessResult): string {
 
 // 语言切换
 function toggleLanguage() {
-  const newLanguage = currentLanguage.value === 'zh' ? 'en' : 'zh';
+  const oldLanguage = currentLanguage.value;
+  const newLanguage = oldLanguage === 'zh' ? 'en' : 'zh';
   currentLanguage.value = newLanguage;
   localStorage.setItem('language', newLanguage);
+  trackLanguageChanged(oldLanguage, newLanguage);
 }
 
 // 切换遥测
 function toggleTelemetry() {
-  const newState = !telemetryEnabled.value;
+  const oldState = telemetryEnabled.value;
+  const newState = !oldState;
   telemetryEnabled.value = newState;
   setConsentStatus(newState ? 'granted' : 'declined');
+
+  // 追踪遥测设置变更
+  trackTelemetryChanged(newState, 'user_action');
 
   if (newState) {
     initAnalytics(() => {
@@ -456,11 +467,30 @@ async function processFiles() {
     // 追踪处理完成
     const durationMs = Date.now() - startTime;
     const successCount = processResults.filter(r => r.success).length;
+    const failureCount = processResults.filter(r => !r.success).length;
 
+    // 追踪批次处理摘要（无论成功还是失败都发送）
+    trackBatchProcessingSummary(
+      selectedTool.value,
+      selectedFiles.value.length,
+      successCount,
+      failureCount,
+      durationMs
+    );
+
+    // 追踪处理结果
     if (successCount === processResults.length) {
       trackProcessingCompleted(selectedTool.value, selectedFiles.value.length, durationMs, successCount);
     } else {
-      // 部分失败
+      // 部分失败 - 追踪具体错误
+      processResults
+        .filter(r => !r.success)
+        .forEach(r => {
+          const errorCategory = categorizeError(r.error || r.message);
+          const fileExt = r.file_path ? r.file_path.split('.').pop() : undefined;
+          trackToolError(selectedTool.value, errorCategory, r.originalMessage || 'unknown', fileExt);
+        });
+
       const errorTypes = processResults
         .filter(r => !r.success)
         .map(r => r.originalMessage || 'unknown')
@@ -475,9 +505,25 @@ async function processFiles() {
 
     // 追踪处理失败
     trackProcessingFailed(selectedTool.value, 'exception', String(error));
+    trackToolError(selectedTool.value, 'exception', 'unhandled_exception', undefined, false);
   } finally {
     processing.value = false;
   }
+}
+
+// 错误分类辅助函数
+function categorizeError(error?: string): string {
+  if (!error) return 'unknown';
+
+  const errorLower = error.toLowerCase();
+
+  if (errorLower.includes('不存在') || errorLower.includes('not found')) return 'file_not_found';
+  if (errorLower.includes('权限') || errorLower.includes('permission') || errorLower.includes('denied')) return 'permission_denied';
+  if (errorLower.includes('格式') || errorLower.includes('format')) return 'format_error';
+  if (errorLower.includes('io') || errorLower.includes('读写')) return 'io_error';
+  if (errorLower.includes('执行') || errorLower.includes('execute') || errorLower.includes('exit')) return 'execution_failed';
+
+  return 'other';
 }
 
 // 清除选择的文件
@@ -562,9 +608,12 @@ async function openFileDirectory(filePath?: string) {
 
 // 主题切换
 function toggleTheme() {
+  const oldTheme = isDarkMode.value ? 'dark' : 'light';
+  const newTheme = oldTheme === 'dark' ? 'light' : 'dark';
   isDarkMode.value = !isDarkMode.value;
   localStorage.setItem('theme', isDarkMode.value ? 'dark' : 'light');
   updateThemeClass();
+  trackThemeChanged(oldTheme, newTheme);
 }
 
 // 更新主题类名 - 适配 Tailwind CSS dark mode
@@ -601,7 +650,7 @@ onMounted(() => {
   updateThemeClass();
 
   // 初始化语言
-  const savedLanguage = localStorage.getItem('language');
+  const savedLanguage = localStorage.getItem('language') as 'zh' | 'en' | null;
   currentLanguage.value = savedLanguage || 'zh';
 
   // 初始化分析服务（非阻塞，异步执行）

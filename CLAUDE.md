@@ -437,6 +437,23 @@ export default defineConfig({
 
 **原则：** 所有需要文档化沉淀的内容均应合理地整合到上述三份文档中。如果某个内容不适合任何一份文档，优先考虑是否真的需要文档化，而不是创建新文档。
 
+### PostHog 分析集成
+
+项目使用 PostHog 进行匿名使用数据追踪，配置特点：
+- **Cookieless 模式**：`cookieless_mode: 'always'`，服务端哈希计算用户 ID
+- **手动事件捕获**：`autocapture: false`，通过 `analytics.ts` 统一管理事件
+- **离线事件队列**：离线时缓存事件到 localStorage，网络恢复后重放
+- **授权驱动**：用户明确同意后才初始化，可通过 UI 随时开关
+
+**错误分类方法**：使用关键词匹配将原始错误映射为标准类型
+```typescript
+// categorizeError 函数示例
+if (errorLower.includes('不存在') || errorLower.includes('not found')) return 'file_not_found';
+if (errorLower.includes('权限') || errorLower.includes('permission')) return 'permission_denied';
+if (errorLower.includes('格式') || errorLower.includes('format')) return 'format_error';
+// ... 等 6 种错误类型
+```
+
 ### 开发约定
 
 1. **总是使用最简单的方法实现需求**，如无必要不引入新的第三方依赖
