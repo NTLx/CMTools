@@ -135,6 +135,8 @@ function initPostHog(): void {
       autocapture: false, // 禁用自动捕获，手动控制
       persistence: 'localStorage', // 使用 localStorage 持久化
       disable_session_recording: false,
+      capture_exceptions: true, // 自动捕获未处理的 JavaScript 异常
+      cookieless_mode: 'always', // 启用无 cookie 模式，使用服务端哈希计算用户 ID
       loaded: (ph) => {
         isInitialized = true;
         console.log('[Analytics] PostHog 初始化成功');
