@@ -1,7 +1,20 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, onUnmounted, watch } from 'vue';
 import { invoke } from '@tauri-apps/api/core';
 import { open } from '@tauri-apps/plugin-dialog';
+import ConsentModal from './components/ConsentModal.vue';
+import {
+  initAnalytics,
+  trackToolSelected,
+  trackFilesSelected,
+  trackProcessingStarted,
+  trackProcessingCompleted,
+  trackProcessingFailed,
+  cleanup,
+  getConsentStatus,
+  setConsentStatus,
+  onConsentChange,
+} from './utils/analytics';
 
 // 工具类型枚举
 enum ToolType {
@@ -49,7 +62,7 @@ interface ProcessResult {
 }
 
 // 获取应用版本号
-const appVersion = (globalThis as any).__APP_VERSION__ || '2.8.5';
+const appVersion = (globalThis as any).__APP_VERSION__ || '2.8.6';
 
 const selectedFiles = ref<string[]>([]);
 const selectedTool = ref<ToolType>(ToolType.AneuFiler);
@@ -71,6 +84,15 @@ const showToast = ref<boolean>(false);
 const toastMessage = ref<string>('');
 let toastTimer: number | null = null;
 const isDarkMode = ref<boolean>(false);
+
+// 隐私授权弹窗状态
+const showConsentModal = ref<boolean>(false);
+
+// 遥测开关状态
+const telemetryEnabled = ref(getConsentStatus() === 'granted');
+
+// 授权状态变化清理函数
+let cleanupConsentListener: (() => void) | null = null;
 
 // 显示 Toast
 function displayToast(message: string) {
@@ -195,6 +217,7 @@ const translations = {
     switchToLight: '切换到亮色模式',
     switchToDark: '切换到暗色模式',
     languageSwitch: '语言切换',
+    telemetrySwitch: '收集软件运行性能数据',
     helpBtn: '帮助',
     languageBtn: '中文',
     themeBtnDark: '暗',
@@ -248,6 +271,7 @@ const translations = {
     switchToLight: 'Switch to light mode',
     switchToDark: 'Switch to dark mode',
     languageSwitch: 'Language Switch',
+    telemetrySwitch: 'Telemetry Settings',
     helpBtn: 'Help',
     languageBtn: 'EN',
     themeBtnDark: 'Dark',
@@ -316,6 +340,19 @@ function toggleLanguage() {
   localStorage.setItem('language', newLanguage);
 }
 
+// 切换遥测
+function toggleTelemetry() {
+  const newState = !telemetryEnabled.value;
+  telemetryEnabled.value = newState;
+  setConsentStatus(newState ? 'granted' : 'declined');
+
+  if (newState) {
+    initAnalytics(() => {
+      showConsentModal.value = true;
+    });
+  }
+}
+
 // 选择文件
 async function selectFiles() {
   try {
@@ -337,14 +374,23 @@ async function processFiles() {
   if (selectedFiles.value.length === 0) {
     return;
   }
-  
+
   processing.value = true;
   results.value = [];
   errorMessages.value = [];
-  
+
+  // 追踪处理开始
+  const startTime = Date.now();
+  const currentTool = getCurrentToolConfig.value;
+
+  trackFilesSelected(selectedFiles.value.length, selectedTool.value);
+  trackProcessingStarted(selectedTool.value, selectedFiles.value.length, {
+    useAreaData: currentTool.supportsAreaData ? useAreaData.value : false,
+    windowsOptimization: currentTool.supportsWindowsOptimization ? windowsOptimization.value : false,
+    language: currentLanguage.value,
+  });
+
   try {
-    const currentTool = getCurrentToolConfig.value;
-    
     // 构建处理选项
     const options: ProcessOptions = {
       toolName: selectedTool.value,
@@ -356,19 +402,19 @@ async function processFiles() {
       language: currentLanguage.value,
       tolerance: currentTool.supportsTolerance ? tolerance.value : undefined,
     };
-    
+
     const processResults = await invoke<ProcessResult[]>('process_files', options);
-    
+
     // 处理结果，提取原始消息键和文件名
     results.value = processResults.map(result => {
       const processedResult = { ...result };
-      
+
       // 解析消息以提取原始消息键和文件名
       if (result.success && result.message) {
         // 尝试解析成功消息
         const successMatchZh = result.message.match(/^成功处理文件:\s*(.+)$/);
         const successMatchEn = result.message.match(/^Successfully processed file:\s*(.+)$/);
-        
+
         if (successMatchZh || successMatchEn) {
           processedResult.originalMessage = 'process_success';
           processedResult.fileName = (successMatchZh || successMatchEn)?.[1] || '';
@@ -381,7 +427,7 @@ async function processFiles() {
         const executeMatchEn = result.message.match(/^Failed to execute program:\s*(.+)$/);
         const notFoundMatchZh = result.message.match(/^文件不存在:\s*(.+)$/);
         const notFoundMatchEn = result.message.match(/^File not found:\s*(.+)$/);
-        
+
         if (failedMatchZh || failedMatchEn) {
           processedResult.originalMessage = 'process_failed';
           processedResult.fileName = (failedMatchZh || failedMatchEn)?.[1] || '';
@@ -393,24 +439,42 @@ async function processFiles() {
           processedResult.fileName = (notFoundMatchZh || notFoundMatchEn)?.[1] || '';
         }
       }
-      
+
       return processedResult;
     });
-    
+
     // 收集错误信息
     const errors = processResults
       .filter(result => !result.success && result.error)
       .map(result => `${result.message}: ${result.error}`);
-    
+
     if (errors.length > 0) {
       errorMessages.value = errors;
       showErrorDialog.value = true;
     }
-    
+
+    // 追踪处理完成
+    const durationMs = Date.now() - startTime;
+    const successCount = processResults.filter(r => r.success).length;
+
+    if (successCount === processResults.length) {
+      trackProcessingCompleted(selectedTool.value, selectedFiles.value.length, durationMs, successCount);
+    } else {
+      // 部分失败
+      const errorTypes = processResults
+        .filter(r => !r.success)
+        .map(r => r.originalMessage || 'unknown')
+        .join(',');
+      trackProcessingFailed(selectedTool.value, errorTypes, 'partial_failure');
+    }
+
   } catch (error) {
     console.error(t('processFilesError'), error);
     errorMessages.value = [String(error)];
     showErrorDialog.value = true;
+
+    // 追踪处理失败
+    trackProcessingFailed(selectedTool.value, 'exception', String(error));
   } finally {
     processing.value = false;
   }
@@ -535,10 +599,40 @@ onMounted(() => {
     isDarkMode.value = savedTheme === 'dark';
   }
   updateThemeClass();
-  
+
   // 初始化语言
   const savedLanguage = localStorage.getItem('language');
   currentLanguage.value = savedLanguage || 'zh';
+
+  // 初始化分析服务（非阻塞，异步执行）
+  initAnalytics(() => {
+    showConsentModal.value = true;
+  });
+
+  // 监听授权状态变化，实时更新遥测按钮状态
+  cleanupConsentListener = onConsentChange((status) => {
+    telemetryEnabled.value = status === 'granted';
+  });
+});
+
+// 清理资源
+onUnmounted(() => {
+  cleanup();
+  if (cleanupConsentListener) {
+    cleanupConsentListener();
+  }
+  if (toastTimer) {
+    clearTimeout(toastTimer);
+  }
+});
+
+// 追踪工具选择变化
+let previousTool: ToolType | null = null;
+watch(selectedTool, (newTool) => {
+  if (previousTool !== null) {
+    trackToolSelected(newTool, previousTool || undefined);
+  }
+  previousTool = newTool;
 });
 </script>
 
@@ -569,7 +663,15 @@ onMounted(() => {
         </p>
       </div>
       <div class="flex items-center gap-3">
-        <button 
+        <button
+          @click="toggleTelemetry"
+          class="p-2 rounded-lg bg-surface-light dark:bg-surface-dark shadow-sm border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors flex items-center justify-center w-10 h-10"
+          :class="telemetryEnabled ? 'text-slate-600 dark:text-slate-300' : 'text-slate-300 dark:text-slate-600'"
+          :title="t('telemetrySwitch')"
+        >
+          <span class="material-icons-round text-xl">analytics</span>
+        </button>
+        <button
           @click="toggleLanguage"
           class="p-2 rounded-lg bg-surface-light dark:bg-surface-dark shadow-sm border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors flex items-center justify-center w-10 h-10"
           :title="t('languageSwitch')"
@@ -905,7 +1007,7 @@ onMounted(() => {
 
        <!-- Toast 提示 -->
        <Teleport to="body">
-         <div 
+         <div
            v-if="showToast"
            class="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-[60] bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-800 px-6 py-3 rounded-full shadow-lg flex items-center gap-2 animate-fadeInUp"
          >
@@ -913,6 +1015,13 @@ onMounted(() => {
            <span class="text-sm font-medium">{{ toastMessage }}</span>
          </div>
        </Teleport>
+
+       <!-- 隐私授权弹窗 -->
+       <ConsentModal
+         :visible="showConsentModal"
+         :language="currentLanguage as 'zh' | 'en'"
+         @close="showConsentModal = false"
+       />
     </main>
   </div>
 </template>

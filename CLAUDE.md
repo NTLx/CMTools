@@ -284,6 +284,66 @@ tauri::Builder::default()
 - 构建脚本会输出详细的 Rust target 检测信息
 - 查看 `src-tauri/target/` 目录了解实际构建产物
 
+## Playwright MCP 配置
+
+Playwright MCP 用于 Web 调试和文档查阅。**默认配置缺少关键参数，需手动优化。**
+
+### 快速配置
+
+> ⚠️ **注意**：Playwright Plugin 更新时可能会覆盖配置文件，届时需重新配置。
+
+Playwright Plugin 有两个配置文件需同步修改：
+- `~/.claude/plugins/cache/claude-plugins-official/playwright/<hash>/.mcp.json`
+- `~/.claude/plugins/marketplaces/claude-plugins-official/external_plugins/playwright/.mcp.json`
+
+将配置修改为：
+```json
+{
+  "playwright": {
+    "command": "npx",
+    "args": ["-y", "@playwright/mcp@latest", "--vision"]
+  }
+}
+```
+
+**参数说明**：
+- `-y`：自动确认 npx 安装，防止交互式提示卡住 MCP 工具
+- `--vision`：启用视觉功能，允许获取网页截图（关键优化）
+
+### 一键配置命令
+
+```bash
+find ~/.claude/plugins -name ".mcp.json" -path "*playwright*" | while read f; do
+  echo "修改: $f"
+  cat > "$f" << 'EOF'
+{
+  "playwright": {
+    "command": "npx",
+    "args": ["-y", "@playwright/mcp@latest", "--vision"]
+  }
+}
+EOF
+done
+```
+
+### 验证方法
+
+1. 重启 Claude Code 会话
+2. 使用 Playwright 打开任意网页
+3. 检查是否能获取截图（`browser_take_screenshot` 或 `browser_snapshot`）
+
+### 进阶配置（可选）
+
+如需运行 Playwright 测试，创建 `playwright.config.ts` 减少 Token 消耗：
+
+```typescript
+import { defineConfig } from '@playwright/test';
+
+export default defineConfig({
+  reporter: process.env.CI || process.env.CLAUDE ? 'line' : 'list',
+});
+```
+
 ## 开发与代码规范
 
 ### 开发原则
@@ -386,6 +446,8 @@ tauri::Builder::default()
 5. **文档中中英文之间、中文与数字之间应有空格**
 6. **技术术语使用行内代码标记**（如 `Tool` 枚举、`invoke` 方法）
 7. **Vite 7 的 `build.target`** 不能使用 `'modules'`，需显式指定浏览器版本数组（如 `['chrome87', 'edge88', 'firefox78', 'safari14']`）以保持 Windows 7 兼容性
+8. **环境变量配置**：使用 `.env` 文件，变量名以 `VITE_` 前缀，构建时注入；类型声明在 `src/vite-env.d.ts` 中添加
+9. **遥测状态监听**：使用 `onConsentChange` 回调机制监听授权状态变化，而非轮询 `localStorage`；在 `onMounted` 注册监听器，`onUnmounted` 清理
 
 ## 相关文档
 

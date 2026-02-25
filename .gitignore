@@ -113,3 +113,5 @@ src/assets/STR-Matcher
 
 /src-tauri/gen/
 .vite/
+
+.env
