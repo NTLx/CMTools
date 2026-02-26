@@ -64,6 +64,12 @@ cargo fmt      # 格式化代码
 cargo clippy   # 静态分析
 ```
 
+### Markdown 文档验证
+```bash
+# 验证 Markdown 语法（检查列表/代码块空行、代码块语言等问题）
+npx --yes markdownlint-cli2 <filename>.md
+```
+
 ## 核心架构：外部工具驱动机制
 
 CMTools 的核心功能通过调用嵌入的外部命令行工具实现，这是理解整个项目的关键。
@@ -191,6 +197,14 @@ match tool {
 }
 ```
 
+**特殊功能说明**：
+
+**verboseLog 参数（仅 UPDFiler_v2 支持）**
+- 参数名: `verbose_log`
+- 命令行参数: `-dev`
+- 用途: 启用详细日志输出（开发者模式）
+- 这是 UPDFiler_v2 的独有功能，前端通过 `selectedTool.value === ToolType.UPDFiler_v2` 判断
+
 ### 3. 前端注册（`src/App.vue`）
 
 在 `tools` 数组中添加配置：
@@ -202,10 +216,19 @@ const tools = ref([
     label: 'NewTool 数据处理',
     supportsStdSample: true,           // 是否支持 -STD 参数
     supportsWindowsOptimization: true, // 是否支持 -GBK 编码优化
-    supportsAreaData: true             // 是否支持 -Area 参数
+    supportsAreaData: true,            // 是否支持 -Area 参数
+    supportsTolerance: false           // 是否支持 -t Tolerance 参数（仅 STR-Matcher）
   }
 ])
 ```
+
+### 特殊参数说明
+
+**Tolerance 参数（仅 STR-Matcher 支持）**
+- 参数名: `tolerance`
+- 命令行参数: `-t <值>`
+- 用途: 设置匹配容差值
+- 仅当值大于 0 时才会添加到命令行
 
 ## 构建系统架构
 
@@ -246,6 +269,9 @@ const tools = ref([
 - **Windows**: `CMTools.x64.exe`、`CMTools.x86.exe`、`CMTools.Win7.x86.exe`
 - **macOS**: `CMTools.AppleSilicon.dmg`、`CMTools.Intel.dmg`
 - **Linux**: `CMTools.x86_64.AppImage`、`CMTools.i686.AppImage`
+
+### CI/CD 限制
+**重要：** 由于集成的分析工具二进制文件（`src/assets/`）不推送到 GitHub，GitHub Actions 等 CI/CD 服务无法执行完整构建。所有构建和发布必须在本地执行。
 
 ## 前后端交互机制
 
@@ -351,24 +377,19 @@ done
 2. 使用 Playwright 打开任意网页
 3. 检查是否能获取截图（`browser_take_screenshot` 或 `browser_snapshot`）
 
-### 进阶配置（可选）
-
-如需运行 Playwright 测试，创建 `playwright.config.ts` 减少 Token 消耗：
-
-```typescript
-import { defineConfig } from '@playwright/test';
-
-export default defineConfig({
-  reporter: process.env.CI || process.env.CLAUDE ? 'line' : 'list',
-});
-```
-
 ## 开发与代码规范
 
 ### 开发原则
 1. **使用中文与用户对话** - 所有交流、注释和文档优先使用中文
-2. **总是使用最简单的方法实现需求** - 避免过度设计
-3. **如无必要，不引入新的第三方依赖** - 保持项目轻量化
+2. **总是使用最简单的方法实现需求** - 避免过度设计，如无必要不引入新的第三方依赖
+3. **外部工具必须放在 `src/assets/`** - 不能放在 `src-tauri/` 目录（构建时会找不到）
+4. **Windows 版本需要 `.exe` 后缀** - macOS/Linux 版本无后缀
+5. **首次构建 32 位版本前**需运行：`rustup target add i686-pc-windows-msvc`
+6. **文档中中英文之间、中文与数字之间应有空格**
+7. **技术术语使用行内代码标记**（如 `Tool` 枚举、`invoke` 方法）
+8. **Vite 7 的 `build.target`** 不能使用 `'modules'`，需显式指定浏览器版本数组（如 `['chrome87', 'edge88', 'firefox78', 'safari14']`）以保持 Windows 7 兼容性
+9. **环境变量配置**：使用 `.env` 文件，变量名以 `VITE_` 前缀，构建时注入；类型声明在 `src/vite-env.d.ts` 中添加
+10. **遥测状态监听**：使用 `onConsentChange` 回调机制监听授权状态变化，而非轮询 `localStorage`；在 `onMounted` 注册监听器，`onUnmounted` 清理
 
 ### 最佳实践
 1. **利用配置驱动特性**
@@ -382,9 +403,12 @@ export default defineConfig({
 
 3. **工具配置同步检查**
    验证工具功能时，必须同时检查前后端配置：
-   - 前端：`src/App.vue` - `tools` 数组中的 `supports*` 配置
+   - 前端：`src/App.vue` - `tools` 数组中的 `supports*` 配置（`supportsStdSample`、`supportsWindowsOptimization`、`supportsAreaData`、`supportsTolerance`）
    - 后端：`src-tauri/src/lib.rs` - `Tool` 枚举的 `supports_*()` 方法和命令行参数逻辑
    - 文档：`user_manual.md` - 工具功能对照表和处理选项说明
+
+   **STR-Matcher 特殊说明**：Tolerance 参数仅 STR-Matcher 支持，使用 `-t` 命令行参数，仅当值大于 0 时生效。
+   **UPDFiler_v2 特殊说明**：verboseLog（详细日志）是 UPDFiler_v2 的独有功能，使用 `-dev` 命令行参数，仅在启用时生效。
 
 ### TypeScript/Vue 代码规范
 - **字符串字面量**：优先使用单引号（`'string'` 而非 `"string"`）
@@ -457,6 +481,9 @@ export default defineConfig({
 - `refactor:` 代码重构
 - `chore:` 构建/工具更新
 
+### Cargo.toml 作者信息
+更新作者信息时使用实际 GitHub 昵称：`authors = ["NTLx"]`
+
 ### 二进制工具文件说明
 **不纳入 git 跟踪**：集成的分析工具二进制文件（`src/assets/`目录中的可执行文件）属于独立开发的其他项目，不纳入本项目 git 版本控制。
 
@@ -494,6 +521,15 @@ export default defineConfig({
    - 遵循 Keep a Changelog 格式规范
    - 分类记录：新增功能、修复问题、重构优化、破坏性变更等
 
+### GitHub 社区健康文件
+项目包含以下社区文件，创建或修改时需注意：
+- `CONTRIBUTING.md` - 贡献指南（根目录）
+- `CODE_OF_CONDUCT.md` - 行为准则（根目录）
+- `.github/ISSUE_TEMPLATE/` - Issue 模板
+- `.github/PULL_REQUEST_TEMPLATE.md` - PR 模板
+- `.github/SECURITY.md` - 安全策略
+- `.github/SUPPORT.md` - 支持指南
+
 **原则：** 所有需要文档化沉淀的内容均应合理地整合到上述四份文档中。如果某个内容不适合任何一份文档，优先考虑是否真的需要文档化，而不是创建新文档。
 
 ### README.md 文档定位
@@ -521,18 +557,6 @@ if (errorLower.includes('权限') || errorLower.includes('permission')) return '
 if (errorLower.includes('格式') || errorLower.includes('format')) return 'format_error';
 // ... 等 6 种错误类型
 ```
-
-### 开发约定
-
-1. **总是使用最简单的方法实现需求**，如无必要不引入新的第三方依赖
-2. **外部工具必须放在 `src/assets/`**，不能放在 `src-tauri/` 目录（构建时会找不到）
-3. **Windows 版本需要 `.exe` 后缀**，macOS/Linux 版本无后缀
-4. **首次构建 32 位版本前**需运行：`rustup target add i686-pc-windows-msvc`
-5. **文档中中英文之间、中文与数字之间应有空格**
-6. **技术术语使用行内代码标记**（如 `Tool` 枚举、`invoke` 方法）
-7. **Vite 7 的 `build.target`** 不能使用 `'modules'`，需显式指定浏览器版本数组（如 `['chrome87', 'edge88', 'firefox78', 'safari14']`）以保持 Windows 7 兼容性
-8. **环境变量配置**：使用 `.env` 文件，变量名以 `VITE_` 前缀，构建时注入；类型声明在 `src/vite-env.d.ts` 中添加
-9. **遥测状态监听**：使用 `onConsentChange` 回调机制监听授权状态变化，而非轮询 `localStorage`；在 `onMounted` 注册监听器，`onUnmounted` 清理
 
 ## 相关文档
 

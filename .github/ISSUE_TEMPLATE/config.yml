@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 问题讨论
+    url: https://github.com/lx/CMTools/discussions
+    about: 在创建 Issue 之前，请先在讨论区交流想法
+  - name: 项目文档
+    url: https://github.com/lx/CMTools/blob/master/README.md
+    about: 查看项目文档了解基本信息
+  - name: 用户手册
+    url: https://github.com/lx/CMTools/blob/master/user_manual.md
+    about: 查看用户使用手册了解详细功能
