@@ -8,7 +8,13 @@ CMTools 是一个基于 Tauri 2.0 + Vue 3 + TypeScript 构建的色谱数据处�
 
 **技术栈**：
 - 前端：Vue 3.5 + TypeScript 5.9 + Vite 7.3 + Tailwind CSS 4.2
-- 后端：Rust (Edition 2024) + Tauri 2.9 + Tokio 1.0
+- 后端：Rust (Edition 2024) + Tauri 2.10 + Tokio 1.0
+
+**许可证（License）说明**：
+- **MIT License 适用范围**：本项目源代码（框架和集成逻辑部分）采用 MIT License
+- **内置二进制工具**：遵循其各自的 License 条款，独立于本项目 License
+- **不涉密说明**：本项目通过调用外部二进制工具执行分析，不包含色谱数据分析算法源代码
+- **开放态度**：本项目希望更加开放，鼓励学习、使用和贡献
 
 ## 常用开发命令
 
@@ -228,6 +234,19 @@ const tools = ref([
 - **发布构建**：`src-tauri/target/release/bundle/`
 - **最终产物**：自动复制到项目根目录，便于分发
 
+### 构建命令输出说明
+
+| 命令 | 适用场景 | 输出产物 |
+|------|----------|----------|
+| `npm run tauri:build` | 开发测试、快速构建 | 当前系统对应版本 |
+| `npm run tauri:build:win` | Windows 发布 | Windows x64/x86/Win7 |
+| `npm run tauri:build:all` | 完整发布、CI/CD | 当前平台所有版本 |
+
+**各平台输出详情**：
+- **Windows**: `CMTools.x64.exe`、`CMTools.x86.exe`、`CMTools.Win7.x86.exe`
+- **macOS**: `CMTools.AppleSilicon.dmg`、`CMTools.Intel.dmg`
+- **Linux**: `CMTools.x86_64.AppImage`、`CMTools.i686.AppImage`
+
 ## 前后端交互机制
 
 使用 Tauri 的 `invoke` 系统进行通信：
@@ -361,6 +380,12 @@ export default defineConfig({
 2. **前后端配置同步**
    修改工具能力时，务必同时更新前后端的配置定义，确保 UI 选项能被后端正确处理。
 
+3. **工具配置同步检查**
+   验证工具功能时，必须同时检查前后端配置：
+   - 前端：`src/App.vue` - `tools` 数组中的 `supports*` 配置
+   - 后端：`src-tauri/src/lib.rs` - `Tool` 枚举的 `supports_*()` 方法和命令行参数逻辑
+   - 文档：`user_manual.md` - 工具功能对照表和处理选项说明
+
 ### TypeScript/Vue 代码规范
 - **字符串字面量**：优先使用单引号（`'string'` 而非 `"string"`）
 - **语法风格**：使用 Composition API 和 `<script setup>` 语法
@@ -404,6 +429,25 @@ export default defineConfig({
    ✓ 正确：在 `src/App.vue` 文件中修改 `tools` 数组
    ✗ 错误：在 src/App.vue 文件中修改 tools 数组
    ```
+
+### 用户手册审查方法
+
+当需要验证或更新 `user_manual.md` 时，采用以下审查框架：
+
+**审查维度**：
+1. **准确性** - 对比代码实现验证文档描述
+   - 工具功能：对比 `src/App.vue` 的 `tools` 数组 和 `src-tauri/src/lib.rs` 的 `Tool` 枚举及 `supports_*` 方法
+   - 参数默认值：检查前端 `ref` 初始值和后端传参逻辑
+   - 平台支持：确认实际构建版本与文档描述一致
+2. **完整性** - 检查是否遗漏功能特性
+   - 新增工具是否同步更新文档
+   - 工具对照表是否包含所有功能列（峰面积、标准品、Windows 优化、详细日志、Tolerance）
+3. **可用性** - 作为用户手册是否清晰易懂
+
+**修改原则**：
+- 遇到不确定的内容先与用户确认再执行修改
+- 按优先级（高→中→低）顺序执行修改
+- 保持文档风格与现有内容一致
 
 ### Git 提交规范
 遵循 Conventional Commits：
@@ -451,6 +495,15 @@ export default defineConfig({
    - 分类记录：新增功能、修复问题、重构优化、破坏性变更等
 
 **原则：** 所有需要文档化沉淀的内容均应合理地整合到上述四份文档中。如果某个内容不适合任何一份文档，优先考虑是否真的需要文档化，而不是创建新文档。
+
+### README.md 文档定位
+
+- **README.md 专注于开发者视角**：技术架构、构建指南、开发规范
+- **user_manual.md 面向最终用户**：软件下载、安装、使用方法
+- 修改文档时应将下载、安装、使用等内容引导至 user_manual.md
+- README.md 不过多涉及二进制工具的详细功能说明
+- 二进制工具（AneuFiler, SMNFiler 等）有各自独立文档，开发者应自行查阅
+- 工具功能特性对照表等详细内容应放在 user_manual.md 而非 README.md
 
 ### PostHog 分析集成
 

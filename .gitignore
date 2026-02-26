@@ -65,6 +65,9 @@ target/
 .vscode/*
 !.vscode/extensions.json
 .idea/
+.claude/
+.playwright-mcp/
+.qoder/
 *.swp
 *.swo
 *~
@@ -99,19 +102,15 @@ Thumbs.db
 # Local configuration
 config.local.*
 
-src/assets/AneuFiler
-src/assets/Aneu23
-src/assets/SMNFiler_v1
-src/assets/SMNFiler_v2
-src/assets/SHCarrier
-src/assets/UPDFiler_v1
-src/assets/UPDFiler_v2
-src/assets/STR-Matcher
-
-*.app
-*.dmg
+# 外部工具二进制文件（不纳入版本控制）
+src/assets/AneuFiler*
+src/assets/Aneu23*
+src/assets/SMNFiler_v1*
+src/assets/SMNFiler_v2*
+src/assets/SHCarrier*
+src/assets/UPDFiler_v1*
+src/assets/UPDFiler_v2*
+src/assets/STR-Matcher*
 
 /src-tauri/gen/
 .vite/
-
-.env
