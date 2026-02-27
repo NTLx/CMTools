@@ -1,13 +1,16 @@
-use std::path::Path;
-use std::process::Command;
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::fs;
 use std::io::Write;
-use std::collections::HashMap;
+use std::path::Path;
+use std::process::Command;
+use std::sync::Arc;
 use std::sync::LazyLock;
-use serde::{Deserialize, Serialize};
+use std::time::Duration;
 use tauri::Manager;
-// use thiserror::Error; // 不再需要，已改为手动实现 Display trait
+use tokio::sync::Semaphore;
 use tokio::task;
+use tokio::time::timeout;
 
 // 自定义错误类型
 #[derive(Debug)]
@@ -23,8 +26,12 @@ impl std::fmt::Display for ProcessError {
         match self {
             ProcessError::UnknownTool { tool } => write!(f, "Unknown tool name: {}", tool),
             ProcessError::Io(err) => write!(f, "IO error: {}", err),
-            ProcessError::CommandFailed { message } => write!(f, "Command execution failed: {}", message),
-            ProcessError::FileProcessing { file, message } => write!(f, "File processing error: {} - {}", file, message),
+            ProcessError::CommandFailed { message } => {
+                write!(f, "Command execution failed: {}", message)
+            }
+            ProcessError::FileProcessing { file, message } => {
+                write!(f, "File processing error: {} - {}", file, message)
+            }
         }
     }
 }
@@ -34,6 +41,27 @@ impl std::error::Error for ProcessError {}
 impl From<std::io::Error> for ProcessError {
     fn from(err: std::io::Error) -> Self {
         ProcessError::Io(err)
+    }
+}
+
+// 动态获取 CPU 线程数作为并发上限
+// 自动适配不同硬件，充分利用多核性能同时避免过度竞争
+static CONCURRENCY_LIMIT: LazyLock<Arc<Semaphore>> = LazyLock::new(|| {
+    let cpu_threads = std::thread::available_parallelism()
+        .map(|p| p.get())
+        .unwrap_or(4); // 回退默认值
+    Arc::new(Semaphore::new(cpu_threads))
+});
+
+// 进程执行超时时间（秒）
+const PROCESS_TIMEOUT_SECS: u64 = 120;
+
+// 检查是否需要重新写入临时可执行文件
+// 仅在文件不存在或大小不匹配时才写入，避免不必要的 I/O 开销
+fn should_rewrite_exe(exe_path: &Path, exe_data: &[u8]) -> bool {
+    match fs::metadata(exe_path) {
+        Ok(meta) => meta.len() != exe_data.len() as u64,
+        Err(_) => true,
     }
 }
 
@@ -62,10 +90,12 @@ impl Tool {
             "UPDFiler_v1" => Ok(Tool::UpdfilerV1),
             "UPDFiler_v2" => Ok(Tool::UpdfilerV2),
             "STR-Matcher" => Ok(Tool::StrMatcher),
-            _ => Err(ProcessError::UnknownTool { tool: s.to_string() }),
+            _ => Err(ProcessError::UnknownTool {
+                tool: s.to_string(),
+            }),
         }
     }
-    
+
     // 获取可执行文件名（根据平台返回不同文件名）
     fn exe_name(&self) -> String {
         let base_name = match self {
@@ -78,18 +108,18 @@ impl Tool {
             Tool::UpdfilerV2 => "UPDFiler_v2",
             Tool::StrMatcher => "STR-Matcher",
         };
-        
+
         #[cfg(target_os = "windows")]
         {
             format!("{}.exe", base_name)
         }
-        
+
         #[cfg(not(target_os = "windows"))]
         {
             base_name.to_string()
         }
     }
-    
+
     // 获取嵌入的可执行文件数据（根据平台选择不同文件）
     fn exe_data(&self) -> &'static [u8] {
         #[cfg(target_os = "windows")]
@@ -134,16 +164,27 @@ impl Tool {
             }
         }
     }
-    
+
     // 检查工具是否支持标准品样本名称
     fn supports_std_sample(&self) -> bool {
-        matches!(self, Tool::Aneu23 | Tool::SMNFilerV1 | Tool::SMNFilerV2 | Tool::SHCarrier)
+        matches!(
+            self,
+            Tool::Aneu23 | Tool::SMNFilerV1 | Tool::SMNFilerV2 | Tool::SHCarrier
+        )
         // UPDFiler_v1 和 UPDFiler_v2 不需要标准品样本名称配置
     }
-    
+
     // 检查工具是否支持 Windows 优化
     fn supports_windows_optimization(&self) -> bool {
-        matches!(self, Tool::SMNFilerV1 | Tool::SMNFilerV2 | Tool::SHCarrier | Tool::UpdfilerV1 | Tool::UpdfilerV2 | Tool::StrMatcher)
+        matches!(
+            self,
+            Tool::SMNFilerV1
+                | Tool::SMNFilerV2
+                | Tool::SHCarrier
+                | Tool::UpdfilerV1
+                | Tool::UpdfilerV2
+                | Tool::StrMatcher
+        )
         // UPDFiler_v1 和 UPDFiler_v2 都支持 Windows 优化配置
     }
 }
@@ -176,7 +217,6 @@ static TRANSLATIONS: LazyLock<HashMap<(&str, &str), &str>> = LazyLock::new(|| {
         (("io_error", "zh"), "IO 错误"),
         (("command_failed_error", "zh"), "命令执行失败"),
         (("file_processing_error", "zh"), "文件处理错误"),
-        
         // 英文翻译
         (("file_not_found", "en"), "File not found"),
         (("file_not_found_error", "en"), "File not found"),
@@ -185,10 +225,22 @@ static TRANSLATIONS: LazyLock<HashMap<(&str, &str), &str>> = LazyLock::new(|| {
         (("execute_failed", "en"), "Failed to execute program"),
         (("unknown_tool", "en"), "Unknown tool name"),
         (("unable_open_directory", "en"), "Unable to open directory"),
-        (("unable_create_temp_file", "en"), "Unable to create temporary executable file"),
-        (("unable_write_file_data", "en"), "Unable to write executable file data"),
-        (("unable_get_permissions", "en"), "Unable to get file permissions"),
-        (("unable_set_permissions", "en"), "Unable to set executable permissions"),
+        (
+            ("unable_create_temp_file", "en"),
+            "Unable to create temporary executable file",
+        ),
+        (
+            ("unable_write_file_data", "en"),
+            "Unable to write executable file data",
+        ),
+        (
+            ("unable_get_permissions", "en"),
+            "Unable to get file permissions",
+        ),
+        (
+            ("unable_set_permissions", "en"),
+            "Unable to set executable permissions",
+        ),
         (("task_execution_failed", "en"), "Task execution failed"),
         (("unknown_tool_error", "en"), "Unknown tool name"),
         (("io_error", "en"), "IO error"),
@@ -199,10 +251,11 @@ static TRANSLATIONS: LazyLock<HashMap<(&str, &str), &str>> = LazyLock::new(|| {
 
 // 消息翻译函数
 fn get_message(key: &str, language: &str, filename: Option<&str>) -> String {
-    let message = TRANSLATIONS.get(&(key, language))
+    let message = TRANSLATIONS
+        .get(&(key, language))
         .or_else(|| TRANSLATIONS.get(&(key, "en")))
         .unwrap_or(&key);
-    
+
     if let Some(name) = filename {
         if !name.is_empty() {
             format!("{}: {}", message, name)
@@ -218,16 +271,29 @@ fn get_message(key: &str, language: &str, filename: Option<&str>) -> String {
 fn process_error_to_localized_string(error: &ProcessError, language: &str) -> String {
     match error {
         ProcessError::UnknownTool { tool } => {
-            format!("{}: {}", get_message("unknown_tool_error", language, None), tool)
+            format!(
+                "{}: {}",
+                get_message("unknown_tool_error", language, None),
+                tool
+            )
         }
         ProcessError::Io(err) => {
             format!("{}: {}", get_message("io_error", language, None), err)
         }
         ProcessError::CommandFailed { message } => {
-            format!("{}: {}", get_message("command_failed_error", language, None), message)
+            format!(
+                "{}: {}",
+                get_message("command_failed_error", language, None),
+                message
+            )
         }
         ProcessError::FileProcessing { file, message } => {
-            format!("{}: {} - {}", get_message("file_processing_error", language, None), file, message)
+            format!(
+                "{}: {} - {}",
+                get_message("file_processing_error", language, None),
+                file,
+                message
+            )
         }
     }
 }
@@ -245,16 +311,28 @@ async fn open_file_directory(file_path: String, language: Option<String>) -> Res
             path.to_path_buf()
         } else {
             std::env::current_dir()
-                .map_err(|e| format!("{}: {}", get_message("unable_open_directory", lang, None), e))?
+                .map_err(|e| {
+                    format!(
+                        "{}: {}",
+                        get_message("unable_open_directory", lang, None),
+                        e
+                    )
+                })?
                 .join(path)
         };
-        
+
         // 使用 /select 参数打开文件浏览器并选中文件
         Command::new("explorer")
             .arg("/select,")
             .arg(&absolute_path)
             .spawn()
-            .map_err(|e| format!("{}: {}", get_message("unable_open_directory", lang, None), e))?;
+            .map_err(|e| {
+                format!(
+                    "{}: {}",
+                    get_message("unable_open_directory", lang, None),
+                    e
+                )
+            })?;
     }
 
     #[cfg(not(target_os = "windows"))]
@@ -267,10 +345,13 @@ async fn open_file_directory(file_path: String, language: Option<String>) -> Res
 
         #[cfg(target_os = "macos")]
         {
-            Command::new("open")
-                .arg(dir_path)
-                .spawn()
-                .map_err(|e| format!("{}: {}", get_message("unable_open_directory", lang, None), e))?;
+            Command::new("open").arg(dir_path).spawn().map_err(|e| {
+                format!(
+                    "{}: {}",
+                    get_message("unable_open_directory", lang, None),
+                    e
+                )
+            })?;
         }
 
         #[cfg(target_os = "linux")]
@@ -278,7 +359,13 @@ async fn open_file_directory(file_path: String, language: Option<String>) -> Res
             Command::new("xdg-open")
                 .arg(dir_path)
                 .spawn()
-                .map_err(|e| format!("{}: {}", get_message("unable_open_directory", lang, None), e))?;
+                .map_err(|e| {
+                    format!(
+                        "{}: {}",
+                        get_message("unable_open_directory", lang, None),
+                        e
+                    )
+                })?;
         }
     }
 
@@ -289,51 +376,72 @@ async fn open_file_directory(file_path: String, language: Option<String>) -> Res
 #[tauri::command]
 async fn get_tool_version(tool_name: String, language: Option<String>) -> Result<String, String> {
     let lang = language.as_deref().unwrap_or("en");
-    
+
     // 解析工具类型
-    let tool = Tool::from_str(&tool_name)
-        .map_err(|e| process_error_to_localized_string(&e, lang))?;
-    
+    let tool =
+        Tool::from_str(&tool_name).map_err(|e| process_error_to_localized_string(&e, lang))?;
+
     // 获取工具的可执行文件信息
     let exe_name = tool.exe_name();
     let exe_data = tool.exe_data();
-    
+
     // 获取临时目录
     let temp_dir = std::env::temp_dir();
     let exe_path = temp_dir.join(format!("cmtools_{}", exe_name));
 
-    // 每次启动时强制重新写入临时文件（不检查大小匹配）
-    {
+    // 仅在文件不存在或大小不匹配时写入
+    if should_rewrite_exe(&exe_path, exe_data) {
         // 将嵌入的可执行文件写入临时目录
-        let mut file = fs::File::create(&exe_path)
-            .map_err(|e| format!("{}: {}", get_message("unable_create_temp_file", lang, None), e))?;
-        file.write_all(exe_data)
-            .map_err(|e| format!("{}: {}", get_message("unable_write_file_data", lang, None), e))?;
+        let mut file = fs::File::create(&exe_path).map_err(|e| {
+            format!(
+                "{}: {}",
+                get_message("unable_create_temp_file", lang, None),
+                e
+            )
+        })?;
+        file.write_all(exe_data).map_err(|e| {
+            format!(
+                "{}: {}",
+                get_message("unable_write_file_data", lang, None),
+                e
+            )
+        })?;
 
         // 在Unix系统上设置可执行权限
         #[cfg(unix)]
         {
             use std::os::unix::fs::PermissionsExt;
             let mut perms = fs::metadata(&exe_path)
-                .map_err(|e| format!("{}: {}", get_message("unable_get_permissions", lang, None), e))?
+                .map_err(|e| {
+                    format!(
+                        "{}: {}",
+                        get_message("unable_get_permissions", lang, None),
+                        e
+                    )
+                })?
                 .permissions();
             perms.set_mode(0o755);
-            fs::set_permissions(&exe_path, perms)
-                .map_err(|e| format!("{}: {}", get_message("unable_set_permissions", lang, None), e))?;
+            fs::set_permissions(&exe_path, perms).map_err(|e| {
+                format!(
+                    "{}: {}",
+                    get_message("unable_set_permissions", lang, None),
+                    e
+                )
+            })?;
         }
     }
-    
+
     // 执行工具的 --version 命令
     let mut cmd = Command::new(&exe_path);
     cmd.arg("--version");
-    
+
     // 在 Windows 上隐藏命令行窗口
     #[cfg(target_os = "windows")]
     {
         use std::os::windows::process::CommandExt;
         cmd.creation_flags(0x08000000);
     }
-    
+
     // 执行命令并获取输出
     match cmd.output() {
         Ok(output) => {
@@ -341,7 +449,7 @@ async fn get_tool_version(tool_name: String, language: Option<String>) -> Result
                 // 从 stdout 获取版本信息
                 let version_output = String::from_utf8_lossy(&output.stdout);
                 let version = version_output.trim().to_string();
-                
+
                 // 如果 stdout 为空，尝试从 stderr 获取
                 if version.is_empty() {
                     let stderr_output = String::from_utf8_lossy(&output.stderr);
@@ -350,9 +458,13 @@ async fn get_tool_version(tool_name: String, language: Option<String>) -> Result
                         return Ok(stderr_version);
                     }
                     // 如果都为空，返回默认信息
-                    return Ok(if lang == "zh" { "版本信息未知".to_string() } else { "Version unknown".to_string() });
+                    return Ok(if lang == "zh" {
+                        "版本信息未知".to_string()
+                    } else {
+                        "Version unknown".to_string()
+                    });
                 }
-                
+
                 Ok(version)
             } else {
                 // 命令执行失败，尝试从 stderr 获取错误信息
@@ -360,13 +472,22 @@ async fn get_tool_version(tool_name: String, language: Option<String>) -> Result
                 if !error_output.trim().is_empty() {
                     return Ok(error_output.trim().to_string());
                 }
-                Ok(if lang == "zh" { "版本信息不可用".to_string() } else { "Version unavailable".to_string() })
+                Ok(if lang == "zh" {
+                    "版本信息不可用".to_string()
+                } else {
+                    "Version unavailable".to_string()
+                })
             }
         }
         Err(e) => {
             // 命令执行异常
-            Err(format!("{}: {}", 
-                if lang == "zh" { "获取版本信息失败" } else { "Failed to get version info" },
+            Err(format!(
+                "{}: {}",
+                if lang == "zh" {
+                    "获取版本信息失败"
+                } else {
+                    "Failed to get version info"
+                },
                 e
             ))
         }
@@ -374,23 +495,33 @@ async fn get_tool_version(tool_name: String, language: Option<String>) -> Result
 }
 
 // 内部处理函数，使用 ProcessError
-async fn process_files_internal(_app: tauri::AppHandle, tool_name: String, file_paths: Vec<String>, use_area_data: bool, std_sample_name: Option<String>, windows_optimization: Option<bool>, verbose_log: Option<bool>, language: Option<String>, tolerance: Option<f64>) -> Result<Vec<ProcessResult>, ProcessError> {
+async fn process_files_internal(
+    _app: tauri::AppHandle,
+    tool_name: String,
+    file_paths: Vec<String>,
+    use_area_data: bool,
+    std_sample_name: Option<String>,
+    windows_optimization: Option<bool>,
+    verbose_log: Option<bool>,
+    language: Option<String>,
+    tolerance: Option<f64>,
+) -> Result<Vec<ProcessResult>, ProcessError> {
     let lang = language.as_deref().unwrap_or("en");
     let mut results = Vec::new();
-    
+
     // 解析工具类型
     let tool = Tool::from_str(&tool_name)?;
-    
+
     // 获取工具的可执行文件信息
     let exe_name = tool.exe_name();
     let exe_data = tool.exe_data();
-    
+
     // 获取临时目录
     let temp_dir = std::env::temp_dir();
     let exe_path = temp_dir.join(format!("cmtools_{}", exe_name));
 
-    // 每次启动时强制重新写入临时文件（不检查大小匹配）
-    {
+    // 仅在文件不存在或大小不匹配时写入，避免不必要的 I/O 开销
+    if should_rewrite_exe(&exe_path, exe_data) {
         // 将嵌入的可执行文件写入临时目录
         let mut file = fs::File::create(&exe_path)?;
         file.write_all(exe_data)?;
@@ -404,216 +535,256 @@ async fn process_files_internal(_app: tauri::AppHandle, tool_name: String, file_
             fs::set_permissions(&exe_path, perms)?;
         }
     }
-    
-    // 并行处理文件
+
+    // 使用信号量限制并发数，避免线程池被耗尽
+    // Semaphore::clone() 返回 Arc<Semaphore>，可以安全地在多个任务间共享
+    let semaphore = CONCURRENCY_LIMIT.clone();
+
+    // 并行处理文件（带并发限制和超时控制）
     let tasks: Vec<_> = file_paths.into_iter().map(|file_path| {
         let exe_path = exe_path.clone();
         let _tool_name = tool_name.clone();
         let std_sample_name = std_sample_name.clone();
         let lang = lang.to_string();
-        
-        task::spawn_blocking(move || -> ProcessResult {
-            let file_path_obj = Path::new(&file_path);
-            
-            // 检查文件是否存在
-            if !file_path_obj.exists() {
-                let error = ProcessError::FileProcessing {
-                    file: file_path.clone(),
-                    message: get_message("file_not_found_error", &lang, None),
-                };
-                return ProcessResult {
-                    success: false,
-                    message: get_message("file_not_found", &lang, Some(&file_path)),
-                    error: Some(process_error_to_localized_string(&error, &lang)),
-                    file_path: Some(file_path.clone()),
-                };
-            }
-            
-            // 获取文件所在目录
-            let file_dir = file_path_obj.parent().unwrap_or(Path::new("."));
-            
-            // 根据不同工具构建命令行参数
-            let mut cmd = Command::new(&exe_path);
-            
-            // 在 Windows 上隐藏命令行窗口
-            #[cfg(target_os = "windows")]
-            {
-                use std::os::windows::process::CommandExt;
-                cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
-            }
-            
-            // 添加输入文件参数
-            cmd.arg("-i").arg(&file_path);
+        let lang_for_timeout = lang.clone(); // 用于超时错误处理
+        let semaphore = semaphore.clone();
 
-            // STR-Matcher 的 Tolerance 参数（仅当值大于 0 时添加）
-            if let Tool::StrMatcher = tool {
-                if let Some(tol_value) = tolerance {
-                    if tol_value > 0.0 {
-                        cmd.arg("-t").arg(tol_value.to_string());
+        async move {
+            // 获取信号量许可，限制并发数
+            let _permit = semaphore.acquire().await.unwrap();
+
+            // 使用 spawn_blocking 执行同步的文件处理
+            let task_handle = task::spawn_blocking(move || -> ProcessResult {
+                let file_path_obj = Path::new(&file_path);
+
+                // 检查文件是否存在
+                if !file_path_obj.exists() {
+                    let error = ProcessError::FileProcessing {
+                        file: file_path.clone(),
+                        message: get_message("file_not_found_error", &lang, None),
+                    };
+                    return ProcessResult {
+                        success: false,
+                        message: get_message("file_not_found", &lang, Some(&file_path)),
+                        error: Some(process_error_to_localized_string(&error, &lang)),
+                        file_path: Some(file_path.clone()),
+                    };
+                }
+
+                // 获取文件所在目录
+                let file_dir = file_path_obj.parent().unwrap_or(Path::new("."));
+
+                // 根据不同工具构建命令行参数
+                let mut cmd = Command::new(&exe_path);
+
+                // 在 Windows 上隐藏命令行窗口
+                #[cfg(target_os = "windows")]
+                {
+                    use std::os::windows::process::CommandExt;
+                    cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+                }
+
+                // 添加输入文件参数
+                cmd.arg("-i").arg(&file_path);
+
+                // STR-Matcher 的 Tolerance 参数（仅当值大于 0 时添加）
+                if let Tool::StrMatcher = tool {
+                    if let Some(tol_value) = tolerance {
+                        if tol_value > 0.0 {
+                            cmd.arg("-t").arg(tol_value.to_string());
+                        }
                     }
                 }
-            }
 
-            // 为 AneuFiler、Aneu23 和 SHCarrier 添加默认的 -dev 参数
-            if let Tool::AneuFiler | Tool::Aneu23 | Tool::SHCarrier = tool {
-                cmd.arg("-dev");
-            }
-            
-            // 添加峰面积数据参数（除 UPDFiler_v1、UPDFiler_v2 和 SMNFiler_v2 外的工具都支持）
-            if use_area_data && !matches!(tool, Tool::UpdfilerV1 | Tool::UpdfilerV2 | Tool::SMNFilerV2) {
-                match tool {
-                    Tool::SMNFilerV1 => cmd.arg("-a"),
-                    _ => cmd.arg("-Area"),
-                };
-            }
-            
-            // 添加标准品样本名称参数（仅部分工具支持）
-            if tool.supports_std_sample() {
-                if let Some(ref std_name) = std_sample_name {
-                    if !std_name.trim().is_empty() {
+                // 为 AneuFiler、Aneu23 和 SHCarrier 添加默认的 -dev 参数
+                if let Tool::AneuFiler | Tool::Aneu23 | Tool::SHCarrier = tool {
+                    cmd.arg("-dev");
+                }
+
+                // 添加峰面积数据参数（除 UPDFiler_v1、UPDFiler_v2 和 SMNFiler_v2 外的工具都支持）
+                if use_area_data && !matches!(tool, Tool::UpdfilerV1 | Tool::UpdfilerV2 | Tool::SMNFilerV2) {
+                    match tool {
+                        Tool::SMNFilerV1 => cmd.arg("-a"),
+                        _ => cmd.arg("-Area"),
+                    };
+                }
+
+                // 添加标准品样本名称参数（仅部分工具支持）
+                if tool.supports_std_sample() {
+                    if let Some(ref std_name) = std_sample_name {
+                        if !std_name.trim().is_empty() {
+                            match tool {
+                                Tool::SMNFilerV1 => cmd.arg("-c").arg(std_name.trim()),
+                                Tool::SMNFilerV2 => cmd.arg("-STD").arg(std_name.trim()),
+                                _ => cmd.arg("-STD").arg(std_name.trim()),
+                            };
+                        }
+                    }
+                }
+
+                // 添加 Windows 优化参数（SMNFiler_v1、SHCarrier、UPDFiler_v1 和 UPDFiler_v2 支持）
+                if tool.supports_windows_optimization() {
+                    if windows_optimization.unwrap_or(false) {
                         match tool {
-                            Tool::SMNFilerV1 => cmd.arg("-c").arg(std_name.trim()),
-                            Tool::SMNFilerV2 => cmd.arg("-STD").arg(std_name.trim()),
-                            _ => cmd.arg("-STD").arg(std_name.trim()),
+                            Tool::SMNFilerV1 => cmd.arg("-e").arg("GBK"),
+                            Tool::SMNFilerV2 => cmd.arg("-GBK"),
+                            Tool::UpdfilerV1 => cmd.arg("-e").arg("GBK"),
+                            _ => cmd.arg("-GBK"),
                         };
                     }
                 }
-            }
-            
-            // 添加 Windows 优化参数（SMNFiler_v1、SHCarrier、UPDFiler_v1 和 UPDFiler_v2 支持）
-            if tool.supports_windows_optimization() {
-                if windows_optimization.unwrap_or(false) {
-                    match tool {
-                        Tool::SMNFilerV1 => cmd.arg("-e").arg("GBK"),
-                        Tool::SMNFilerV2 => cmd.arg("-GBK"),
-                        Tool::UpdfilerV1 => cmd.arg("-e").arg("GBK"),
-                        _ => cmd.arg("-GBK"),
-                    };
+
+                // 为 SMNFiler_v1 添加特殊参数
+                if let Tool::SMNFilerV1 = tool {
+                    // 添加输出路径参数（使用输入文件所在目录）
+                    if let Some(parent_dir) = file_path_obj.parent() {
+                        cmd.arg("-o").arg(parent_dir);
+                    }
+
+                    // 添加语言参数（与当前界面语言一致）
+                    if lang == "zh" {
+                        cmd.arg("-l");
+                    }
                 }
-            }
-            
-            // 为 SMNFiler_v1 添加特殊参数
-            if let Tool::SMNFilerV1 = tool {
-                // 添加输出路径参数（使用输入文件所在目录）
-                if let Some(parent_dir) = file_path_obj.parent() {
-                    cmd.arg("-o").arg(parent_dir);
-                }
-                
-                // 添加语言参数（与当前界面语言一致）
-                if lang == "zh" {
-                    cmd.arg("-l");
-                }
-            }
-            
-            // 为 SMNFiler_v2 添加特殊参数
-            if let Tool::SMNFilerV2 = tool {
-                // 添加开发者模式参数
-                cmd.arg("-dev");
-            }
-            
-            // 为 UPDFiler_v1 添加特殊参数
-            if let Tool::UpdfilerV1 = tool {
-                // 添加输出路径参数（使用输入文件所在目录）
-                if let Some(parent_dir) = file_path_obj.parent() {
-                    cmd.arg("-o").arg(parent_dir);
-                }
-            }
-            
-            // 为 UPDFiler_v2 添加 -dev 参数
-            if let Tool::UpdfilerV2 = tool {
-                if verbose_log.unwrap_or(false) {
+
+                // 为 SMNFiler_v2 添加特殊参数
+                if let Tool::SMNFilerV2 = tool {
+                    // 添加开发者模式参数
                     cmd.arg("-dev");
                 }
-            }
-            
-            // 在开发模式下输出调用命令到控制台
-            #[cfg(debug_assertions)]
-            {
-                let cmd_str = format!("{:?}", cmd);
-                println!("[DEBUG] Executing command: {}", cmd_str);
-                println!("[DEBUG] Working directory: {:?}", file_dir);
-                println!("[DEBUG] Tool: {}, File: {}", _tool_name, file_path);
-                if let Tool::AneuFiler | Tool::Aneu23 | Tool::SHCarrier = tool {
-                    println!("[DEBUG] Added default -dev parameter for AneuFiler/Aneu23/SHCarrier");
+
+                // 为 UPDFiler_v1 添加特殊参数
+                if let Tool::UpdfilerV1 = tool {
+                    // 添加输出路径参数（使用输入文件所在目录）
+                    if let Some(parent_dir) = file_path_obj.parent() {
+                        cmd.arg("-o").arg(parent_dir);
+                    }
                 }
-                if use_area_data && !matches!(tool, Tool::UpdfilerV1 | Tool::UpdfilerV2) {
-                    println!("[DEBUG] Using peak area data: true");
-                }
-                if let Some(ref std_name) = std_sample_name {
-                    println!("[DEBUG] Standard sample name: {}", std_name);
-                }
-                if matches!(tool, Tool::SMNFilerV1 | Tool::SMNFilerV2 | Tool::SHCarrier | Tool::UpdfilerV1 | Tool::UpdfilerV2) {
-                    println!("[DEBUG] Windows optimization: {}", windows_optimization.unwrap_or(false));
-                }
+
+                // 为 UPDFiler_v2 添加 -dev 参数
                 if let Tool::UpdfilerV2 = tool {
-                    println!("[DEBUG] Verbose log: {}", verbose_log.unwrap_or(false));
+                    if verbose_log.unwrap_or(false) {
+                        cmd.arg("-dev");
+                    }
                 }
-                println!("[DEBUG] ----------------------------------------");
-            }
-            
-            // 执行外部程序
-            match cmd.current_dir(file_dir).output() {
-                Ok(output) => {
-                    if output.status.success() {
-                        ProcessResult {
-                            success: true,
-                            message: get_message("process_success", &lang, Some(&file_path_obj.file_name().unwrap().to_string_lossy())),
-                            error: None,
-                            file_path: Some(file_path.clone()),
+
+                // 在开发模式下输出调用命令到控制台
+                #[cfg(debug_assertions)]
+                {
+                    let cmd_str = format!("{:?}", cmd);
+                    println!("[DEBUG] Executing command: {}", cmd_str);
+                    println!("[DEBUG] Working directory: {:?}", file_dir);
+                    println!("[DEBUG] Tool: {}, File: {}", _tool_name, file_path);
+                    if let Tool::AneuFiler | Tool::Aneu23 | Tool::SHCarrier = tool {
+                        println!("[DEBUG] Added default -dev parameter for AneuFiler/Aneu23/SHCarrier");
+                    }
+                    if use_area_data && !matches!(tool, Tool::UpdfilerV1 | Tool::UpdfilerV2) {
+                        println!("[DEBUG] Using peak area data: true");
+                    }
+                    if let Some(ref std_name) = std_sample_name {
+                        println!("[DEBUG] Standard sample name: {}", std_name);
+                    }
+                    if matches!(tool, Tool::SMNFilerV1 | Tool::SMNFilerV2 | Tool::SHCarrier | Tool::UpdfilerV1 | Tool::UpdfilerV2) {
+                        println!("[DEBUG] Windows optimization: {}", windows_optimization.unwrap_or(false));
+                    }
+                    if let Tool::UpdfilerV2 = tool {
+                        println!("[DEBUG] Verbose log: {}", verbose_log.unwrap_or(false));
+                    }
+                    println!("[DEBUG] ----------------------------------------");
+                }
+
+                // 执行外部程序
+                match cmd.current_dir(file_dir).output() {
+                    Ok(output) => {
+                        if output.status.success() {
+                            ProcessResult {
+                                success: true,
+                                message: get_message("process_success", &lang, Some(&file_path_obj.file_name().unwrap().to_string_lossy())),
+                                error: None,
+                                file_path: Some(file_path.clone()),
+                            }
+                        } else {
+                            let error_msg = String::from_utf8_lossy(&output.stderr);
+                            let error = ProcessError::CommandFailed {
+                                message: error_msg.to_string(),
+                            };
+                            ProcessResult {
+                                success: false,
+                                message: get_message("process_failed", &lang, Some(&file_path_obj.file_name().unwrap().to_string_lossy())),
+                                error: Some(process_error_to_localized_string(&error, &lang)),
+                                file_path: Some(file_path.clone()),
+                            }
                         }
-                    } else {
-                        let error_msg = String::from_utf8_lossy(&output.stderr);
+                    }
+                    Err(e) => {
                         let error = ProcessError::CommandFailed {
-                            message: error_msg.to_string(),
+                            message: e.to_string(),
                         };
                         ProcessResult {
                             success: false,
-                            message: get_message("process_failed", &lang, Some(&file_path_obj.file_name().unwrap().to_string_lossy())),
+                            message: get_message("execute_failed", &lang, Some(&file_path_obj.file_name().unwrap().to_string_lossy())),
                             error: Some(process_error_to_localized_string(&error, &lang)),
                             file_path: Some(file_path.clone()),
                         }
                     }
                 }
-                Err(e) => {
-                    let error = ProcessError::CommandFailed {
-                        message: e.to_string(),
-                    };
-                    ProcessResult {
-                        success: false,
-                        message: get_message("execute_failed", &lang, Some(&file_path_obj.file_name().unwrap().to_string_lossy())),
-                        error: Some(process_error_to_localized_string(&error, &lang)),
-                        file_path: Some(file_path.clone()),
-                    }
-                }
-            }
-        })
-    }).collect();
-    
-    // 等待所有任务完成并收集结果
-    for task in tasks {
-        match task.await {
-            Ok(result) => results.push(result),
-            Err(e) => {
-                results.push(ProcessResult {
+            });
+
+            // 使用超时包装任务执行，防止外部工具卡死
+            match timeout(Duration::from_secs(PROCESS_TIMEOUT_SECS), task_handle).await {
+                Ok(Ok(result)) => result,
+                Ok(Err(e)) => ProcessResult {
                     success: false,
-                    message: get_message("task_execution_failed", &lang, None),
+                    message: get_message("task_execution_failed", &lang_for_timeout, None),
                     error: Some(e.to_string()),
                     file_path: None,
-                });
+                },
+                Err(_) => ProcessResult {
+                    success: false,
+                    message: get_message("task_execution_failed", &lang_for_timeout, None),
+                    error: Some(format!("Timeout after {} seconds", PROCESS_TIMEOUT_SECS)),
+                    file_path: None,
+                },
             }
         }
+    }).collect();
+
+    // 等待所有任务完成并收集结果
+    for task in tasks {
+        let result = task.await;
+        results.push(result);
     }
-    
+
     Ok(results)
 }
 
 // 处理文件的命令
 #[tauri::command]
-async fn process_files(app: tauri::AppHandle, tool_name: String, file_paths: Vec<String>, use_area_data: bool, std_sample_name: Option<String>, windows_optimization: Option<bool>, verbose_log: Option<bool>, language: Option<String>, tolerance: Option<f64>) -> Result<Vec<ProcessResult>, String> {
+async fn process_files(
+    app: tauri::AppHandle,
+    tool_name: String,
+    file_paths: Vec<String>,
+    use_area_data: bool,
+    std_sample_name: Option<String>,
+    windows_optimization: Option<bool>,
+    verbose_log: Option<bool>,
+    language: Option<String>,
+    tolerance: Option<f64>,
+) -> Result<Vec<ProcessResult>, String> {
     let lang = language.as_deref().unwrap_or("en");
-    process_files_internal(app, tool_name, file_paths, use_area_data, std_sample_name, windows_optimization, verbose_log, language.clone(), tolerance)
-        .await
-        .map_err(|e| process_error_to_localized_string(&e, lang))
+    process_files_internal(
+        app,
+        tool_name,
+        file_paths,
+        use_area_data,
+        std_sample_name,
+        windows_optimization,
+        verbose_log,
+        language.clone(),
+        tolerance,
+    )
+    .await
+    .map_err(|e| process_error_to_localized_string(&e, lang))
 }
 
 // 清理所有临时文件
@@ -637,7 +808,11 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
-        .invoke_handler(tauri::generate_handler![process_files, open_file_directory, get_tool_version])
+        .invoke_handler(tauri::generate_handler![
+            process_files,
+            open_file_directory,
+            get_tool_version
+        ])
         .setup(|app| {
             let window = app.get_webview_window("main").unwrap();
             let window_clone = window.clone();

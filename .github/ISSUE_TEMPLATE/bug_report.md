@@ -53,7 +53,7 @@ body:
     attributes:
       label: CMTools 版本
       description: 你使用的是哪个版本？
-      placeholder: 例如：2.8.6
+      placeholder: 例如：2.8.7
     validations:
       required: true
 

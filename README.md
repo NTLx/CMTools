@@ -5,7 +5,7 @@
   <h3>现代化的色谱数据处理工具集</h3>
   <p>基于 Tauri 2.0 + Vue 3 + TypeScript 构建的跨平台桌面应用</p>
 
-  [![Version](https://img.shields.io/badge/version-2.8.6-blue.svg)](https://github.com/Cubicise/CMTools)
+  [![Version](https://img.shields.io/badge/version-2.8.7-blue.svg)](https://github.com/Cubicise/CMTools)
   [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
   [![Tauri](https://img.shields.io/badge/Tauri-2.10-orange.svg)](https://tauri.app/)
   [![Vue](https://img.shields.io/badge/Vue-3.5-green.svg)](https://vuejs.org/)
@@ -17,11 +17,13 @@
 CMTools 是一个基于 Tauri 2.0 + Vue 3 + TypeScript 构建的跨平台桌面应用，专为色谱数据处理而设计。采用前后端分离架构，通过 Rust 后端调用外部命令行工具实现核心数据处理功能。
 
 **架构特点：**
+
 - **前端**：Vue 3 (Composition API) + TypeScript + Vite，提供现代化的用户界面
 - **后端**：Rust + Tauri + Tokio，确保高性能和内存安全
 - **扩展性**：通过外部可执行文件机制，支持灵活添加新的数据处理工具
 
 **核心优势：**
+
 - 🚀 **高性能**：Rust 后端可快速处理大型数据集
 - 🛠️ **可扩展**：清晰的架构设计，易于添加新工具
 - 🌍 **跨平台**：支持 Windows、macOS 和 Linux
@@ -43,7 +45,7 @@ CMTools 采用前后端分离的现代桌面应用架构，利用 Tauri 将基�
 
 ### 项目结构
 
-```
+```text
 CMTools/
 ├── src/                      # Vue 前端源码
 │   ├── App.vue               # 核心 UI 组件
@@ -100,7 +102,7 @@ npm run tauri:build
 **输出说明**：
 
 | 当前系统 | 输出文件 | 说明 |
-|----------|----------|------|
+| ---------- | ---------- | ------ |
 | Windows x64 | `CMTools.exe` | 64 位 Windows 便携版 |
 | Windows x86 | `CMTools.exe` | 32 位 Windows 便携版 |
 | macOS Apple Silicon | `CMTools.AppleSilicon.dmg` | M 系列芯片 macOS 版 |
@@ -119,7 +121,7 @@ npm run tauri:build:win
 **输出文件**：
 
 | 文件 | 目标系统 | 架构 | 说明 |
-|------|----------|------|------|
+| ------ | ---------- | ------ | ------ |
 | `CMTools.x64.exe` | Windows 10+ | x86_64 | 64 位标准版 |
 | `CMTools.x86.exe` | Windows 10+ | i686 | 32 位标准版 |
 | `CMTools.Win7.x86.exe` | Windows 7 SP1+ | i686 | Win7 兼容版 |
@@ -127,6 +129,7 @@ npm run tauri:build:win
 > **注意**：Windows 7 版本由于 Tauri 2.9+ 的限制可能存在兼容性问题。
 
 **前置准备**：
+
 ```bash
 # 首次构建前需安装 32 位目标
 rustup target add i686-pc-windows-msvc
@@ -144,7 +147,7 @@ npm run tauri:build:all
 **输出说明**：
 
 | 当前平台 | 输出文件 |
-|----------|----------|
+| ---------- | ---------- |
 | Windows | `CMTools.x64.exe`、`CMTools.x86.exe`、`CMTools.Win7.x86.exe` |
 | macOS | `CMTools.AppleSilicon.dmg`、`CMTools.Intel.dmg` |
 | Linux | `CMTools.x86_64.AppImage`、`CMTools.i686.AppImage` |
@@ -152,7 +155,7 @@ npm run tauri:build:all
 ### 维护命令
 
 | 命令 | 说明 |
-|------|------|
+| ------ | ------ |
 | `npm run clean:cache` | 清理所有构建缓存（Cargo + Frontend） |
 | `npm run clean:cache:cargo` | 仅清理 Rust/Cargo 构建缓存 |
 | `npm run clean:cache:frontend` | 仅清理前端构建缓存 |
@@ -165,6 +168,7 @@ npm run tauri dev
 ```
 
 **调试技巧**：
+
 - **后端日志**：开发模式下，后端 `println!` 输出会显示在终端中
 - **检查临时文件**：系统临时目录可查看释放的 `cmtools_*` 工具文件
 - **构建调试**：构建脚本会输出详细的 Rust 目标检测和构建进度
@@ -188,6 +192,7 @@ CMTools 采用**外部工具驱动设计**：核心功能通过 Rust 后端调�
 3. **命令调用**：通过 `std::process::Command` 执行并捕获输出
 
 **关键文件**：
+
 - `src-tauri/src/lib.rs` - 核心逻辑：工具枚举、参数处理、错误处理
 - `src/App.vue` - 前端交互：UI 展示、参数收集、invoke 调用
 
@@ -198,6 +203,7 @@ CMTools 采用**外部工具驱动设计**：核心功能通过 Rust 后端调�
 以添加名为 `NewTool` 的工具为例：
 
 **1. 准备工具文件**
+
 ```bash
 # Windows
 cp NewTool.exe src/assets/
@@ -243,23 +249,6 @@ match tool {
   supportsWindowsOptimization: true,
   supportsAreaData: true
 }
-```
-
-### 遥测与分析
-
-CMTools 集成了 PostHog 遥测功能，用于收集匿名使用数据。
-
-**隐私保护机制**：
-- Cookieless Mode：用户 ID 服务端哈希计算
-- 无身份识别：不调用 identify 方法
-- 禁用自动捕获：仅追踪手动指定事件
-- 数据脱敏：不收集文件内容等敏感信息
-- 用户授权：首次启动需明确同意
-
-**配置方式**（`.env` 文件）：
-```bash
-VITE_POSTHOG_KEY=your_posthog_api_key
-VITE_POSTHOG_HOST=https://app.posthog.com
 ```
 
 ## 📦 部署

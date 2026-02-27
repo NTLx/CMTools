@@ -64,8 +64,8 @@
 
 ## 参见
 
-本行为准则改编自 [Contributor Covenant](https://www.contributor-covenant.org) 2.1 版本，可在 https://www.contributor-covenant.org/version/2/1/code_of_conduct.html 查看。
+本行为准则改编自 [Contributor Covenant](https://www.contributor-covenant.org) 2.1 版本，可在 <https://www.contributor-covenant.org/version/2/1/code_of_conduct.html> 查看。
 
 社区影响指南灵感来自 [Mozilla 的行为准则分级](https://github.com/mozilla/diversity)。
 
-有关本行为准则常见问题的解答，请参阅 https://www.contributor-covenant.org/faq。
+有关本行为准则常见问题的解答，请参阅 <https://www.contributor-covenant.org/faq>。

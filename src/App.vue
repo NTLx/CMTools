@@ -11,7 +11,6 @@ import {
   trackProcessingCompleted,
   trackProcessingFailed,
   cleanup,
-  getConsentStatus,
   setConsentStatus,
   onConsentChange,
   trackBatchProcessingSummary,
@@ -67,7 +66,7 @@ interface ProcessResult {
 }
 
 // 获取应用版本号
-const appVersion = (globalThis as any).__APP_VERSION__ || '2.8.6';
+const appVersion = (globalThis as any).__APP_VERSION__ || '2.8.7';
 
 const selectedFiles = ref<string[]>([]);
 const selectedTool = ref<ToolType>(ToolType.AneuFiler);
@@ -93,8 +92,8 @@ const isDarkMode = ref<boolean>(false);
 // 隐私授权弹窗状态
 const showConsentModal = ref<boolean>(false);
 
-// 遥测开关状态
-const telemetryEnabled = ref(getConsentStatus() === 'granted');
+// 遥测开关状态（默认启用）
+const telemetryEnabled = ref(true);
 
 // 授权状态变化清理函数
 let cleanupConsentListener: (() => void) | null = null;
@@ -304,38 +303,57 @@ function t(key: string): string {
   return translations[currentLanguage.value as keyof typeof translations]?.[key as keyof typeof translations.zh] || key;
 }
 
-// 动态翻译结果消息
-function getLocalizedResultMessage(result: ProcessResult): string {
+// 计算本地化的结果消息（带缓存，避免重复计算）
+const localizedMessages = computed(() => {
+  const messages = new Map<string, string>();
+  for (const result of results.value) {
+    if (result.file_path) {
+      messages.set(result.file_path, getLocalizedResultMessageInternal(result));
+    }
+  }
+  return messages;
+});
+
+// 内部函数：获取本地化的结果消息
+function getLocalizedResultMessageInternal(result: ProcessResult): string {
   // 如果有原始消息键和文件名，根据当前语言重新翻译
   if (result.originalMessage && result.fileName) {
     const messageKey = result.originalMessage;
     const fileName = result.fileName;
-    
+
     // 根据消息键和当前语言返回翻译
     switch (messageKey) {
       case 'process_success':
-        return currentLanguage.value === 'zh' 
-          ? `成功处理文件: ${fileName}` 
+        return currentLanguage.value === 'zh'
+          ? `成功处理文件: ${fileName}`
           : `Successfully processed file: ${fileName}`;
       case 'process_failed':
-        return currentLanguage.value === 'zh' 
-          ? `处理文件失败: ${fileName}` 
+        return currentLanguage.value === 'zh'
+          ? `处理文件失败: ${fileName}`
           : `Failed to process file: ${fileName}`;
       case 'execute_failed':
-        return currentLanguage.value === 'zh' 
-          ? `执行程序失败: ${fileName}` 
+        return currentLanguage.value === 'zh'
+          ? `执行程序失败: ${fileName}`
           : `Failed to execute program: ${fileName}`;
       case 'file_not_found':
-        return currentLanguage.value === 'zh' 
-          ? `文件不存在: ${fileName}` 
+        return currentLanguage.value === 'zh'
+          ? `文件不存在: ${fileName}`
           : `File not found: ${fileName}`;
       default:
         return result.message;
     }
   }
-  
+
   // 如果没有原始消息键，返回当前消息
   return result.message;
+}
+
+// 对外接口：获取本地化的结果消息（从缓存读取）
+function getLocalizedResultMessage(result: ProcessResult): string {
+  if (result.file_path) {
+    return localizedMessages.value.get(result.file_path) || result.message;
+  }
+  return getLocalizedResultMessageInternal(result);
 }
 
 // 语言切换
@@ -533,8 +551,11 @@ function clearFiles() {
 }
 
 // 移除单个文件
-function removeFile(index: number) {
-  selectedFiles.value.splice(index, 1);
+function removeFile(file: string) {
+  const index = selectedFiles.value.indexOf(file);
+  if (index > -1) {
+    selectedFiles.value.splice(index, 1);
+  }
 }
 
 // 清除结果控制台
@@ -654,8 +675,11 @@ onMounted(() => {
   currentLanguage.value = savedLanguage || 'zh';
 
   // 初始化分析服务（非阻塞，异步执行）
+  // 注：遥测仅收集系统数据，不涉及用户隐私，默认启用且不再显示授权弹窗
   initAnalytics(() => {
-    showConsentModal.value = true;
+    // 已禁用：不再弹出授权确认，直接设置默认授权
+    setConsentStatus('granted');
+    telemetryEnabled.value = true;
   });
 
   // 监听授权状态变化，实时更新遥测按钮状态
@@ -713,6 +737,7 @@ watch(selectedTool, (newTool) => {
       </div>
       <div class="flex items-center gap-3">
         <button
+          v-show="false"
           @click="toggleTelemetry"
           class="p-2 rounded-lg bg-surface-light dark:bg-surface-dark shadow-sm border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors flex items-center justify-center w-10 h-10"
           :class="telemetryEnabled ? 'text-slate-600 dark:text-slate-300' : 'text-slate-300 dark:text-slate-600'"
@@ -804,16 +829,16 @@ watch(selectedTool, (newTool) => {
               </div>
 
               <div class="overflow-y-auto pr-1 space-y-2 flex-grow scrollbar-thin">
-                <div 
-                  v-for="(file, index) in selectedFiles" 
-                  :key="index"
+                <div
+                  v-for="file in selectedFiles"
+                  :key="file"
                   class="flex items-center gap-3 p-3 bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-100 dark:border-slate-700 group hover:border-primary/30 transition-colors"
                 >
                   <span class="material-icons-round text-slate-400 text-xl group-hover:text-primary transition-colors">description</span>
                   <span class="text-sm font-mono text-slate-700 dark:text-slate-300 truncate flex-1" :title="file">
                     {{ file.split(/[\\/]/).pop() }}
                   </span>
-                  <button @click="removeFile(index)" class="text-slate-400 hover:text-danger p-1 rounded transition-colors opacity-0 group-hover:opacity-100">
+                  <button @click="removeFile(file)" class="text-slate-400 hover:text-danger p-1 rounded transition-colors opacity-0 group-hover:opacity-100">
                     <span class="material-icons-round text-sm">close</span>
                   </button>
                 </div>

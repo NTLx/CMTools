@@ -50,14 +50,14 @@ function detectSystemArchitecture() {
             return {
                 target: 'aarch64-apple-darwin',
                 output: 'CMTools.AppleSilicon.dmg',
-                bundleOutput: 'cmtools_2.8.6_aarch64.dmg',
+                bundleOutput: 'cmtools_2.8.7_aarch64.dmg',
                 description: 'Apple Silicon (M系列) macOS 版本'
             };
         } else {
             return {
                 target: 'x86_64-apple-darwin',
                 output: 'CMTools.Intel.dmg',
-                bundleOutput: 'cmtools_2.8.6_x64.dmg',
+                bundleOutput: 'cmtools_2.8.7_x64.dmg',
                 description: 'Intel macOS 版本'
             };
         }
