@@ -24,7 +24,7 @@ CMTools 是一款基于 **Tauri 2.0 + Vue 3 + TypeScript** 构建的现代化、
 
 ### 第一步：获取软件
 
-从 [官方发布页面](https://space.dingtalk.com/s/gwHPAAAAAlo5iAwCzgpGUKMD2gAgN2Y2ZTJiZGM0OTNmNGYzNjg1N2I3MTRkOTA3Nzg2M2E) 下载适用于您操作系统的最新版本（提取码：`F8aB`）：
+从 [官方发布页面](https://space.dingtalk.com/s/gwHPAAAAAlpxUt4CzgpGUKMD2gAgMjdlYjUwZmFlYzUwNGQ1NTk0OGUyNWNmMDkxMmYwNzk) 下载适用于您操作系统的最新版本（提取码：`3nCL`）：
 
 * **64 位版本 (`CMTools.x64.exe`)**：适用于大多数现代 Windows 系统。提供更好的性能和内存管理。
 * **32 位版本 (`CMTools.x86.exe`)**：适用于较旧的系统或特定环境要求。兼容 32 位和 64 位 Windows 系统。
