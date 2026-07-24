@@ -76,6 +76,7 @@ enum Tool {
     UpdfilerV1,
     UpdfilerV2,
     StrMatcher,
+    KazFiler,
 }
 
 impl Tool {
@@ -90,6 +91,7 @@ impl Tool {
             "UPDFiler_v1" => Ok(Tool::UpdfilerV1),
             "UPDFiler_v2" => Ok(Tool::UpdfilerV2),
             "STR-Matcher" => Ok(Tool::StrMatcher),
+            "KAZFiler" => Ok(Tool::KazFiler),
             _ => Err(ProcessError::UnknownTool {
                 tool: s.to_string(),
             }),
@@ -107,6 +109,7 @@ impl Tool {
             Tool::UpdfilerV1 => "UPDFiler_v1",
             Tool::UpdfilerV2 => "UPDFiler_v2",
             Tool::StrMatcher => "STR-Matcher",
+            Tool::KazFiler => "KAZFiler",
         };
 
         #[cfg(target_os = "windows")]
@@ -133,6 +136,7 @@ impl Tool {
                 Tool::UpdfilerV1 => include_bytes!("../../src/assets/UPDFiler_v1.exe"),
                 Tool::UpdfilerV2 => include_bytes!("../../src/assets/UPDFiler_v2.exe"),
                 Tool::StrMatcher => include_bytes!("../../src/assets/STR-Matcher.exe"),
+                Tool::KazFiler => include_bytes!("../../src/assets/KAZFiler.exe"),
             }
         }
 
@@ -147,6 +151,7 @@ impl Tool {
                 Tool::UpdfilerV1 => include_bytes!("../../src/assets/UPDFiler_v1"),
                 Tool::UpdfilerV2 => include_bytes!("../../src/assets/UPDFiler_v2"),
                 Tool::StrMatcher => include_bytes!("../../src/assets/STR-Matcher"),
+                Tool::KazFiler => include_bytes!("../../src/assets/KAZFiler"),
             }
         }
 
@@ -161,6 +166,7 @@ impl Tool {
                 Tool::UpdfilerV1 => include_bytes!("../../src/assets/UPDFiler_v1"),
                 Tool::UpdfilerV2 => include_bytes!("../../src/assets/UPDFiler_v2"),
                 Tool::StrMatcher => include_bytes!("../../src/assets/STR-Matcher"),
+                Tool::KazFiler => include_bytes!("../../src/assets/KAZFiler"),
             }
         }
     }
@@ -184,6 +190,7 @@ impl Tool {
                 | Tool::UpdfilerV1
                 | Tool::UpdfilerV2
                 | Tool::StrMatcher
+                | Tool::KazFiler
         )
         // UPDFiler_v1 和 UPDFiler_v2 都支持 Windows 优化配置
     }
@@ -505,6 +512,7 @@ async fn process_files_internal(
     verbose_log: Option<bool>,
     language: Option<String>,
     tolerance: Option<f64>,
+    windows_optimization_flag: Option<String>,
 ) -> Result<Vec<ProcessResult>, ProcessError> {
     let lang = language.as_deref().unwrap_or("en");
     let mut results = Vec::new();
@@ -548,6 +556,7 @@ async fn process_files_internal(
         let lang = lang.to_string();
         let lang_for_timeout = lang.clone(); // 用于超时错误处理
         let semaphore = semaphore.clone();
+        let windows_optimization_flag = windows_optimization_flag.clone();
 
         async move {
             // 获取信号量许可，限制并发数
@@ -622,15 +631,17 @@ async fn process_files_internal(
                     }
                 }
 
-                // 添加 Windows 优化参数（SMNFiler_v1、SHCarrier、UPDFiler_v1 和 UPDFiler_v2 支持）
+                // 添加 Windows 优化参数（参数形式由前端 windows_optimization_flag 配置）
                 if tool.supports_windows_optimization() {
                     if windows_optimization.unwrap_or(false) {
-                        match tool {
-                            Tool::SMNFilerV1 => cmd.arg("-e").arg("GBK"),
-                            Tool::SMNFilerV2 => cmd.arg("-GBK"),
-                            Tool::UpdfilerV1 => cmd.arg("-e").arg("GBK"),
-                            _ => cmd.arg("-GBK"),
-                        };
+                        if let Some(flag) = windows_optimization_flag.as_deref() {
+                            // 按单空格分隔，多词形式如 "-e GBK" 拆成多个 arg
+                            for part in flag.split(' ') {
+                                if !part.is_empty() {
+                                    cmd.arg(part);
+                                }
+                            }
+                        }
                     }
                 }
 
@@ -770,6 +781,7 @@ async fn process_files(
     verbose_log: Option<bool>,
     language: Option<String>,
     tolerance: Option<f64>,
+    windows_optimization_flag: Option<String>,
 ) -> Result<Vec<ProcessResult>, String> {
     let lang = language.as_deref().unwrap_or("en");
     process_files_internal(
@@ -782,6 +794,7 @@ async fn process_files(
         verbose_log,
         language.clone(),
         tolerance,
+        windows_optimization_flag,
     )
     .await
     .map_err(|e| process_error_to_localized_string(&e, lang))

@@ -30,6 +30,7 @@ enum ToolType {
   UPDFiler_v1 = 'UPDFiler_v1',
   UPDFiler_v2 = 'UPDFiler_v2',
   STRMatcher = 'STR-Matcher',
+  KAZFiler = 'KAZFiler',
 }
 
 // 工具配置接口
@@ -40,6 +41,8 @@ interface ToolConfig {
   supportsWindowsOptimization: boolean;
   supportsAreaData: boolean; // 新增：是否支持峰面积数据选项
   supportsTolerance: boolean; // 新增：是否支持 Tolerance 参数
+  // Windows 优化参数形式（多词形式用单空格分隔，如 "-e GBK"）；null 表示不支持
+  windowsOptimizationFlag: string | null;
 }
 
 // 处理选项接口
@@ -52,6 +55,8 @@ interface ProcessOptions {
   verboseLog?: boolean;
   language: string;
   tolerance?: number; // 新增：Tolerance 参数
+  // Windows 优化参数形式（多词形式用单空格分隔）
+  windowsOptimizationFlag?: string;
   [key: string]: unknown;
 }
 
@@ -66,7 +71,7 @@ interface ProcessResult {
 }
 
 // 获取应用版本号
-const appVersion = (globalThis as any).__APP_VERSION__ || '2.8.8';
+const appVersion = (globalThis as any).__APP_VERSION__ || '2.9.0';
 
 const selectedFiles = ref<string[]>([]);
 const selectedTool = ref<ToolType>(ToolType.AneuFiler);
@@ -122,6 +127,7 @@ const tools: ToolConfig[] = [
     supportsWindowsOptimization: false,
     supportsAreaData: true,
     supportsTolerance: false,
+    windowsOptimizationFlag: null,
   },
   {
     name: ToolType.Aneu23,
@@ -130,6 +136,7 @@ const tools: ToolConfig[] = [
     supportsWindowsOptimization: false,
     supportsAreaData: true,
     supportsTolerance: false,
+    windowsOptimizationFlag: null,
   },
   {
     name: ToolType.SMNFiler_v1,
@@ -138,6 +145,7 @@ const tools: ToolConfig[] = [
     supportsWindowsOptimization: true,
     supportsAreaData: true, // SMNFiler_v1 支持峰面积数据选项
     supportsTolerance: false,
+    windowsOptimizationFlag: '-e GBK',
   },
   {
     name: ToolType.SMNFiler_v2,
@@ -146,6 +154,7 @@ const tools: ToolConfig[] = [
     supportsWindowsOptimization: true,
     supportsAreaData: false, // SMNFiler_v2 不支持峰面积数据选项
     supportsTolerance: false,
+    windowsOptimizationFlag: '-GBK',
   },
   {
     name: ToolType.SHCarrier,
@@ -154,6 +163,16 @@ const tools: ToolConfig[] = [
     supportsWindowsOptimization: true,
     supportsAreaData: true,
     supportsTolerance: false,
+    windowsOptimizationFlag: '-GBK',
+  },
+  {
+    name: ToolType.KAZFiler,
+    label: 'KAZFiler',
+    supportsStdSample: false,
+    supportsWindowsOptimization: true,
+    supportsAreaData: false,
+    supportsTolerance: false,
+    windowsOptimizationFlag: '--gbk',
   },
   {
     name: ToolType.UPDFiler_v1,
@@ -162,6 +181,7 @@ const tools: ToolConfig[] = [
     supportsWindowsOptimization: true,
     supportsAreaData: false, // UPDFiler_v1 不支持峰面积数据选项
     supportsTolerance: false,
+    windowsOptimizationFlag: '-e GBK',
   },
   {
     name: ToolType.UPDFiler_v2,
@@ -170,6 +190,7 @@ const tools: ToolConfig[] = [
     supportsWindowsOptimization: true,
     supportsAreaData: false, // UPDFiler_v2 不支持峰面积数据选项
     supportsTolerance: false,
+    windowsOptimizationFlag: '-GBK',
   },
   {
     name: ToolType.STRMatcher,
@@ -178,6 +199,7 @@ const tools: ToolConfig[] = [
     supportsWindowsOptimization: true,
     supportsAreaData: false,
     supportsTolerance: true,
+    windowsOptimizationFlag: '-GBK',
   },
 ];
 
@@ -430,6 +452,7 @@ async function processFiles() {
       verboseLog: selectedTool.value === ToolType.UPDFiler_v2 ? verboseLog.value : undefined,
       language: currentLanguage.value,
       tolerance: currentTool.supportsTolerance ? tolerance.value : undefined,
+      windowsOptimizationFlag: currentTool.supportsWindowsOptimization ? currentTool.windowsOptimizationFlag ?? undefined : undefined,
     };
 
     const processResults = await invoke<ProcessResult[]>('process_files', options);
