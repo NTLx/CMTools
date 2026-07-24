@@ -8,6 +8,23 @@
 
 ---
 
+## [2.9.0] - 2026-07-24
+
+### 新增
+
+- **KAZFiler 工具** - 新增 AZF/性染色体倍型分析工具，支持 Windows 编码优化
+
+### 重构
+
+- Windows 优化参数形式改为配置驱动：前端 `ToolConfig` 增 `windowsOptimizationFlag` 字段，后端统一按字符串拼接传参，移除工具特化的 match 分支
+
+### 文档
+
+- 新增 ADR-0001：Windows 优化参数形式重构决策记录
+- 新增 `CONTEXT.md`：CMTools 核心术语表
+
+---
+
 ## [2.8.8] - 2026-07-03
 
 ### 修复
@@ -348,9 +365,10 @@
 | v2.2.x-v2.3.x | 2025.08 | SMNFiler、UPDFiler 工具 |
 | v2.4.x-v2.5.x | 2025.09 | 工具版本细分、多架构支持 |
 | v2.6.x-v2.7.x | 2025.10-2026.01 | 工具迭代、跨平台优化 |
-| v2.8.x | 2026.01-至今 | STR-Matcher 工具 |
+| v2.8.x | 2026.01-2026.07 | STR-Matcher 工具 |
+| v2.9.x | 2026.07-至今 | KAZFiler 工具、Windows 优化参数配置化重构 |
 
 **当前支持**：
 
-- 8 个数据处理工具（AneuFiler、Aneu23、SMNFiler_v1/v2、UPDFiler_v1/v2、SHCarrier、STR-Matcher）
+- 9 个数据处理工具（AneuFiler、Aneu23、SMNFiler_v1/v2、UPDFiler_v1/v2、SHCarrier、STR-Matcher、KAZFiler）
 - 3 个平台（Windows、macOS、Linux）

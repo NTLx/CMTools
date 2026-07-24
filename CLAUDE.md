@@ -115,7 +115,7 @@ CMTools 的核心功能通过调用嵌入的外部命令行工具实现，这是
 ### 关键文件
 
 - **`src-tauri/src/lib.rs`**：核心业务逻辑
-    - `Tool` 枚举：定义所有可用工具（AneuFiler、Aneu23、SMNFiler_v1/v2、SHCarrier、STR-Matcher、UPDFiler_v1/v2）
+    - `Tool` 枚举：定义所有可用工具（AneuFiler、Aneu23、SMNFiler_v1/v2、SHCarrier、KAZFiler、STR-Matcher、UPDFiler_v1/v2）
     - `process_files_internal`：处理文件的核心函数，负责工具释放、参数构造、命令执行
     - `ProcessError`：自定义错误类型，用于错误传播
 
@@ -247,7 +247,8 @@ const tools = ref([
     supportsStdSample: true,           // 是否支持 -STD 参数
     supportsWindowsOptimization: true, // 是否支持 -GBK 编码优化
     supportsAreaData: true,            // 是否支持 -Area 参数
-    supportsTolerance: false           // 是否支持 -t Tolerance 参数（仅 STR-Matcher）
+    supportsTolerance: false,          // 是否支持 -t Tolerance 参数（仅 STR-Matcher）
+    windowsOptimizationFlag: '-GBK',  // Windows 优化参数形式（多词用单空格分隔）；不支持时为 null
   }
 ])
 ```
@@ -260,6 +261,14 @@ const tools = ref([
 - 命令行参数: `-t <值>`
 - 用途: 设置匹配容差值
 - 仅当值大于 0 时才会添加到命令行
+
+**Windows 优化参数形式（配置驱动，详见 ADR-0001）**
+
+- 字段: `ToolConfig.windowsOptimizationFlag`
+- 取值: 字符串，写出工具期望的参数形式（如 `"-GBK"`、`"-e GBK"`、`"--gbk"`）；多词形式用单空格分隔
+- 用途: 前端配置驱动后端命令行参数拼装，无需修改后端 match 分支
+- 后端逻辑: 按单空格拆分字符串后逐个 `cmd.arg(...)`，无工具特化分支
+- 新工具接入: 在 `tools` 数组中为该工具填入对应的参数形式字符串；不支持时填 `null`
 
 ## 构建系统架构
 
@@ -439,9 +448,9 @@ done
 1. **利用配置驱动特性**
 
    启用工具的通用特性（如 Windows 优化）时，通常只需修改配置，无需编写新逻辑：
-    - **前端**：更新 `src/App.vue` 的 `tools` 数组
-    - **后端**：更新 `src-tauri/src/lib.rs` 的 `supports_*` 判定方法
-    - **机制**：利用后端通用逻辑中的默认匹配分支（如 `_ => cmd.arg("-GBK")`）自动生效
+    - **前端**：更新 `src/App.vue` 的 `tools` 数组（含 `windowsOptimizationFlag` 字段）
+    - **后端**：更新 `src-tauri/src/lib.rs` 的 `supports_*` 判定方法（如新增工具支持 Windows 优化，需加入 `supports_windows_optimization()` 的 `matches!` 列表）
+    - **机制**：GBK 参数形式由前端 `windowsOptimizationFlag` 字符串字段驱动，后端按空格拆分后逐个 `cmd.arg(...)`，无工具特化 match 分支（详见 ADR-0001）
 
 2. **前后端配置同步**
 
@@ -450,9 +459,9 @@ done
 3. **工具配置同步检查**
 
    验证工具功能时，必须同时检查前后端配置：
-    - 前端：`src/App.vue` - `tools` 数组中的 `supports*` 配置（`supportsStdSample`、`supportsWindowsOptimization`、`supportsAreaData`、`supportsTolerance`）
+    - 前端：`src/App.vue` - `tools` 数组中的 `supports*` 配置（`supportsStdSample`、`supportsWindowsOptimization`、`supportsAreaData`、`supportsTolerance`）以及 `windowsOptimizationFlag` 字段
     - 后端：`src-tauri/src/lib.rs` - `Tool` 枚举的 `supports_*()` 方法和命令行参数逻辑
-    - 文档：`user_manual.md` - 工具功能对照表和处理选项说明
+    - 文档：`user_manual.md` - 工具功能对照表和处理选项说明；架构决策查阅 `docs/adr/`
 
    **STR-Matcher 特殊说明**：Tolerance 参数仅 STR-Matcher 支持，使用 `-t` 命令行参数，仅当值大于 0 时生效。
 
@@ -639,3 +648,17 @@ if (errorLower.includes('格式') || errorLower.includes('format')) return 'form
 - `README.md` - 项目总体介绍和快速开始
 - `user_manual.md` - 用户使用手册
 - `CHANGELOG.md` - 版本更新历史
+
+## Agent skills
+
+### Issue tracker
+
+Issues 和 specs 以本地 markdown 文件形式存于 `.scratch/<feature>/`。详见 `docs/agents/issue-tracker.md`。
+
+### Triage labels
+
+使用五个规范默认标签（`needs-triage`、`needs-info`、`ready-for-agent`、`ready-for-human`、`wontfix`）。详见 `docs/agents/triage-labels.md`。
+
+### Domain docs
+
+单上下文布局（根目录 `CONTEXT.md` + `docs/adr/`）。详见 `docs/agents/domain.md`。
